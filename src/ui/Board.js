@@ -1,23 +1,49 @@
 import { type, elementName } from '../../shared/elements.js';
-import { combo } from '../../shared/combos.js';
+import { combo, comboDetails } from '../../shared/combos.js';
 
 // Поле: 3 линии × башни, Нексусы, входы в Нексус (базовые цели).
 // Рендер идентичен v1.5, но данные приходят из персонального PlayerView.
 const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 
-const cardHTML = (c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}">${c.r}<span class="suit">${c.s}</span></span>`;
+export const cardHTML = (c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}">${c.r}<span class="suit">${c.s}</span></span>`;
 
-function tower({ hp, max, icon, label, lane, kind, active, slots }) {
+// Шкалы силы над башнями: последняя ширина запоминается для плавной анимации.
+export const METER_LAST = new Map();
+
+export function meterHTML(cards, kind, lane) {
+  const complete = cards.length === 2;
+  const power = complete ? combo(cards) : 0;
+  const element = complete ? type(cards) : '';
+  const key = lane + '-' + kind;
+  const pct = complete ? 100 : 0;
+  const previous = METER_LAST.has(key) ? METER_LAST.get(key) : 0;
+  METER_LAST.set(key, pct);
+  const caption = kind === 'atk' ? '⚔ АТАКА' : '🛡 ЗАЩИТА';
+  return `<div class="power-meter ${kind === 'atk' ? 'power-attack' : 'power-defense'}" aria-label="${caption}: ${power} из ${power} (полная шкала)">
+    <div class="power-meter-head"><span>${caption}</span><strong>${power}</strong><span class="power-element">${element}</span></div>
+    <div class="power-meter-track"><i data-meter-target="${pct}" style="width:${previous}%"></i></div>
+  </div>`;
+}
+
+export function animateMeters() {
+  requestAnimationFrame(() => {
+    document.querySelectorAll('[data-meter-target]').forEach((el) => {
+      el.style.width = el.dataset.meterTarget + '%';
+    });
+  });
+}
+
+export function tower({ hp, max, icon, label, lane, kind, active, slots }) {
   const cards = active ? slots[lane][kind] : [];
   const element = active && hp > 0 && cards.length === 2 ? ` element-${{ '🔥': 'fire', '💧': 'water', '🪨': 'earth', '🌪️': 'air', '♨️': 'steam', '🌫️': 'storm' }[type(cards)]}` : '';
   return `<div class="tower ${hp <= 0 ? 'dead' : ''}${active && hp > 0 ? ' drop-target' : ''}${element}" ${active ? `data-lane="${lane}" data-kind="${kind}"` : ''}>
+    ${active ? meterHTML(cards, kind, lane) : ''}
+    ${active ? `<div class="tower-cards">${cards.map((c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}${c.justPlaced ? ' landed' : ''}">${c.r}<span class="suit">${c.s}</span></span>`).join('')}</div>` : ''}
     <div class="em">${hp <= 0 ? '💥' : icon}</div>
     <div class="tag">${label}</div>
     <div class="value">${Math.max(0, hp)} / ${max}</div>
     <div class="tinybar"><i style="width:${Math.max(0, (hp / max) * 100)}%"></i></div>
-    ${active ? `<div class="tower-cards">${cards.map((c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}${c.justPlaced ? ' landed' : ''}">${c.r}<span class="suit">${c.s}</span></span>`).join('')}</div>
-    <div class="element-label">${cards.length === 2 ? elementName(cards) : ''}</div>
-    <div class="drop-hint">${cards.length ? `${combo(cards)} · ${type(cards)} · ↺` : (kind === 'atk' ? '♥♦ АТАКА' : '♠♣ ЗАЩИТА')}</div>` : ''}
+    ${active ? `<div class="element-label">${cards.length === 2 ? elementName(cards) : ''}</div>` : ''}
   </div>`;
 }
 
@@ -27,7 +53,6 @@ export function Board(view, mySlots, myHand) {
   let html = `<div class="battle-head"><div>◀ МОИ ЛИНИИ</div><div>ЛИНИЯ</div><div>ЛИНИИ СОПЕРНИКА ▶</div></div>`;
   for (let l = 0; l < 3; l++) {
     const defIcon = type(mySlots[l].def), atkIcon = type(mySlots[l].atk);
-    const oppAtk = opp?.outer[l] > 0;
     html += `<div class="lane">
       <div class="side"><div class="tower-group">
         ${tower({ hp: me.inner[l], max: 18, icon: defIcon, label: 'МОЯ ВНУТРЕННЯЯ', lane: l, kind: 'def', active: me.outer[l] <= 0 && me.inner[l] > 0, slots: mySlots })}

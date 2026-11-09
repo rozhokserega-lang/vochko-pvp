@@ -1,0 +1,111 @@
+/* ── Combat FX v5 (порт из vochko_pvp_combat_fixed_target_v5) ── */
+.damage-float.vfx-hit{
+ display:flex;align-items:center;justify-content:center;gap:3px;
+ padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;
+ font-size:clamp(19px,5vw,30px);font-weight:1000;letter-spacing:.2px;
+ line-height:1;white-space:nowrap;pointer-events:none;
+ text-shadow:0 2px 3px #000,0 0 12px #000,0 0 18px #000;
+ animation:vfxClassicRise 1.4s ease-out var(--vfx-delay,0ms) both!important;
+}
+.vfx-hit.enemy-hit{color:#ffdd78}.vfx-hit.player-hit{color:#ff727c}
+.vfx-hit.burn-hit{color:#ffac47}.vfx-hit.blocked-hit{color:#a6d9fa;font-size:clamp(14px,3.5vw,20px)}
+.vfx-hit .vfx-icon{font-size:.83em;filter:drop-shadow(0 2px 4px #000)}
+.vfx-hit .vfx-value{font-variant-numeric:tabular-nums}
+@keyframes vfxClassicRise{
+ 0%{opacity:0;transform:translate(-50%,-50%) scale(.82)}
+ 12%{opacity:1;transform:translate(-50%,-66%) scale(1.12)}
+ 32%{opacity:1;transform:translate(-50%,-100%) scale(1)}
+ 78%{opacity:.9;transform:translate(-50%,-145%) scale(1)}
+ 100%{opacity:0;transform:translate(-50%,-180%) scale(.96)}
+}
+.tower.vfx-impact,.base-lane.vfx-impact,.nexus.vfx-impact{animation:vfxClassicImpact .42s ease-out!important}
+@keyframes vfxClassicImpact{0%{filter:brightness(1.5);transform:scale(1.04)}55%{filter:brightness(1.15);transform:scale(.99)}100%{filter:brightness(1);transform:scale(1)}}
+.vfx-element-fire{box-shadow:0 0 13px #ff613970!important}
+.vfx-element-water{box-shadow:0 0 13px #45b9ff80!important}
+.vfx-element-earth{box-shadow:0 0 13px #c99b4a80!important}
+.vfx-element-air{box-shadow:0 0 13px #51dcc280!important}
+.vfx-element-steam{box-shadow:0 0 13px #a97df080!important}
+.vfx-element-storm{box-shadow:0 0 13px #a1c2db80!important}
+@media(prefers-reduced-motion:reduce){.damage-float.vfx-hit{animation:vfxClassicRise .7s linear var(--vfx-delay,0ms) both!important}.tower.vfx-impact,.base-lane.vfx-impact,.nexus.vfx-impact{animation:none!important}}
+
+#lanes{position:relative}
+.combat-stage{position:absolute;top:4px;left:50%;transform:translateX(-50%);
+ z-index:120;pointer-events:none;background:#0b1525e8;color:#f7dc9a;
+ border:1px solid #a78c53;border-radius:99px;padding:4px 14px;
+ font-size:12px;font-weight:950;letter-spacing:.8px;white-space:nowrap;
+ box-shadow:0 4px 20px #0009;animation:combatStagePop 1.2s ease-out both}
+@keyframes combatStagePop{0%{opacity:0;transform:translate(-50%,-6px) scale(.85)}
+ 20%,75%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-5px)}}
+
+.combat-shield{position:absolute;z-index:90;left:50%;bottom:calc(100% + 3px);
+ transform:translate(-50%,6px) scale(.85);opacity:0;pointer-events:none;
+ width:clamp(70px,11vw,108px);padding:4px 5px 5px;
+ background:linear-gradient(145deg,#17354eea,#132235f0);
+ border:1px solid #72c7f4;border-radius:8px;box-shadow:0 0 13px #3cb7f477,0 6px 15px #0008;
+ transition:opacity .4s ease,transform .4s ease!important;color:#d8f4ff}
+.combat-shield-ready{opacity:1;transform:translate(-50%,0) scale(1)}
+.combat-shield-title{display:flex;justify-content:center;align-items:center;gap:3px;font-size:11px;font-weight:900;white-space:nowrap}
+.combat-shield-icon{font-size:13px}
+.combat-shield-track{height:6px;border-radius:5px;background:#081522;margin-top:3px;overflow:hidden;border:1px solid #4b8ca5}
+.combat-shield-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#47c1ee,#b9f5ff);
+ box-shadow:0 0 8px #5ceaff;transition:width .95s cubic-bezier(.18,.8,.25,1)!important}
+.combat-shield-hit{border-color:#ffbd68;box-shadow:0 0 14px #ffa13c88,0 5px 15px #0008}
+.combat-shield-hit .combat-shield-track i{transition:width .82s cubic-bezier(.25,.05,.4,1)!important}
+.combat-shield-number{font-variant-numeric:tabular-nums;transition:color .25s}
+.combat-shield-pending .combat-shield-track i{width:0!important}
+.combat-shield-charging{box-shadow:0 0 18px #59d8ffb0,0 6px 15px #0008!important}
+.combat-shield-broken{border-color:#f97768!important;box-shadow:0 0 22px #fb655ca8!important}
+.combat-shield-out{opacity:0!important;transform:translate(-50%,-13px) scale(.85)!important;transition:opacity .4s ease!important}
+.combat-shield-initial .combat-shield-track i{width:100%}
+.tower{position:relative}
+.tower .tinybar i,.base-lane .tinybar i{transition:width .8s ease-out!important}
+.damage-float.vfx-hit{animation-duration:1.25s!important}
+.combat-damage-number{
+ position:fixed;z-index:9999;pointer-events:none;display:flex;gap:5px;align-items:center;
+ transform:translate(-50%,0);white-space:nowrap;font-size:clamp(15px,2.3vw,23px);
+ font-weight:950;text-shadow:0 2px 4px #050a12,0 0 8px #050a12;
+ animation:combatFloat 1.25s cubic-bezier(.2,.75,.25,1) both;
+}
+.combat-damage-number span{font-size:1.1em}
+.shield-damage-number{color:#82e7f6}
+.hp-damage-number{color:#ffca75;font-size:clamp(19px,2.7vw,28px)}
+@keyframes combatFloat{
+ 0%{opacity:0;transform:translate(-50%,12px) scale(.8)}
+ 15%{opacity:1;transform:translate(-50%,-4px) scale(1.14)}
+ 65%{opacity:1;transform:translate(-50%,-25px) scale(1)}
+ 100%{opacity:0;transform:translate(-50%,-48px) scale(.92)}
+}
+.combat-hp-restore{font-variant-numeric:tabular-nums}
+.nexus{position:relative}
+
+.tower.drop-target{margin-top:2px!important;padding-top:5px!important;min-height:108px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+.tower .power-meter{width:100%;margin-bottom:4px;position:relative;z-index:4}
+.power-meter-head{display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;font-size:9px;font-weight:900;line-height:1.15}
+.power-meter-head strong{font-size:13px;font-variant-numeric:tabular-nums}
+.power-meter-head .power-element{font-size:12px;min-width:12px}
+.power-attack .power-meter-head{color:#ff988d}
+.power-defense .power-meter-head{color:#7eead6}
+.power-meter-track{width:100%;height:8px;background:#0b1524;border:1px solid #354861;border-radius:99px;overflow:hidden}
+.power-meter-track i{display:block;height:100%;border-radius:99px;transition:width .25s ease-out}
+.power-attack .power-meter-track i{background:linear-gradient(90deg,#ba3e47,#ff8362);box-shadow:0 0 9px #ff705588}
+.power-defense .power-meter-track i{background:linear-gradient(90deg,#268d9d,#6ce8c4);box-shadow:0 0 9px #5cddcc88}
+.tower.drop-target .tower-cards{position:relative!important;top:auto!important;left:auto!important;transform:none!important;justify-content:center;min-height:26px;margin:1px 0 2px}
+.tower.drop-target .tower-cards .mini{width:22px;height:28px}
+.tower.drop-target .em{font-size:12px}
+.tower.drop-target .element-label{font-size:7px;min-height:9px}
+.tower.drop-target .tag{font-size:7px}
+.tower.drop-target .value{font-size:10px}
+@media(max-width:740px){
+ .combat-shield{width:65px;padding:3px 4px}.combat-shield-title{font-size:9px}.combat-shield-icon{font-size:10px}.combat-shield-track{height:5px}.combat-stage{font-size:10px;padding:3px 9px}
+ .tower.drop-target{min-height:96px;padding:3px 2px!important;margin-top:2px!important}
+ .power-meter-head{font-size:7px;gap:2px;letter-spacing:-.25px}
+ .power-meter-head strong{font-size:11px}
+ .power-meter-head .power-element{font-size:10px;min-width:9px}
+ .power-meter-track{height:6px}
+ .tower.drop-target .tower-cards{min-height:23px;margin:1px 0}
+ .tower.drop-target .tower-cards .mini{width:18px;height:24px}
+ .tower.drop-target .tag{font-size:6px}
+ .tower.drop-target .value{font-size:8px}
+}
+@media(max-width:390px){.power-meter-head{font-size:6px}.power-meter-head strong{font-size:10px}.tower.drop-target{min-height:91px}}
+@media(prefers-reduced-motion:reduce){.combat-shield-track i,.tower .tinybar i{transition-duration:.2s!important}}

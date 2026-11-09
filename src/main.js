@@ -5,7 +5,8 @@ import { watchMatch } from './lib/realtime.js';
 import { Lobby, waitingRoom } from './ui/Lobby.js';
 import { Board, nexusPanel } from './ui/Board.js';
 import { renderPreview, roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
-import { showRoundDamage, clearFloats, playRoundAnimation } from './ui/animations.js';
+import { showRoundDamage, clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
+import { animateMeters, METER_LAST } from './ui/Board.js';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -85,7 +86,7 @@ async function refresh(matchId, afterEvents = false) {
     return;
   }
   myHand = view.me.hand;
-  if (view.round !== slotsState.round) { slots = resetSlots(); slotsState.round = view.round; }
+  if (view.round !== slotsState.round) { slots = resetSlots(); METER_LAST.clear(); slotsState.round = view.round; }
   if (view.status === 'finished' || view.winner) {
     // Аудит п.5: оба игрока автоматически уходят в новый матч после реванша.
     if (view.nextMatchId && view.nextMatchId !== view.matchId) {
@@ -93,15 +94,7 @@ async function refresh(matchId, afterEvents = false) {
       return enterMatch(view.nextMatchId);
     }
     render();
-    const title = view.winner === 'draw' ? '🤝 Ничья' : view.winner === 'me' ? '🏆 Победа!' : '💀 Поражение';
-    app.appendChild(EndScreen({
-      title,
-      message: view.winner === 'draw' ? 'Оба Нексуса разрушены или лимит раундов.' :
-        view.winner === 'me' ? 'Нексус соперника разрушен.' : 'Твой Нексус разрушен.',
-      canRematch: view.canRematch,
-      onRematch: doRematch,
-      onLeave: () => { api.leaveRoom(view.matchId); localStorage.removeItem('vochko_match'); location.href = location.pathname; },
-    }));
+    showEndScreen(view);
     return;
   }
   render();
@@ -126,6 +119,7 @@ function doRematch(btn) {
 }
 
 function render() {
+  if (isCombatPlaying()) return; // UI заморожен на время боевой хореографии
   const root = document.createElement('div');
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
@@ -157,6 +151,7 @@ function render() {
   app.replaceChildren(root);
 
   renderHand();
+  animateMeters();
   renderPreview(byId('pairPreview'), selected.map(cardById));
   wireReportClicks(byId('battleReports'), view, view.seat);
 
@@ -195,6 +190,24 @@ function render() {
 }
 
 function setStatus(text) { const el = byId('status'); if (el) el.textContent = text; }
+
+// Экран финала — вызывается и из refresh, и из хореографии боя.
+function showEndScreen(v) {
+  const title = v.winner === 'draw' ? '🤝 Ничья' : v.winner === 'me' ? '🏆 Победа!' : '💀 Поражение';
+  const message = v.winner === 'draw'
+    ? 'Оба Нексуса разрушены или лимит раундов.'
+    : v.winner === 'me' ? 'Нексус соперника разрушен.' : 'Твой Нексус разрушен.';
+  app.appendChild(EndScreen({
+    title,
+    message,
+    canRematch: v.canRematch,
+    onRematch: doRematch,
+    onLeave: () => { api.leaveRoom(v.matchId); localStorage.removeItem('vochko_match'); location.href = location.pathname; },
+  }));
+}
+
+// Хореография боя рендерит финальное состояние и финальный экран сама.
+bindCombatUI({ render, showEndScreen });
 
 function renderHand() {
   const hand = byId('hand');
