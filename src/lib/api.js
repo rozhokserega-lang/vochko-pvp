@@ -2,22 +2,30 @@ import { supabase } from './supabase.js';
 
 // Прямой fetch вместо functions.invoke: invoke маскирует тело ошибки
 // («non-2xx status code»), а нам нужны коды room-not-found и т.п.
+// Таймаут 15 c: зависший мобильный fetch не должен навсегда блокировать кнопку.
 async function call(name, body = {}) {
   const sb = supabase();
   const { data } = await sb.auth.getSession();
   const token = data.session?.access_token;
-  const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`, {
-    method: 'POST',
-    headers: {
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      authorization: `Bearer ${token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(json.error ?? `http-${r.status}`);
-  return json;
+  const ctrl = new AbortController();
+  const killer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(json.error ?? `http-${r.status}`);
+    return json;
+  } finally {
+    clearTimeout(killer);
+  }
 }
 
 const RU = {

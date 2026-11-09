@@ -207,12 +207,13 @@ async function submit(attempt = 0) {
     lastVersion = 0;
     await refresh(view.matchId, !!r.resolved);
   } catch (e) {
-    const stale = String(e.message ?? '').includes('stale');
-    if (stale && attempt < 1) {
-      await refresh(view.matchId);   // соперник успел раньше: берём свежую версию и повторяем
+    const msg = String(e.message ?? '');
+    const retryable = msg.includes('stale') || msg.includes('таймаут') || msg.includes('timeout') || e.name === 'AbortError';
+    if (retryable && attempt < 2) {
+      if (e.name === 'AbortError') await refresh(view.matchId); // ход мог доехать — сверимся (идемпотентно)
       return submit(attempt + 1);
     }
-    setStatus('Ошибка: ' + (e.message ?? 'повтори попытку'));
+    setStatus('Ошибка: ' + (msg || 'повтори попытку'));
     const btn = byId('fightBtn'); if (btn) btn.disabled = false;
   }
 }
