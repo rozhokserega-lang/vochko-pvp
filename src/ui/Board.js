@@ -35,8 +35,8 @@ export function Board(view, mySlots, myHand) {
       </div></div>
       <div class="centerlane"><b>${LANE_NAMES[l]}</b><span>⚔</span><small>${l + 1}</small></div>
       <div class="side enemy"><div class="tower-group">
-        ${tower({ hp: opp.outer[l], max: 12, icon: '🏰', label: 'ВРАГ: ВНЕШ.', lane: l, kind: 'atk', active: false, slots: [] })}
-        ${tower({ hp: opp.inner[l], max: 18, icon: '🏰', label: 'ВРАГ: ВНУТР.', lane: l, kind: 'atk', active: false, slots: [] })}
+        ${tower({ hp: opp.outer[l], max: 12, icon: '🏰', label: 'ВРАГ: ВНЕШ.', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots })}
+        ${tower({ hp: opp.inner[l], max: 18, icon: '🏰', label: 'ВРАГ: ВНУТР.', lane: l, kind: 'atk', active: opp.outer[l] <= 0 && opp.inner[l] > 0, slots: mySlots })}
       </div></div>
     </div>`;
   }
@@ -47,7 +47,8 @@ export function nexusPanel(view) {
   const me = view.board.me, opp = view.board.opponent;
   const baseLane = (state, own) => [0, 1, 2].map((l) => {
     const open = state.outer[l] <= 0 && state.inner[l] <= 0;
-    return `<div class="base-lane ${open ? 'open' : ''}" title="${open ? 'Открытый путь' : 'Сначала разрушить обе башни линии'}">${['Ⅰ','Ⅱ','Ⅲ'][l]} ${open ? '⚡' : '🔒'}</div>`;
+    const kind = own ? 'def' : 'atk';
+    return `<div class="base-lane ${open ? 'open drop-target' : ''}" ${open ? `data-lane="${l}" data-kind="${kind}"` : ''} title="${open ? 'Открытый путь' : 'Сначала разрушить обе башни линии'}">${['Ⅰ','Ⅱ','Ⅲ'][l]} ${open ? '⚡' : '🔒'}</div>`;
   }).join('');
   return `<div class="nexus"><div class="orb">🔷</div><div style="flex:1">
       <div class="sub">МОЙ НЕКСУС</div><div class="hp">${me.nexus} / 80</div>
