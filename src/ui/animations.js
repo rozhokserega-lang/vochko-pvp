@@ -14,6 +14,7 @@ const ELEMENT_CLASS = { '🔥': 'fire', '💧': 'water', '🪨': 'earth', '🌪�
 // 2) затем удары — поджог, следом прямой урон; 3) свечение гаснет.
 export function playRoundAnimation(view) {
   const rep = view.latestRoundReport;
+  (window.__animLog = window.__animLog || []).push({ fn: 'playRoundAnimation', repRound: rep?.round, events: rep?.events?.length, at: Date.now() % 100000 });
   if (!rep) return;
   const mySeat = view.seat;
   const lanes = document.querySelectorAll('#lanes .lane');

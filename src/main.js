@@ -67,6 +67,7 @@ async function enterMatch(matchId) {
 
 async function refresh(matchId, afterEvents = false) {
   view = await api.getState(matchId);
+  (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, afterEvents, at: Date.now() % 100000 });
   if (view.version <= lastVersion && !afterEvents) return render();
   lastVersion = view.version;
   // Второй ещё не вошёл — показываем экран ожидания вместо поля.
