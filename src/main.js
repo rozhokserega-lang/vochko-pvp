@@ -64,6 +64,11 @@ async function refresh(matchId, afterEvents = false) {
   view = await api.getState(matchId);
   if (view.version <= lastVersion && !afterEvents) return render();
   lastVersion = view.version;
+  // Второй ещё не вошёл — показываем экран ожидания вместо поля.
+  if (view.status === 'waiting') {
+    app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link));
+    return;
+  }
   myHand = view.me.hand;
   if (view.round !== slotsState.round) { slots = resetSlots(); slotsState.round = view.round; }
   if (view.status === 'finished' || view.winner) {
