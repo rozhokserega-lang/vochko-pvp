@@ -26,7 +26,7 @@ export function Lobby({ onCreate, onBot, onJoin, joinError }) {
   return root;
 }
 
-export function waitingRoom(matchId, roomCode, getLink) {
+export function waitingRoom(matchId, roomCode, getLink, { onExit } = {}) {
   const root = document.createElement('div');
   root.className = 'lobby';
   const link = getLink(roomCode);
@@ -36,6 +36,8 @@ export function waitingRoom(matchId, roomCode, getLink) {
     <div class="code">${roomCode}</div>
     <div class="sub"><a href="${link}">${link}</a></div>
     <div class="row"><span class="toast">⏳ Ждём второго игрока…</span></div>
+    ${onExit ? '<div class="row"><button class="btn" data-act="exit">🚪 Отменить комнату и вернуться в лобби</button></div>' : ''}
     <div class="status" data-info="match">${matchId}</div>`;
+  if (onExit) root.querySelector('[data-act="exit"]').onclick = () => onExit();
   return root;
 }

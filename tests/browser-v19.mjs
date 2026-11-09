@@ -165,6 +165,15 @@ ok(sidesOk.enemy.length === 6 && sidesOk.enemy.every((t) => '♥♦'.includes(t.
     const hpAfter = await pageA.evaluate(() => [...document.querySelectorAll('.tower .value')].map((e) => e.textContent).join('|'));
     ok(hpBefore === hpAfter, `реконнект после F5: HP-строки идентичны`);
 
+    // Выход из матча: кнопка в шапке → подтверждение → лобби, F5 остаётся в лобби
+    pageA.once('dialog', (d) => d.accept());
+    await pageA.getByRole('button', { name: 'Выйти в лобби' }).click();
+    await pageA.waitForSelector('.lobby', { timeout: 15000 });
+    ok(true, 'выход из матча (кнопка в шапке) возвращает в лобби');
+    await pageA.reload();
+    await pageA.waitForSelector('.lobby', { timeout: 20000 });
+    ok(true, 'после выхода F5 показывает лобби (реконнект отключён: localStorage чист)');
+
     const errA = errors.get('A'), errB = errors.get('B');
     ok(errA.length === 0, `консоль A без ошибок (${errA.length}) — ${errA.slice(0, 2).join(' · ')}`);
     ok(errB.length === 0, `консоль B без ошибок (${errB.length}) — ${errB.slice(0, 2).join(' · ')}`);
