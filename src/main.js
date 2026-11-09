@@ -19,6 +19,7 @@ let fortifyLane = null;   // выбранная линия укрепления 
 let fortifyMode = false;
 let unwatch = null;
 let lastVersion = 0;
+let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
 
 const cardById = (id) => myHand.find((c) => c.id === id);
 const usedIds = () => new Set(slots.flatMap((s) => [...s.atk, ...s.def].map((c) => c.id)));
