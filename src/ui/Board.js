@@ -26,11 +26,13 @@ export function meterHTML(cards, kind, lane) {
 }
 
 export function animateMeters() {
-  requestAnimationFrame(() => {
+  // Без requestAnimationFrame: в перекрытых окнах RAF замирает и шкала
+  // остаётся пустой; обычный таймер работает всегда.
+  setTimeout(() => {
     document.querySelectorAll('[data-meter-target]').forEach((el) => {
       el.style.width = el.dataset.meterTarget + '%';
     });
-  });
+  }, 30);
 }
 
 export function tower({ hp, max, icon, label, lane, kind, active, slots }) {
