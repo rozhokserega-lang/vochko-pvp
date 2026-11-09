@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/engine.test.js",
+    "test": "node --test tests/engine.test.js tests/audit.test.js",
     "build": "vite build",
     "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",
     "dev": "vite"

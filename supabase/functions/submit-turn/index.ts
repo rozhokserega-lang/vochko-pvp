@@ -5,7 +5,7 @@ import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 import { dealHand } from '../_shared/deal.ts';
-import { validateTurn, materializeTurn } from '../../../shared/validation.js';
+import { validateTurn, materializeTurn, fortifyAllowed } from '../../../shared/validation.js';
 import { botPlan } from '../../../shared/bot.js';
 import { resolveRound } from '../../../shared/engine.js';
 
@@ -32,7 +32,12 @@ Deno.serve(async (req) => {
          where match_id = ${m.id} and round = ${m.round} and player_id = ${user.id}`;
       if (existing.length) return { accepted: true, version: Number(m.version), ready: true };
 
-      if (Number(expectedVersion) !== Number(m.version)) throw new HttpError(`stale version: current ${m.version}`, 409);
+      // Аудит п.2: укрепление — один раз за матч.
+      const fort = fortifyAllowed(st.fortifyUsed?.[String(seat)], fortifyLane);
+      if (!fort.ok) throw new HttpError(fort.error, 400);
+      // Аудит п.6: проверку равенства expectedVersion убрали — почти
+      // одновременные ходы больше не конфликтуют; атомарность держат
+      // FOR UPDATE + проверка раунда + идемпотентность.
 
       const st = m.state ?? {};
       const check = validateTurn(st.hands?.[String(seat)] ?? [], { placements, fortifyLane });

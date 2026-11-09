@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
           board: emptyBoard(),
           hands: { 1: dealHand(), 2: dealHand() },
           fortifyUsed: { 1: false, 2: false },
+          botMatch: !!st.botMatch, // реванш с ботом остаётся PvE
         })})
         returning id, room_code, version`;
       st.nextMatchId = created.id;

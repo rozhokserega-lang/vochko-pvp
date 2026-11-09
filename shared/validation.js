@@ -47,3 +47,11 @@ export function materializeTurn(hand, turn) {
     fortifyLane: turn.fortifyLane ?? null,
   };
 }
+
+// Укрепление — один раз за матч (аудит п.2). Сервер проверяет флаг до резолва.
+export function fortifyAllowed(fortifyUsed, fortifyLane) {
+  if (fortifyLane == null) return { ok: true };
+  if (![0, 1, 2].includes(fortifyLane)) return { ok: false, error: 'fortify-lane' };
+  if (fortifyUsed) return { ok: false, error: 'fortify-used' };
+  return { ok: true };
+}

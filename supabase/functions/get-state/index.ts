@@ -1,9 +1,9 @@
 // get-state: персонализированный DTO (README §5). До разрешения раунда карты
 // соперника и его раскладка не покидают сервер — ни в каком виде.
-import { requireUser } from '../_shared/auth.ts';
-import { json, err, cors, HttpError } from '../_shared/cors.ts';
-import { sql } from '../_shared/db.ts';
-import { shieldPct } from '../../../shared/engine.js';
+import { requireUser } from './_shared/auth.ts';
+import { json, err, cors, HttpError } from './_shared/cors.ts';
+import { sql } from './_shared/db.ts';
+import { shieldPct } from './shared/engine.js';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -22,9 +22,8 @@ Deno.serve(async (req) => {
     const [readyRow] = await sql`
       select
         count(*) filter (where player_id = ${user.id})::int as mine,
-        count(*)::int as total
+        count(*) filter (where seat <> ${seat})::int as theirs
       from private.turns where match_id = ${m.id} and round = ${m.round}`;
-    const ready = readyRow.total >= 2;
 
     const [report] = await sql`
       select public_result from private.round_events
@@ -38,22 +37,25 @@ Deno.serve(async (req) => {
       round: m.round,
       version: Number(m.version),
       me: {
+        userId: user.id,
         hand: st.hands?.[String(seat)] ?? [],
         ready: readyRow.mine > 0,
         fortifyUsed: st.fortifyUsed?.[String(seat)] ?? false,
       },
       opponent: {
-        connected: (seat === 1 ? m.player2_id : m.player1_id) != null,
-        ready: m.status === 'planning' ? ready : false,
+        connected: st.botMatch ? true : (seat === 1 ? m.player2_id : m.player1_id) != null,
+        isBot: !!st.botMatch,
+        ready: readyRow.theirs > 0,
         fortifyUsed: st.fortifyUsed?.[String(seat === 1 ? 2 : 1)] ?? false,
       },
       board: {
-        me: myBoard ?? null, // своя доска целиком, включая burn
+        me: myBoard ? { ...myBoard, shieldPct: shieldPct(myBoard) } : null,
         opponent: oppBoard ? { nexus: oppBoard.nexus, outer: oppBoard.outer, inner: oppBoard.inner, shieldPct: shieldPct(oppBoard) } : null,
       },
       latestRoundReport: report?.public_result ?? null,
       winner: m.status === 'finished' ? (m.winner_seat == null ? 'draw' : m.winner_seat === seat ? 'me' : 'opponent') : null,
       canRematch: m.status === 'finished',
+      nextMatchId: st.nextMatchId ?? null,
     });
   } catch (e) {
     return err(e?.message ?? 'error', e instanceof HttpError ? e.status : 500);

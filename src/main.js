@@ -28,7 +28,15 @@ const usedIds = () => new Set(slots.flatMap((s) => [...s.atk, ...s.def].map((c) 
 async function boot() {
   try { await ensureSession(); } catch (e) { return renderError('Не удалось войти: ' + e.message); }
   const roomParam = new URLSearchParams(location.search).get('room');
+  // Аудит п.4: восстановление матча после F5 — и для создателя комнаты тоже.
+  const saved = localStorage.getItem('vochko_match');
   if (roomParam) return joinRoom(roomParam);
+  if (saved) {
+    try {
+      const v = await api.getState(saved);
+      if (v && v.seat && v.status !== 'finished') { lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
+    } catch { localStorage.removeItem('vochko_match'); }
+  }
   renderLobby();
 }
 
@@ -61,6 +69,7 @@ async function joinRoom(code) {
 async function enterMatch(matchId) {
   clearFloats();
   if (unwatch) unwatch();
+  localStorage.setItem('vochko_match', matchId); // реконнект после F5 (аудит п.4)
   unwatch = watchMatch(matchId, () => refresh(matchId));
   await refresh(matchId);
 }
@@ -78,6 +87,11 @@ async function refresh(matchId, afterEvents = false) {
   myHand = view.me.hand;
   if (view.round !== slotsState.round) { slots = resetSlots(); slotsState.round = view.round; }
   if (view.status === 'finished' || view.winner) {
+    // Аудит п.5: оба игрока автоматически уходят в новый матч после реванша.
+    if (view.nextMatchId && view.nextMatchId !== view.matchId) {
+      lastVersion = 0; lastReportRound = 0; slots = resetSlots(); slotsState.round = 0;
+      return enterMatch(view.nextMatchId);
+    }
     render();
     const title = view.winner === 'draw' ? '🤝 Ничья' : view.winner === 'me' ? '🏆 Победа!' : '💀 Поражение';
     app.appendChild(EndScreen({
@@ -86,7 +100,7 @@ async function refresh(matchId, afterEvents = false) {
         view.winner === 'me' ? 'Нексус соперника разрушен.' : 'Твой Нексус разрушен.',
       canRematch: view.canRematch,
       onRematch: doRematch,
-      onLeave: () => { api.leaveRoom(view.matchId); location.href = location.pathname; },
+      onLeave: () => { api.leaveRoom(view.matchId); localStorage.removeItem('vochko_match'); location.href = location.pathname; },
     }));
     return;
   }
@@ -107,7 +121,7 @@ const resetSlots = () => Array.from({ length: 3 }, () => ({ atk: [], def: [] }))
 function doRematch(btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Ждём соперника…'; }
   api.rematch(view.matchId).then((r) => {
-    if (!r.waiting) { lastVersion = 0; slots = resetSlots(); slotsState.round = 0; enterMatch(r.matchId); }
+    if (!r.waiting) { lastVersion = 0; lastReportRound = 0; slots = resetSlots(); slotsState.round = 0; enterMatch(r.matchId); }
   }).catch(() => { if (btn) { btn.disabled = false; btn.textContent = '🔁 Реванш'; } });
 }
 
