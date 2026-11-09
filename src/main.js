@@ -91,8 +91,11 @@ async function refresh(matchId, afterEvents = false) {
     return;
   }
   render();
-  // Анимация играет обоим, когда появляется НОВЫЙ отчёт раунда (по версии отчёта).
-  const repRound = view.latestRoundReport?.round ?? 0;
+  // Анимация играет обоим, когда появляется НОВЫЙ отчёт раунда.
+  // У public_result нет поля round — берём его из первой строки report (или round-1).
+  const repRound = view.latestRoundReport
+    ? (view.latestRoundReport.report?.[0]?.round ?? Math.max(0, view.round - 1))
+    : 0;
   if (repRound > lastReportRound) { lastReportRound = repRound; if (repRound > 0) playRoundAnimation(view); }
 }
 
