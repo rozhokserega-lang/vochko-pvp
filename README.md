@@ -23,11 +23,12 @@ docs/        architecture · rules · api · security · deployment (ADR)
 ## Этапы (README пакета §8)
 
 - [x] **A** — перенос движка + тесты (18/18, property ≡ легаси)
-- [ ] **B** — Supabase: схема, RLS, Edge Functions, персональный DTO
-- [ ] **C** — онлайн-раунд: submit-turn, атомарный resolve, realtime, реконнект
-- [ ] **D** — интерфейс v1.5 (без экрана столкновений, цифры над башнями)
-- [ ] **E** — GitHub Pages + Actions
-- [ ] **F** — реальный тест на двух устройствах
+- [x] **B** — Supabase: схема, RLS, Edge Functions (6 шт., все ACTIVE)
+- [x] **C** — онлайн-раунд: submit-turn, атомарный resolve, realtime, реконнект-состояние —
+      проверено живым прогоном: две анонимные сессии, resolve раунда, отчёт, утечек рук нет
+- [x] **D** — интерфейс v1.5 (лобби, башни, drag&drop, предпросмотр, отчёт, цифры урона, реванш)
+- [x] **E** — GitHub Pages: https://rozhokserega-lang.github.io/vochko-pvp/ (Actions, секреты в repo secrets)
+- [ ] **F** — реальный тест на двух устройствах (за игроками)
 
 ## ADR (зафиксированные решения)
 
