@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test tests/engine.test.js",
     "build": "vite build",
+    "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",
     "dev": "vite"
   },
   "dependencies": {
