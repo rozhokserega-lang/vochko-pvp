@@ -1,9 +1,9 @@
 // get-state: персонализированный DTO (README §5). До разрешения раунда карты
 // соперника и его раскладка не покидают сервер — ни в каком виде.
-import { requireUser } from './_shared/auth.ts';
-import { json, err, cors, HttpError } from './_shared/cors.ts';
-import { sql } from './_shared/db.ts';
-import { shieldPct } from './shared/engine.js';
+import { requireUser } from '../_shared/auth.ts';
+import { json, err, cors, HttpError } from '../_shared/cors.ts';
+import { sql } from '../_shared/db.ts';
+import { shieldPct } from '../../../shared/engine.js';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
