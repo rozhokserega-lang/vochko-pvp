@@ -25,9 +25,17 @@ Deno.serve(async (req) => {
         count(*) filter (where seat <> ${seat})::int as theirs
       from private.turns where match_id = ${m.id} and round = ${m.round}`;
 
+    // Отчёт последнего раунда. При ФИНАЛЕ submit-turn НЕ увеличивает round
+    // (матч завершается на текущем номере), поэтому public_result финального
+    // боя хранится с round = m.round, а не m.round - 1. Без этой поправки
+    // клиент не получает финальный отчёт и показывает окно победы/поражения
+    // сразу, пропуская анимацию последнего удара.
+    const finished = m.status === 'finished';
+    const reportRound = finished ? m.round : m.round - 1;
+
     const [report] = await sql`
       select public_result from private.round_events
-       where match_id = ${m.id} and round = ${m.round - 1}`;
+       where match_id = ${m.id} and round = ${reportRound}`;
 
     return json({
       matchId: m.id,
