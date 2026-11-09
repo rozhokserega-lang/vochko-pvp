@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       seat,
       status: m.status,
       round: m.round,
-      version: m.version,
+      version: Number(m.version),
       me: {
         hand: st.hands?.[String(seat)] ?? [],
         ready: readyRow.mine > 0,

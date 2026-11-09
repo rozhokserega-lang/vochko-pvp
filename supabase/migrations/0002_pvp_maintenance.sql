@@ -13,19 +13,19 @@ as $$
 $$;
 
 -- Плановая очистка через pg_cron (если расширение доступно в проекте).
-do $$
+do $do$
 begin
   create extension if not exists pg_cron;
   perform cron.schedule(
     'pvp-expire-matches',
     '17 * * * *',
-    $$select private.expire_old_matches();$$
+    $exe$ select private.expire_old_matches(); $exe$
   );
 exception when others then
   -- pg_cron недоступен: очистка выполняется вручную или через периодический
   -- вызов private.expire_old_matches() (например, из get-state).
   raise notice 'pg_cron not available, schedule manually';
-end $$;
+end $do$;
 
 -- Удаление завершённых матчей старше 7 дней (ADR-4).
 create or replace function private.purge_finished_matches()

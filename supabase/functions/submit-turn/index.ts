@@ -23,16 +23,18 @@ Deno.serve(async (req) => {
       if (!seat) throw new HttpError('not a participant', 403);
       if (m.status !== 'planning') throw new HttpError('match is not in planning', 409);
       if (round !== m.round) throw new HttpError(`stale round: current ${m.round}`, 409);
-      if (expectedVersion !== m.version) throw new HttpError(`stale version: current ${m.version}`, 409);
 
-      // Идемпотентность: повторный submit того же игрока возвращает прежнее подтверждение.
+      // Идемпотентность важнее версии: повторный submit возвращает прежнее
+      // подтверждение, даже если version уже уехал вперёд (README §6.8).
       const existing = await tx`
         select 1 from private.turns
          where match_id = ${m.id} and round = ${m.round} and player_id = ${user.id}`;
-      if (existing.length) return { accepted: true, version: m.version, ready: true };
+      if (existing.length) return { accepted: true, version: Number(m.version), ready: true };
+
+      if (Number(expectedVersion) !== Number(m.version)) throw new HttpError(`stale version: current ${m.version}`, 409);
 
       const st = m.state ?? {};
-      const check = validateTurn(st.hands?.[String(seat)] ?? [], placements);
+      const check = validateTurn(st.hands?.[String(seat)] ?? [], { placements, fortifyLane });
       if (!check.ok) throw new HttpError(check.error ?? 'invalid turn');
 
       await tx`

@@ -1,6 +1,6 @@
 // Серверная раздача: доверенный источник случайности (README §6 — Math.random
 // клиента запрещён). Используем crypto.getRandomValues.
-import { deck, shuffled } from '../../../shared/cards.js';
+import { deck, shuffled, deal } from '../../../shared/cards.js';
 
 export function cryptoRng(): number {
   const buf = new Uint32Array(1);
@@ -10,7 +10,7 @@ export function cryptoRng(): number {
 
 // Рука раунда: 7 красных + 7 чёрных из перемешанной колоды (правила v1.5).
 export function dealHand() {
-  return shuffled(deck(), cryptoRng);
+  return deal(cryptoRng);
 }
 
 // Код комнаты: криптостойкий, без похожих символов (README §4).

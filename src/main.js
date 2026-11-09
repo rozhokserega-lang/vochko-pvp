@@ -157,8 +157,7 @@ function render() {
   });
 
   byId('clearBtn').onclick = () => { selected = []; slots = resetSlots(); render(); };
-  byId('fightBtn').onclick = submit;
-
+  byId('fightBtn').onclick = () => submit();
   wireDrag();
 }
 
@@ -178,23 +177,27 @@ function renderHand() {
   }));
 }
 
-async function submit() {
+async function submit(attempt = 0) {
   const placements = slots.map((s, l) => ({
     lane: l,
     attack: s.atk.map((c) => c.id),
     defense: s.def.map((c) => c.id),
   }));
   if (placements.some((p) => p.attack.length !== 2 || p.defense.length !== 2))
-    return setStatus('Собери 3 атакующие и 3 защитные пары. Сыграй тактику «Авторазложить» позже.');
+    return setStatus('Собери 3 атакующие и 3 защитные пары.');
   byId('fightBtn').disabled = true;
   try {
     const r = await api.submitTurn({ matchId: view.matchId, round: view.round, expectedVersion: view.version, placements, fortifyLane });
-    if (r.ready && r.resolved) { lastVersion = 0; }
-    await refresh(view.matchId, r.resolved);
+    lastVersion = 0;
+    await refresh(view.matchId, !!r.resolved);
   } catch (e) {
+    const stale = String(e.message ?? '').includes('stale');
+    if (stale && attempt < 1) {
+      await refresh(view.matchId);   // соперник успел раньше: берём свежую версию и повторяем
+      return submit(attempt + 1);
+    }
     setStatus('Ошибка: ' + (e.message ?? 'повтори попытку'));
-    if (e.message?.includes('stale')) { lastVersion = 0; await refresh(view.matchId); }
-    else byId('fightBtn').disabled = false;
+    const btn = byId('fightBtn'); if (btn) btn.disabled = false;
   }
 }
 
