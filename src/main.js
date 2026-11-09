@@ -1,4 +1,5 @@
 import './styles.css';
+import './combat-v5.css';
 import { ensureSession, supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';
 import { watchMatch } from './lib/realtime.js';
