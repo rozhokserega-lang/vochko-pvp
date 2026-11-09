@@ -109,6 +109,14 @@ while (rounds < 50 && guard < 120) {
 }
 ok(finished, `матч дошёл до финала (${rounds} раундов, лимит 45)`);
 
+// 11b. Финальный отчёт: get-state должен вернуть public_result ФИНАЛЬНОГО раунда
+// (submit-turn не увеличивает round при финале → отчёт хранится с round = m.round).
+// Иначе клиент пропускает анимацию последнего удара и сразу показывает результат.
+const vfin = (await a('get-state', { matchId: room.matchId })).body;
+ok(Number(vfin.latestRoundReport?.report?.[0]?.round) === Number(vfin.round),
+   `финальный отчёт в DTO (репорт ${vfin.latestRoundReport?.report?.[0]?.round} = матч-раунд ${vfin.round})`);
+ok(!!vfin.latestRoundReport?.events?.length, 'финальные battle-события присутствуют в DTO');
+
 // 12. Аудит п.5: реванш — оба переходят в новый матч
 const rm1 = await a('rematch', { matchId: room.matchId });
 ok(rm1.body.waiting === true, 'реванш: первый подтвердил — ожидание');
