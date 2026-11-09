@@ -1,15 +1,21 @@
-// Классические цифры урона + боевая хореография v4 (порт из v5-версии игрока):
-// щиты обеих сторон заряжены с «Готова» → атака съедает щит → только затем
-// падает HP башен. Косметика: авторитетные HP и расчёт — только сервер.
+import { revealAssignments, shieldEntries } from './combat-logic.js';
+
+// Боевая хореография v19 (эталон vochko_pvp_enemy_defense_reveal_v19.html):
+// 1) под обеих сторон раскрываютсяcommitted пары (падение карт на цели),
+// 2) щиты обеих сторон полны уже с момента «Готов» → атака съедает щит,
+// 3) только затем падает HP башен и Нексусов (серверные события).
+// Косметика: авторитетные HP и расчёт — только сервер (Supabase).
 let timers = [];
 
 export function clearFloats() {
   timers.forEach(clearTimeout);
   timers.length = 0;
   document.querySelectorAll('.damage-float').forEach((el) => el.remove());
+  // Переход на другой экран/матч обязан отменять и боевую хореографию:
+  // все таймеры сбрасываются, вставные узлы и маркеры HP убираются.
+  cancelCombat();
 }
 
-const ELEMENT_CLASS = { '🔥': 'fire', '💧': 'water', '🪨': 'earth', '🌪️': 'air', '♨️': 'steam', '🌫️': 'storm' };
 const VFX_ICONS = { '🔥': '🔥', '💧': '💧', '🪨': '🪨', '🌪️': '🌪️', '♨️': '♨️', '🌫️': '🌫️' };
 
 // Цель удара определяется детерминированно по стадии (не «первая живая»).
@@ -17,8 +23,9 @@ export function vfxTarget(ev, seat) {
   const mine = (ev.side === 'a' && seat === 1) || (ev.side === 'b' && seat === 2);
   const lane = document.querySelectorAll('#lanes .lane')[ev.l];
   if (ev.stage === 'nexus') {
-    // У вражеского Нексуса нет #botBaseTargets — контейнер .nexus.enemy.
-    return document.querySelector(mine ? '.nexus:not(.enemy)' : '.nexus.enemy');
+    // Нексусы — большие трёхэтажные: этаж соответствует обстреливаемой линии.
+    return document.querySelector((mine ? '.nexus-fortress.ally' : '.nexus-fortress.enemy') + ` .nexus-floor[data-lane="${ev.l}"]`)
+      || document.querySelector(mine ? '.nexus-fortress.ally' : '.nexus-fortress.enemy');
   }
   if (!lane) return null;
   const towers = lane.querySelectorAll(mine ? '.side:not(.enemy) .tower' : '.side.enemy .tower');
@@ -60,7 +67,7 @@ export function showRoundDamage(events, seat) {
   events.forEach((ev) => vfxFloat(ev, seat, ev.burn ? 0 : 120));
 }
 
-/* ── Хореография боя: щиты → атаки по щитам → урон башням ── */
+/* ── Хореография боя: карты → щиты → урон башням — с непрерывным таймлайном ── */
 let combatTimers = [];
 let combatRun = 0;
 let combatPlaying = false;
@@ -70,13 +77,13 @@ export const isCombatPlaying = () => combatPlaying;
 const combatUI = {};
 export function bindCombatUI(ui) { Object.assign(combatUI, ui); }
 
-function combatLater(fn, ms) { const id = setTimeout(fn, ms); combatTimers.push(id); return id; }
-
-function combatClear() {
+// Полная отмена текущей хореографии (выход из матча, реванш, F5-восстановление).
+export function cancelCombat() {
   combatRun++;
   combatTimers.forEach(clearTimeout);
   combatTimers = [];
-  document.querySelectorAll('.combat-shield,.combat-stage').forEach((x) => x.remove());
+  combatPlaying = false;
+  document.querySelectorAll('.combat-shield,.combat-stage,.combat-card-reveal,.combat-damage-number').forEach((x) => x.remove());
   document.querySelectorAll('.combat-hp-restore').forEach((x) => {
     x.classList.remove('combat-hp-restore');
     if (x.dataset.combatFinalText !== undefined) { x.textContent = x.dataset.combatFinalText; delete x.dataset.combatFinalText; }
@@ -84,21 +91,30 @@ function combatClear() {
   });
 }
 
+function combatLater(fn, ms) { const id = setTimeout(fn, ms); combatTimers.push(id); return id; }
+
+function combatClear() {
+  cancelCombat();
+}
+
 function combatShieldTarget(lane, side, seat, stage) {
-  // Цель — конкретная башня, получившая удар, а не «первая живая» после
+  // Цель — конкретная башня/этаж, получившие удар, а не «первая живая» после
   // того, как сервер уже обновил HP. Стороны рендерятся в обратном порядке.
   const mine = (side === 'a' && seat === 1) || (side === 'b' && seat === 2);
   const laneEl = document.querySelectorAll('#lanes .lane')[lane];
+  if (stage === 'nexus') {
+    return document.querySelector((mine ? '.nexus-fortress.ally' : '.nexus-fortress.enemy') + ` .nexus-floor[data-lane="${lane}"]`)
+      || document.querySelector(mine ? '.nexus-fortress.ally' : '.nexus-fortress.enemy');
+  }
   if (!laneEl) return null;
   const selector = mine ? '.side:not(.enemy) .tower' : '.side.enemy .tower';
   const towers = laneEl.querySelectorAll(selector);
-  if (stage === 'nexus') return document.querySelector(mine ? '.nexus:not(.enemy)' : '.nexus.enemy');
   if (stage === 'outer') return towers[mine ? 1 : 0] || null;
   if (stage === 'inner') return towers[mine ? 0 : 1] || null;
   return laneEl.querySelector((mine ? '.side:not(.enemy)' : '.side.enemy') + ' .tower.drop-target') || towers[mine ? 1 : 0] || null;
 }
 
-function combatBubble(target, icon, power) {
+function combatBubble(target, icon, power, lane) {
   if (!target) return null;
   const bubble = document.createElement('div');
   bubble.className = 'combat-shield';
@@ -106,6 +122,25 @@ function combatBubble(target, icon, power) {
   bubble.querySelector('.combat-shield-icon').textContent = icon || '🛡️';
   bubble.querySelector('.combat-shield-number').textContent = String(power);
   target.appendChild(bubble);
+  // Шкала щита живёт внутри своей линии: position:fixed + clamp не даёт ей
+  // уехать на соседнюю башню или обрезаться контейнерами поля.
+  const targetRect = target.getBoundingClientRect();
+  const nexusMeter = target.classList.contains('nexus-floor') ? target.querySelector('.nexus-floor-meter') : null;
+  const meterRect = nexusMeter?.getBoundingClientRect();
+  const laneNode = target.closest('.lane') || document.querySelectorAll('#lanes .lane')[Math.max(0, Math.min(2, Number(lane) || 0))];
+  const laneRect = laneNode?.getBoundingClientRect();
+  const meterWidth = meterRect ? Math.max(86, meterRect.width) : Math.min(128, Math.max(86, targetRect.width));
+  const anchor = meterRect || targetRect;
+  const x = Math.max(meterWidth / 2 + 8, Math.min(innerWidth - meterWidth / 2 - 8, anchor.left + anchor.width / 2));
+  const desiredY = meterRect ? meterRect.top - 4 : targetRect.top - 48;
+  const minY = laneRect ? laneRect.top + 8 : 8;
+  const maxY = laneRect ? laneRect.bottom - 52 : innerHeight - 52;
+  const y = Math.max(minY, Math.min(Math.max(minY, maxY), desiredY));
+  bubble.style.setProperty('position', 'fixed', 'important');
+  bubble.style.setProperty('left', x + 'px', 'important');
+  bubble.style.setProperty('top', y + 'px', 'important');
+  bubble.style.setProperty('bottom', 'auto', 'important');
+  bubble.style.setProperty('width', meterWidth + 'px', 'important');
   requestAnimationFrame(() => bubble.classList.add('combat-shield-ready'));
   return bubble;
 }
@@ -122,10 +157,15 @@ function combatStage(label) {
 
 // HP-снимок: мгновенно откатываем полоски к ДО-ударным значениям, чтобы
 // на фазе урона красиво упасть до финальных (серверных) значений.
+// Возвращает map counter для восстановления HP Нексуса на этажах.
 function combatHpSnapshot(events, seat) {
   const grouped = new Map();
   for (const ev of events) {
-    const target = vfxTarget(ev, seat);
+    const mine = (ev.side === 'a' && seat === 1) || (ev.side === 'b' && seat === 2);
+    // Нексус: HP живёт в .nexus-fortress-stats; башни — в .value/.tinybar.
+    const target = ev.stage === 'nexus'
+      ? document.querySelector((mine ? '.nexus-fortress.ally' : '.nexus-fortress.enemy') + ' .nexus-fortress-stats')
+      : vfxTarget(ev, seat);
     if (!target || !Number(ev.amount)) continue;
     if (!grouped.has(target)) grouped.set(target, []);
     grouped.get(target).push(ev);
@@ -192,8 +232,50 @@ function combatHpPopup(target, amount, element) {
   combatLater(() => target.classList.remove('vfx-impact'), 450);
 }
 
-// Хореография раунда. Щит изначально полный; атака сначала съедает щит,
-// и только серверный урон снимает HP башен.
+// Раскрытие committed-пар ДО щитов и урона: только карты серверного отчёта.
+// Наши башни принимают атакующие карты врага (падение); на башнях врага
+// раскрывается ЕГО защита в развёрнутом виде. Чья рука никогда не читается,
+// цели и разметка приходят из combat-logic.revealAssignments.
+export function combatRevealAttackCards(report, seat) {
+  const overlays = [];
+  for (const a of revealAssignments(report, seat)) {
+    const target = combatShieldTarget(a.lane, a.defenderSide, seat, a.stage);
+    if (!target) continue;
+    const cards = a.cards;
+    const rect = target.getBoundingClientRect();
+    const laneEl = document.querySelectorAll('#lanes .lane')[a.lane];
+    const laneRect = laneEl?.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'combat-card-reveal ' + (a.isMine ? 'incoming' : 'defending');
+    const label = document.createElement('div');
+    label.className = 'combat-reveal-label';
+    label.textContent = a.label;
+    const pair = document.createElement('div');
+    pair.className = 'combat-reveal-pair';
+    el.append(label, pair);
+    for (const card of cards) {
+      const c = document.createElement('span');
+      c.className = 'combat-reveal-card' + ('♥♦'.includes(card.s) ? ' red' : '');
+      const rank = document.createElement('b'); rank.textContent = card.r;
+      const suit = document.createElement('span'); suit.textContent = card.s;
+      c.append(rank, suit); pair.appendChild(c);
+    }
+    const width = 104;
+    const x = Math.max(width / 2 + 8, Math.min(innerWidth - width / 2 - 8, rect.left + rect.width / 2));
+    const minY = (laneRect?.top ?? 0) + 35;
+    const maxY = (laneRect?.bottom ?? innerHeight) - 100;
+    const y = Math.max(minY, Math.min(Math.max(minY, maxY), rect.top + rect.height * 0.30));
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    document.body.appendChild(el);
+    overlays.push(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('fall')));
+  }
+  return overlays;
+}
+
+// Хореография раунда v19. Порядок фаз со стабильным таймлайном:
+// 0.0–1.75с карты падают и раскрываются → 1.9с щиты пробиты → 3.25с HP падает
+// → 4.75с щиты уплывают → 5.25с свежий авторитетный рендер (+ финиш-экран).
 export function playRoundAnimation(view) {
   const rep = view.latestRoundReport;
   if (!rep || !Array.isArray(rep.events)) return;
@@ -204,34 +286,27 @@ export function playRoundAnimation(view) {
   const valid = () => run === combatRun;
   const hpItems = combatHpSnapshot(rep.events, seat);
   const shields = [];
-  // Строка report.a: A бьёт B (защита B = row.b.info.d). Строка report.b: B бьёт A.
-  for (const row of rep.report || []) {
-    const lane = Number(row.lane);
-    for (const entry of [
-      { side: 'a', info: row.b?.info, stage: row.b?.stage, attackElement: row.b?.info?.at },
-      { side: 'b', info: row.a?.info, stage: row.a?.stage, attackElement: row.a?.info?.at },
-    ]) {
-      if (!entry.info) continue;
-      const full = Math.max(0, Number(entry.info.d) || 0);
-      const attack = Math.max(0, Number(entry.info.a) || 0);
-      const target = combatShieldTarget(lane, entry.side, seat, entry.stage);
-      const bubble = combatBubble(target, entry.info.dt, full);
-      if (!bubble) continue;
-      const track = bubble.querySelector('.combat-shield-track i');
-      const number = bubble.querySelector('.combat-shield-number');
-      // Щит сразу полный — без искусственной зарядки после «Готова».
-      bubble.classList.add('combat-shield-ready', 'combat-shield-initial');
-      track.style.transition = 'none';
-      track.style.width = '100%';
-      number.textContent = String(full);
-      void track.offsetWidth;
-      shields.push({ bubble, target, track, number, full, attack, element: entry.attackElement });
-    }
+  for (const e of shieldEntries(rep.report)) {
+    const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
+    const bubble = combatBubble(target, e.element, e.full, e.lane);
+    if (!bubble) continue;
+    const track = bubble.querySelector('.combat-shield-track i');
+    const number = bubble.querySelector('.combat-shield-number');
+    // Щит сразу полный — без искусственной зарядки после «Готова».
+    bubble.classList.add('combat-shield-ready', 'combat-shield-initial');
+    track.style.transition = 'none';
+    track.style.width = '100%';
+    number.textContent = String(e.full);
+    void track.offsetWidth;
+    shields.push({ bubble, target, track, number, full: e.full, attack: e.attack, element: e.attackElement });
   }
+  const revealedCards = combatRevealAttackCards(rep.report, seat);
+  (window.__animLog = window.__animLog || []).push({ fn: 'anim', overlays: revealedCards.length, shields: shields.length, hp: hpItems.length });
   const phase = document.querySelector('#phase');
-  if (phase) phase.textContent = '🛡 Защита';
-  combatStage('🛡 Щиты готовы');
-  // 0.45 с: удар по щитам. Цифры показывают поглощённые щитом очки.
+  if (phase) phase.textContent = '🃏 Раскрытие атак';
+  combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 1300);
+  combatLater(() => revealedCards.forEach((el) => el.remove()), 1750);
+  // 1.9с: удар по щитам. Цифры показывают поглощённые щитом очки.
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '⚔️ Атака по щитам';
@@ -245,8 +320,8 @@ export function playRoundAnimation(view) {
       if (absorbed) combatShieldPopup(target, absorbed, element);
       if (remaining === 0) combatLater(() => bubble.classList.add('combat-shield-broken'), 900);
     });
-  }, 450);
-  // 1.8 с: только теперь падает HP — по фактическим серверным события.
+  }, 1900);
+  // 3.25с: только теперь падает HP — по фактическим серверным событиям.
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '💥 Урон башням';
@@ -262,15 +337,19 @@ export function playRoundAnimation(view) {
       delete val.dataset.combatFinalText;
       delete bar.dataset.combatFinalWidth;
     });
-  }, 1800);
-  // 3.2 с: щиты уплывают.
+  }, 3250);
+  // 4.75с: щиты уплывают.
   combatLater(() => {
     if (!valid()) return;
     shields.forEach(({ bubble }) => bubble.classList.add('combat-shield-out'));
-  }, 3200);
-  // 3.75 с: рендерим свежее авторитетное состояние после всей последовательности.
+  }, 4750);
+  // 5.25с: UI разморожен, рендерим свежее авторитетное состояние; финальный
+  // экран показывается ТОЛЬКО после полного проигрыша последнего боя.
   combatLater(() => {
-    if (!valid()) return;
+    if (!valid()) {
+      if (import.meta.env.DEV) (window.__animLog = window.__animLog || []).push({ fn: 'anim-dropped' });
+      return;
+    }
     combatPlaying = false;
     shields.forEach(({ bubble }) => bubble.remove());
     document.querySelectorAll('.combat-damage-number').forEach((el) => el.remove());
@@ -278,5 +357,5 @@ export function playRoundAnimation(view) {
     if (view.status === 'finished' || view.winner) {
       if (combatUI.showEndScreen) combatUI.showEndScreen(view);
     }
-  }, 3750);
+  }, 5250);
 }
