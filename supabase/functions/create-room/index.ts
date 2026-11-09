@@ -8,7 +8,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
     const user = await requireUser(req);
-    // Анти-спам: не больше 10 открытых комнат на игрока.
+    // Старые waiting-комнаты игрока закрываем: они бессмысленны после ухода.
+    await sql`
+      update private.matches set status = 'finished', updated_at = now()
+       where player1_id = ${user.id} and status = 'waiting'`;
+    // Анти-спам: не больше 10 открытых комнат на игрока (защита на случай гонок).
     const [{ count }] = await sql`
       select count(*)::int as count from private.matches
        where player1_id = ${user.id} and status = 'waiting'`;

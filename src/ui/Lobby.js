@@ -19,6 +19,8 @@ export function Lobby({ onCreate, onJoin, joinError }) {
   root.querySelector('#roomInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') root.querySelector('[data-act="join"]').click();
   });
+  // Ошибку видно сразу и в консоли: молчаливые отбои путают игроков.
+  if (joinError) console.error('[lobby]', joinError);
   return root;
 }
 
