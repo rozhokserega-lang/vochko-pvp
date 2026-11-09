@@ -1,5 +1,5 @@
 // Экран лобби: создать комнату / войти по коду или ссылке ?room=CODE.
-export function Lobby({ onCreate, onJoin, joinError }) {
+export function Lobby({ onCreate, onBot, onJoin, joinError }) {
   const root = document.createElement('div');
   root.className = 'lobby';
   root.innerHTML = `
