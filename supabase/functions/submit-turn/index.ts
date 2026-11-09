@@ -1,12 +1,13 @@
-// submit-turn: валидация хода, идемпотентный приём, атомарный resolve
-// (README §6). Ровно один расчёт раунда на транзакцию c row lock.
+// submit-turn: валидация хода, идемпотентный приём, атомарный resolve.
+// PvE: бот играет seat 2 внутри той же транзакции (shared/bot.js).
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 import { dealHand } from '../_shared/deal.ts';
 import { validateTurn, materializeTurn } from '../../../shared/validation.js';
-import { resolveRound, shieldPct } from '../../../shared/engine.js';
+import { botPlan } from '../../../shared/bot.js';
+import { resolveRound } from '../../../shared/engine.js';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -20,7 +21,7 @@ Deno.serve(async (req) => {
       const [m] = await tx`select * from private.matches where id = ${matchId} for update`;
       if (!m) throw new HttpError('match not found', 404);
       const seat = user.id === m.player1_id ? 1 : user.id === m.player2_id ? 2 : 0;
-      if (!seat) throw new HttpError('not a participant', 403);
+      if (!seat || (m.state?.botMatch && seat !== 1)) throw new HttpError('not a participant', 403);
       if (m.status !== 'planning') throw new HttpError('match is not in planning', 409);
       if (round !== m.round) throw new HttpError(`stale round: current ${m.round}`, 409);
 
@@ -42,12 +43,59 @@ Deno.serve(async (req) => {
         values (${m.id}, ${m.round}, ${user.id}, ${seat},
                 ${sql.json(placements)}, ${fortifyLane ?? null})`;
 
+      const resolveAndStore = async (turnA, turnB) => {
+        const board = { round: m.round, a: st.board.a, b: st.board.b };
+        const resolved = resolveRound(board, turnA, turnB);
+        st.board = { a: board.a, b: board.b };
+
+        // Укрепление сгорает после разрешённого раунда.
+        st.fortifyUsed = {
+          1: st.fortifyUsed?.[1] || turnA.fortifyLane != null,
+          2: st.fortifyUsed?.[2] || turnB.fortifyLane != null,
+        };
+
+        const finished = resolved.finished;
+        const newRound = finished ? m.round : m.round + 1;
+        if (!finished) st.hands = { 1: dealHand(), 2: dealHand() };
+
+        await tx`
+          insert into private.round_events (match_id, round, public_result)
+          values (${m.id}, ${m.round}, ${sql.json({ events: resolved.events, report: resolved.report })})`;
+
+        await tx`
+          update private.matches
+             set state = ${sql.json(st)},
+                 round = ${newRound},
+                 version = version + 1,
+                 status = ${finished ? 'finished' : 'planning'},
+                 winner_seat = ${finished ? (resolved.winner === 'a' ? 1 : resolved.winner === 'b' ? 2 : null) : null},
+                 updated_at = now()
+           where id = ${m.id}
+          returning version`;
+
+        return {
+          accepted: true,
+          ready: true,
+          resolved: finished,
+          events: resolved.events,
+          winner: resolved.winner,
+        };
+      };
+
+      if (st.botMatch) {
+        // PvE: бот играет seat 2 в той же транзакции — расчёт мгновенный.
+        return await resolveAndStore(
+          materializeTurn(st.hands['1'], { placements, fortifyLane }),
+          { placements: botPlan(st.hands['2'], st.board.a, st.board.b), fortifyLane: null },
+        );
+      }
+
       const [{ count }] = await tx`
         select count(*)::int as count from private.turns
          where match_id = ${m.id} and round = ${m.round}`;
       if (count < 2) {
         await tx`update private.matches set version = version + 1, updated_at = now() where id = ${m.id}`;
-        return { accepted: true, version: m.version + 1, ready: false };
+        return { accepted: true, version: Number(m.version) + 1, ready: false };
       }
 
       // Второе подтверждение — единственный расчёт раунда.
@@ -56,51 +104,15 @@ Deno.serve(async (req) => {
          where match_id = ${m.id} and round = ${m.round}`;
       const bySeat = new Map(rows.map((r) => [r.seat, r]));
       const t1 = bySeat.get(1)!, t2 = bySeat.get(2)!;
-      const st1 = { placements: t1.placements, fortifyLane: t1.fortify_lane };
-      const st2 = { placements: t2.placements, fortifyLane: t2.fortify_lane };
-      const hand1 = st.hands?.['1'] ?? [], hand2 = st.hands?.['2'] ?? [];
-
-      const board = { round: m.round, a: st.board.a, b: st.board.b };
-      const resolved = resolveRound(board, materializeTurn(hand1, st1), materializeTurn(hand2, st2));
-      st.board = { a: board.a, b: board.b };
-
-      // Укрепление сгорает после разрешённого раунда.
-      st.fortifyUsed = {
-        1: st.fortifyUsed?.[1] || t1.fortify_lane != null,
-        2: st.fortifyUsed?.[2] || t2.fortify_lane != null,
-      };
-
-      const finished = resolved.finished;
-      const newRound = finished ? m.round : m.round + 1;
-      if (!finished) st.hands = { 1: dealHand(), 2: dealHand() };
-
-      await tx`
-        insert into private.round_events (match_id, round, public_result)
-        values (${m.id}, ${m.round}, ${sql.json({ events: resolved.events, report: resolved.report })})`;
-
-      await tx`
-        update private.matches
-           set state = ${sql.json(st)},
-               round = ${newRound},
-               version = version + 1,
-               status = ${finished ? 'finished' : 'planning'},
-               winner_seat = ${finished ? (resolved.winner === 'a' ? 1 : resolved.winner === 'b' ? 2 : null) : null},
-               updated_at = now()
-         where id = ${m.id}
-        returning version`;
-
-      return {
-        accepted: true,
-        ready: true,
-        resolved: finished,
-        events: resolved.events,
-        winner: resolved.winner,
-      };
+      return await resolveAndStore(
+        materializeTurn(st.hands['1'], { placements: t1.placements, fortifyLane: t1.fortify_lane }),
+        materializeTurn(st.hands['2'], { placements: t2.placements, fortifyLane: t2.fortify_lane }),
+      );
     });
 
     if (result.accepted && result.ready) {
       const [m] = await sql`select version from private.matches where id = ${matchId}`;
-      await broadcastState(matchId, m.version, 'round');
+      await broadcastState(matchId, Number(m.version), 'round');
     }
     return json(result);
   } catch (e) {

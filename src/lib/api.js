@@ -29,7 +29,7 @@ const RU = {
 };
 
 export const api = {
-  createRoom: () => call('create-room'),
+  createRoom: (opts = {}) => call('create-room', opts),
   joinRoom: async (roomCode) => {
     try { return await call('join-room', { roomCode }); }
     catch (e) { throw new Error(RU[e.message] ?? 'Не удалось войти: ' + e.message); }

@@ -33,9 +33,13 @@ async function boot() {
 
 function renderLobby(joinError) {
   app.replaceChildren(Lobby({
-    onCreate: async () => {
-      try { const r = await api.createRoom(); app.replaceChildren(waitingRoom(r.matchId, r.roomCode, link)); await enterMatch(r.matchId); }
-      catch (e) { renderLobby(e.message); }
+    onCreate: async () => { try { const r = await api.createRoom(); app.replaceChildren(waitingRoom(r.matchId, r.roomCode, link)); await enterMatch(r.matchId); } catch (e) { renderLobby(e.message); } },
+    onBot: async () => {
+      try {
+        const r = await api.createRoom({ vsBot: true });
+        lastReportRound = 0; slots = resetSlots(); slotsState.round = 0;
+        await enterMatch(r.matchId);
+      } catch (e) { renderLobby(e.message); }
     },
     onJoin: (code) => joinRoom(code),
     joinError,
@@ -104,7 +108,7 @@ function render() {
   const root = document.createElement('div');
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
-      <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}</div></div>
+      <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
       <div class="pill" id="roundBadge">Раунд ${view.round}</div></header>
     <div class="wrap">
       <div class="battle" id="lanes">${Board(view, slots, myHand)}</div>

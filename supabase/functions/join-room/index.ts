@@ -14,6 +14,7 @@ Deno.serve(async (req) => {
     // Понятные коды ошибок: клиент показывает человеческий текст.
     const [m] = await sql`select * from private.matches where room_code = ${code}`;
     if (!m) throw new HttpError('room-not-found', 404);
+    if (m.state?.botMatch) throw new HttpError('room-unavailable', 409);
     if (m.player1_id === user.id) throw new HttpError('own-room', 409);
     if (m.status !== 'waiting' || m.player2_id) throw new HttpError('room-unavailable', 409);
 

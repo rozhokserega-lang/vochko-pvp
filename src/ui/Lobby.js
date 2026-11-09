@@ -6,11 +6,13 @@ export function Lobby({ onCreate, onJoin, joinError }) {
     <h2>ВОЧКО · Три линии</h2>
     <div class="sub">Онлайн-дуэль 1×1. Создай комнату и отправь ссылку сопернику.</div>
     <div class="row"><button class="btn btn-gold" data-act="create">➕ Создать комнату</button></div>
+    <div class="row"><button class="btn" data-act="bot">🤖 Играть с ботом</button></div>
     <div class="sub" style="margin:14px 0 6px">…или войти по коду</div>
     <input id="roomInput" maxlength="6" placeholder="КОД" autocomplete="off" />
     <div class="row"><button class="btn" data-act="join">🔗 Войти по коду</button></div>
     <div class="status" id="lobbyStatus">${joinError ?? ''}</div>`;
   root.querySelector('[data-act="create"]').onclick = () => onCreate();
+  root.querySelector('[data-act="bot"]').onclick = () => onBot();
   root.querySelector('[data-act="join"]').onclick = () => {
     const code = root.querySelector('#roomInput').value.trim().toUpperCase();
     if (code.length < 4) return;
