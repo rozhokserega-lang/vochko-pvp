@@ -9,7 +9,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
     const user = await requireUser(req);
-    const { roomCode } = await req.json();
+    const code = String((await req.json()).roomCode ?? '').trim().toUpperCase();
+
+    // Понятные коды ошибок: клиент показывает человеческий текст.
+    const [m] = await sql`select * from private.matches where room_code = ${code}`;
+    if (!m) throw new HttpError('room-not-found', 404);
+    if (m.player1_id === user.id) throw new HttpError('own-room', 409);
+    if (m.status !== 'waiting' || m.player2_id) throw new HttpError('room-unavailable', 409);
 
     // Атомарный захват второго места: условие в UPDATE, а не в приложении.
     const joined = await sql`
@@ -24,12 +30,12 @@ Deno.serve(async (req) => {
                fortifyUsed: { 1: false, 2: false },
              })},
              updated_at = now()
-       where room_code = ${String(roomCode ?? '').toUpperCase()}
+       where id = ${m.id}
          and status = 'waiting'
          and player2_id is null
          and player1_id <> ${user.id}
        returning id, version`;
-    if (!joined.length) throw new HttpError('room not joinable', 409);
+    if (!joined.length) throw new HttpError('room-unavailable', 409);
 
     const match = joined[0];
     await broadcastState(match.id, match.version, 'joined');
