@@ -1,13 +1,15 @@
 import './styles.css';
 import './combat-v5.css';
+import './arena-v19.css';
 import { ensureSession, supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';
 import { watchMatch } from './lib/realtime.js';
 import { Lobby, waitingRoom } from './ui/Lobby.js';
-import { Board, nexusPanel } from './ui/Board.js';
+import { Board, nexusPhaseBar } from './ui/Board.js';
 import { renderPreview, roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
-import { showRoundDamage, clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
+import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { animateMeters, METER_LAST } from './ui/Board.js';
+import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -78,8 +80,15 @@ async function enterMatch(matchId) {
 
 async function refresh(matchId, afterEvents = false) {
   view = await api.getState(matchId);
-  (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, afterEvents, at: Date.now() % 100000 });
-  if (view.version <= lastVersion && !afterEvents) return render();
+  (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, afterEvents, playing: isCombatPlaying(), at: Date.now() % 100000 });
+  // Хореография боя захватывает UI: новое состояние применяется после неё.
+  if (isCombatPlaying()) return;
+  const finished = view.status === 'finished' || !!view.winner;
+  const rep = view.latestRoundReport;
+  // Анимация играет обоим, когда появляется НОВЫЙ отчёт раунда.
+  const repRound = nextReportRound(rep, { finished, round: view.round });
+  const hasNewBattle = hasNewBattleReport(rep, repRound, lastReportRound);
+  if (view.version <= lastVersion && !afterEvents && !hasNewBattle && !finished) return render();
   lastVersion = view.version;
   // Второй ещё не вошёл — показываем экран ожидания вместо поля.
   if (view.status === 'waiting') {
@@ -88,7 +97,8 @@ async function refresh(matchId, afterEvents = false) {
   }
   myHand = view.me.hand;
   if (view.round !== slotsState.round) { slots = resetSlots(); METER_LAST.clear(); slotsState.round = view.round; }
-  if (view.status === 'finished' || view.winner) {
+  // Финал без нового боя: переход в реванш или финальный экран.
+  if (finished && !hasNewBattle) {
     // Аудит п.5: оба игрока автоматически уходят в новый матч после реванша.
     if (view.nextMatchId && view.nextMatchId !== view.matchId) {
       lastVersion = 0; lastReportRound = 0; slots = resetSlots(); slotsState.round = 0;
@@ -99,12 +109,12 @@ async function refresh(matchId, afterEvents = false) {
     return;
   }
   render();
-  // Анимация играет обоим, когда появляется НОВЫЙ отчёт раунда.
-  // У public_result нет поля round — берём его из первой строки report (или round-1).
-  const repRound = view.latestRoundReport
-    ? (view.latestRoundReport.report?.[0]?.round ?? Math.max(0, view.round - 1))
-    : 0;
-  if (repRound > lastReportRound) { lastReportRound = repRound; if (repRound > 0) playRoundAnimation(view); }
+  if (hasNewBattle) {
+    // Финальный бой тоже играется полностью ДО экрана победы (v19 §6).
+    lastReportRound = repRound;
+    playRoundAnimation(view);
+    return;
+  }
   // Флажок «только что положено» гаснет — повторные перерисовки не переигрывают прилёт.
   setTimeout(() => { for (const s of slots) for (const c of [...s.atk, ...s.def]) c.justPlaced = false; }, 500);
 }
@@ -128,7 +138,7 @@ function render() {
       <div class="pill" id="roundBadge">Раунд ${view.round}</div></header>
     <div class="wrap">
       <div class="battle" id="lanes">${Board(view, slots, myHand)}</div>
-      <div class="score" id="nexusScore">${nexusPanel(view, slots)}</div>
+      <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
       <section class="hand-area">
         <div class="hand-head"><div><strong>МОЯ РУКА</strong>
           <div class="sub">Тяни карту на башню или выбери две карты и нажми на цель.</div></div>
@@ -165,7 +175,7 @@ function render() {
     render();
   });
 
-  root.querySelectorAll('.tower.drop-target').forEach((t) => t.addEventListener('click', () => {
+  root.querySelectorAll('.tower.drop-target, .nexus-floor.drop-target').forEach((t) => t.addEventListener('click', () => {
     if (view.me.ready) return;
     const lane = +t.dataset.lane, kind = t.dataset.kind;
     if (!selected.length) { slots[lane][kind] = []; render(); return; } // клик по башне без выбора — снять пару
@@ -193,7 +203,9 @@ function render() {
 function setStatus(text) { const el = byId('status'); if (el) el.textContent = text; }
 
 // Экран финала — вызывается и из refresh, и из хореографии боя.
+// Идемпотентный: повторные Realtime-события не наслаивают оверлеи.
 function showEndScreen(v) {
+  if (document.querySelector('.end-overlay')) return;
   const title = v.winner === 'draw' ? '🤝 Ничья' : v.winner === 'me' ? '🏆 Победа!' : '💀 Поражение';
   const message = v.winner === 'draw'
     ? 'Оба Нексуса разрушены или лимит раундов.'
