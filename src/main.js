@@ -97,6 +97,8 @@ async function refresh(matchId, afterEvents = false) {
     ? (view.latestRoundReport.report?.[0]?.round ?? Math.max(0, view.round - 1))
     : 0;
   if (repRound > lastReportRound) { lastReportRound = repRound; if (repRound > 0) playRoundAnimation(view); }
+  // Флажок «только что положено» гаснет — повторные перерисовки не переигрывают прилёт.
+  setTimeout(() => { for (const s of slots) for (const c of [...s.atk, ...s.def]) c.justPlaced = false; }, 500);
 }
 
 const slotsState = { round: 0 };
@@ -117,7 +119,7 @@ function render() {
       <div class="pill" id="roundBadge">Раунд ${view.round}</div></header>
     <div class="wrap">
       <div class="battle" id="lanes">${Board(view, slots, myHand)}</div>
-      <div class="score" id="nexusScore">${nexusPanel(view)}</div>
+      <div class="score" id="nexusScore">${nexusPanel(view, slots)}</div>
       <section class="hand-area">
         <div class="hand-head"><div><strong>МОЯ РУКА</strong>
           <div class="sub">Тяни карту на башню или выбери две карты и нажми на цель.</div></div>
@@ -160,8 +162,9 @@ function render() {
     const allowed = kind === 'atk' ? '♥♦' : '♠♣';
     if (selected.some((id) => !allowed.includes(cardById(id).s))) return setStatus('Не та масть для этой башни.');
     const pair = slots[lane][kind];
+    const before = pair.length;
     if (pair.length + selected.length > 2) { slots[lane][kind] = []; }
-    selected.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) slots[lane][kind].push(c); });
+    selected.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) { slots[lane][kind].push(c); c.justPlaced = true; } });
     selected = [];
     render();
   }));
@@ -272,7 +275,7 @@ window.addEventListener('pointerup', (e) => {
           const pair = slots[lane][kind];
           if (!(ids.length === 1 && pair.some((x) => x.id === dragId))) {
             if (pair.length + ids.length > 2) slots[lane][kind] = [];
-            ids.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) slots[lane][kind].push(c); });
+            ids.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) { slots[lane][kind].push(c); c.justPlaced = true; } });
             selected = [];
             render();
           }

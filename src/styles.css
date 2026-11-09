@@ -54,8 +54,8 @@ h1{font-size:19px;letter-spacing:1.5px;margin:0;color:var(--gold);white-space:no
 @keyframes elementFlash{0%{filter:brightness(1.7) saturate(1.4);transform:scale(1.07)}100%{filter:brightness(1) saturate(1);transform:scale(1)}}
 .tower.element-flash{animation:elementFlash .8s ease-out}
 @keyframes cardLand{from{transform:translateY(-16px) rotate(-6deg) scale(.7);opacity:0}to{opacity:1}}
-.tower .tower-cards .mini{animation:cardLand .35s ease-out backwards}
-.tower .tower-cards .mini:nth-child(2){animation-delay:.12s}
+.tower .tower-cards .mini.landed{animation:cardLand .35s ease-out backwards}
+.tower .tower-cards .mini.landed:nth-child(2){animation-delay:.12s}
 .tower .em{font-size:13px;line-height:1.05}
 .tower .tag{font-size:7px;font-weight:800;color:#cfdcf5;line-height:1.1;min-height:14px;display:flex;align-items:center;justify-content:center}
 .tower .value{font-size:9px;font-weight:800}

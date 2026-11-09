@@ -15,7 +15,7 @@ function tower({ hp, max, icon, label, lane, kind, active, slots }) {
     <div class="tag">${label}</div>
     <div class="value">${Math.max(0, hp)} / ${max}</div>
     <div class="tinybar"><i style="width:${Math.max(0, (hp / max) * 100)}%"></i></div>
-    ${active ? `<div class="tower-cards">${cards.map(cardHTML).join('')}</div>
+    ${active ? `<div class="tower-cards">${cards.map((c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}${c.justPlaced ? ' landed' : ''}">${c.r}<span class="suit">${c.s}</span></span>`).join('')}</div>
     <div class="element-label">${cards.length === 2 ? elementName(cards) : ''}</div>
     <div class="drop-hint">${cards.length ? `${combo(cards)} · ${type(cards)} · ↺` : (kind === 'atk' ? '♥♦ АТАКА' : '♠♣ ЗАЩИТА')}</div>` : ''}
   </div>`;
@@ -43,12 +43,15 @@ export function Board(view, mySlots, myHand) {
   return html;
 }
 
-export function nexusPanel(view) {
+export function nexusPanel(view, mySlots) {
   const me = view.board.me, opp = view.board.opponent;
+  // Входы в Нексус: у себя показываем защитную пару (она «переезжает» сюда,
+  // когда линия пробита); у соперника раскладка скрыта до разрешения раунда.
   const baseLane = (state, own) => [0, 1, 2].map((l) => {
     const open = state.outer[l] <= 0 && state.inner[l] <= 0;
     const kind = own ? 'def' : 'atk';
-    return `<div class="base-lane ${open ? 'open drop-target' : ''}" ${open ? `data-lane="${l}" data-kind="${kind}"` : ''} title="${open ? 'Открытый путь' : 'Сначала разрушить обе башни линии'}">${['Ⅰ','Ⅱ','Ⅲ'][l]} ${open ? '⚡' : '🔒'}</div>`;
+    const pair = own && mySlots ? mySlots[l][kind] : [];
+    return `<div class="base-lane ${open ? 'open drop-target' : ''}" ${open ? `data-lane="${l}" data-kind="${kind}"` : ''} title="${open ? 'Открытый путь' : 'Сначала разрушить обе башни линии'}"><span>${['Ⅰ','Ⅱ','Ⅲ'][l]} ${open ? '⚡' : '🔒'}</span>${open && pair.length ? `<div class="base-cards">${pair.map(cardHTML).join('')}</div>` : ''}</div>`;
   }).join('');
   return `<div class="nexus"><div class="orb">🔷</div><div style="flex:1">
       <div class="sub">МОЙ НЕКСУС</div><div class="hp">${me.nexus} / 80</div>
