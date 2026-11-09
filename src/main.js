@@ -24,6 +24,7 @@ let fortifyMode = false;
 let unwatch = null;
 let lastVersion = 0;
 let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
+let refreshEpoch = 0;    // защита от «зависшего» get-state при смене экрана/матча
 
 const cardById = (id) => myHand.find((c) => c.id === id);
 const usedIds = () => new Set(slots.flatMap((s) => [...s.atk, ...s.def].map((c) => c.id)));
@@ -46,7 +47,7 @@ async function boot() {
 
 function renderLobby(joinError) {
   app.replaceChildren(Lobby({
-    onCreate: async () => { try { const r = await api.createRoom(); app.replaceChildren(waitingRoom(r.matchId, r.roomCode, link)); await enterMatch(r.matchId); } catch (e) { renderLobby(e.message); } },
+    onCreate: async () => { try { const r = await api.createRoom(); app.replaceChildren(waitingRoom(r.matchId, r.roomCode, link, { onExit: () => exitMatch(r.matchId, 'Отменить комнату и вернуться в лобби?') })); await enterMatch(r.matchId); } catch (e) { renderLobby(e.message); } },
     onBot: async () => {
       try {
         const r = await api.createRoom({ vsBot: true });
@@ -71,6 +72,7 @@ async function joinRoom(code) {
 
 // ── Экран матча ────────────────────────────────────────────────────────────
 async function enterMatch(matchId) {
+  refreshEpoch++;
   clearFloats();
   if (unwatch) unwatch();
   localStorage.setItem('vochko_match', matchId); // реконнект после F5 (аудит п.4)
@@ -78,8 +80,32 @@ async function enterMatch(matchId) {
   await refresh(matchId);
 }
 
+// ── Выход из матча ─────────────────────────────────────────────────────────
+// Кнопка в шапке + кнопка на экране ожидания. Чистит localStorage и ?room= —
+// иначе F5 (реконнект по п.4) вернул игрока в покинутый матч.
+function exitMatch(matchId = view?.matchId, confirmText) {
+  const isBot = view?.opponent?.isBot;
+  const text = confirmText ?? (isBot
+    ? 'Выйти из матча с ботом? Прогресс раунда будет потерян.'
+    : 'Выйти из матча? Соперник увидит «отключился»; у него будет 10 минут на возврат.');
+  if (!window.confirm(text)) return;
+  refreshEpoch++;
+  localStorage.removeItem('vochko_match');
+  history.replaceState(null, '', location.pathname);
+  if (unwatch) { unwatch(); unwatch = null; }
+  clearFloats();
+  lastVersion = 0; lastReportRound = 0;
+  selected = []; fortifyLane = null; fortifyMode = false;
+  slots = resetSlots(); slotsState.round = 0;
+  myHand = []; view = null;
+  if (matchId) api.leaveRoom(matchId).catch(() => { /* finished/нет участия — не критично */ });
+  renderLobby();
+}
+
 async function refresh(matchId, afterEvents = false) {
+  const epoch = refreshEpoch; // сменился pantalla/матч — устаревший get-state игнорируем
   view = await api.getState(matchId);
+  if (epoch !== refreshEpoch) return;
   (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, afterEvents, playing: isCombatPlaying(), at: Date.now() % 100000 });
   // Хореография боя захватывает UI: новое состояние применяется после неё.
   if (isCombatPlaying()) return;
@@ -92,7 +118,7 @@ async function refresh(matchId, afterEvents = false) {
   lastVersion = view.version;
   // Второй ещё не вошёл — показываем экран ожидания вместо поля.
   if (view.status === 'waiting') {
-    app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link));
+    app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link, { onExit: () => exitMatch(view.matchId, 'Отменить комнату и вернуться в лобби?') }));
     return;
   }
   myHand = view.me.hand;
@@ -135,7 +161,8 @@ function render() {
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
       <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
-      <div class="pill" id="roundBadge">Раунд ${view.round}</div></header>
+      <div class="head-right"><div class="pill" id="roundBadge">Раунд ${view.round}</div>
+      <button class="exit-btn" id="exitBtn" title="Выйти в лобби" aria-label="Выйти в лобби">🚪 Выйти</button></div></header>
     <div class="wrap">
       <div class="battle" id="lanes">${Board(view, slots, myHand)}</div>
       <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
@@ -197,6 +224,7 @@ function render() {
 
   byId('clearBtn').onclick = () => { selected = []; slots = resetSlots(); render(); };
   byId('fightBtn').onclick = () => submit();
+  byId('exitBtn').onclick = () => exitMatch();
   wireDrag();
 }
 
