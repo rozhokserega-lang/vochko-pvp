@@ -5,7 +5,7 @@ import { combo } from '../../shared/combos.js';
 // Рендер идентичен v1.5, но данные приходят из персонального PlayerView.
 const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 
-const cardHTML = (c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}">${c.r}<span>${c.s}</span></span>`;
+const cardHTML = (c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}">${c.r}<span class="suit">${c.s}</span></span>`;
 
 function tower({ hp, max, icon, label, lane, kind, active, slots }) {
   const cards = active ? slots[lane][kind] : [];

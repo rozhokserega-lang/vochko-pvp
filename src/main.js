@@ -188,7 +188,7 @@ function renderHand() {
     b.className = `card ${'♥♦'.includes(c.s) ? 'red' : ''} ${used.has(c.id) ? 'used' : ''} ${selected.includes(c.id) ? 'selected' : ''}`;
     b.dataset.card = c.id;
     b.draggable = false;
-    b.innerHTML = `${c.r}<small>${c.s}</small>`;
+    b.innerHTML = `<i class="rank">${c.r}</i><span class="suit">${c.s}</span>`;
     return b;
   }));
 }
