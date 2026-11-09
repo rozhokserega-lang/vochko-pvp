@@ -59,6 +59,11 @@ h1{font-size:25px;letter-spacing:2px;margin:0;color:var(--gold)}
 .tower.drag-over{transform:translateY(-5px) scale(1.045)!important;box-shadow:0 0 0 2px #f6d488,0 0 28px #f6d48888!important}
 .tower.impact{animation:towerImpact .42s ease-out}
 @keyframes towerImpact{0%{filter:brightness(1.8);transform:scale(1.08)}60%{transform:scale(.97)}100%{filter:brightness(1);transform:scale(1)}}
+@keyframes elementFlash{0%{filter:brightness(1.7) saturate(1.4);transform:scale(1.07)}100%{filter:brightness(1) saturate(1);transform:scale(1)}}
+.tower.element-flash{animation:elementFlash .8s ease-out}
+@keyframes cardLand{from{transform:translateY(-16px) rotate(-6deg) scale(.7);opacity:0}to{opacity:1}}
+.tower .tower-cards .mini{animation:cardLand .35s ease-out backwards}
+.tower .tower-cards .mini:nth-child(2){animation-delay:.12s}
 .tower .em{font-size:22px}
 .tower .tag{font-size:9px;font-weight:800;color:#cfdcf5;line-height:1.2;min-height:22px;display:flex;align-items:center;justify-content:center}
 .tower .value{font-size:11px;font-weight:800}

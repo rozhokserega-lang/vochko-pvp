@@ -5,7 +5,7 @@ import { watchMatch } from './lib/realtime.js';
 import { Lobby, waitingRoom } from './ui/Lobby.js';
 import { Board, nexusPanel } from './ui/Board.js';
 import { renderPreview, roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
-import { showRoundDamage, clearFloats } from './ui/animations.js';
+import { showRoundDamage, clearFloats, playRoundAnimation } from './ui/animations.js';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -84,8 +84,10 @@ async function refresh(matchId, afterEvents = false) {
     }));
     return;
   }
-  if (afterEvents && view.latestRoundReport) showRoundDamage(view.latestRoundReport.events, view.seat);
   render();
+  // Анимация играет обоим, когда появляется НОВЫЙ отчёт раунда (по версии отчёта).
+  const repRound = view.latestRoundReport?.round ?? 0;
+  if (repRound > lastReportRound) { lastReportRound = repRound; if (repRound > 0) playRoundAnimation(view); }
 }
 
 const slotsState = { round: 0 };
