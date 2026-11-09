@@ -32,14 +32,13 @@ Deno.serve(async (req) => {
          where match_id = ${m.id} and round = ${m.round} and player_id = ${user.id}`;
       if (existing.length) return { accepted: true, version: Number(m.version), ready: true };
 
-      // Аудит п.2: укрепление — один раз за матч.
+      const st = m.state ?? {};
+      // Аудит п.2: укрепление — один раз за матч (проверка ПОСЛЕ объявления st).
       const fort = fortifyAllowed(st.fortifyUsed?.[String(seat)], fortifyLane);
       if (!fort.ok) throw new HttpError(fort.error, 400);
       // Аудит п.6: проверку равенства expectedVersion убрали — почти
       // одновременные ходы больше не конфликтуют; атомарность держат
       // FOR UPDATE + проверка раунда + идемпотентность.
-
-      const st = m.state ?? {};
       const check = validateTurn(st.hands?.[String(seat)] ?? [], { placements, fortifyLane });
       if (!check.ok) throw new HttpError(check.error ?? 'invalid turn');
 
@@ -81,7 +80,8 @@ Deno.serve(async (req) => {
         return {
           accepted: true,
           ready: true,
-          resolved: finished,
+          resolved: true, // семантика: раунд РАССЧИТАН (не путать с концом матча)
+          finished,       // матч завершён целиком
           events: resolved.events,
           winner: resolved.winner,
         };
