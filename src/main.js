@@ -183,14 +183,26 @@ function renderHand() {
   const hand = byId('hand');
   if (!hand) return;
   const used = usedIds();
+  // Стихия выбранной пары: обе карты «оживают» — огонь горит, вода льётся и т.д.
+  const pairEl = selected.length === 2 ? elementOfPair(selected) : '';
   hand.replaceChildren(...myHand.map((c) => {
     const b = document.createElement('button');
-    b.className = `card ${'♥♦'.includes(c.s) ? 'red' : ''} ${used.has(c.id) ? 'used' : ''} ${selected.includes(c.id) ? 'selected' : ''}`;
+    const glow = pairEl && selected.includes(c.id) ? ` el-${pairEl}` : '';
+    b.className = `card ${'♥♦'.includes(c.s) ? 'red' : ''} ${used.has(c.id) ? 'used' : ''} ${selected.includes(c.id) ? 'selected' : ''}${glow}`;
     b.dataset.card = c.id;
     b.draggable = false;
     b.innerHTML = `<i class="rank">${c.r}</i><span class="suit">${c.s}</span>`;
     return b;
   }));
+}
+
+// Стихия пары по мастям (та же логика, что и в бою).
+function elementOfPair(ids) {
+  if (ids.length !== 2) return '';
+  const a = cardById(ids[0]), b = cardById(ids[1]);
+  if (!a || !b) return '';
+  if (a.s === b.s) return { '♥': 'fire', '♦': 'water', '♠': 'earth', '♣': 'air' }[a.s];
+  return (a.s === '♥' || a.s === '♦') ? 'steam' : 'storm';
 }
 
 async function submit(attempt = 0) {
@@ -251,14 +263,20 @@ window.addEventListener('pointerup', (e) => {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.drop-target');
     if (target) {
       const lane = +target.dataset.lane, kind = target.dataset.kind;
-      const c = cardById(dragId);
       const allowed = kind === 'atk' ? '♥♦' : '♠♣';
-      if (c && allowed.includes(c.s) && !view.me.ready) {
-        const pair = slots[lane][kind];
-        if (pair.some((x) => x.id === dragId)) {} // уже там
-        else if (pair.length >= 2) slots[lane][kind] = [c];
-        else pair.push(c);
-        render();
+      if (!view.me.ready) {
+        // Пара выбрана заранее — переносим обе карты разом; иначе тащим одиночную.
+        const ids = selected.length === 2 ? [...selected] : [dragId];
+        const cardsOk = ids.map(cardById).every((c) => c && allowed.includes(c.s));
+        if (cardsOk) {
+          const pair = slots[lane][kind];
+          if (!(ids.length === 1 && pair.some((x) => x.id === dragId))) {
+            if (pair.length + ids.length > 2) slots[lane][kind] = [];
+            ids.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) slots[lane][kind].push(c); });
+            selected = [];
+            render();
+          }
+        }
       }
     } else setStatus('Перетащи карту на доступную башню.');
   }

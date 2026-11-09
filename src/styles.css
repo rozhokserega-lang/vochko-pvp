@@ -99,6 +99,20 @@ h1{font-size:19px;letter-spacing:1.5px;margin:0;color:var(--gold);white-space:no
 .card.red{color:#c72c42}
 .card.used{opacity:.25;pointer-events:none}
 .card.selected{transform:translateY(-3px);outline:2px solid #f6d488}
+
+/* Выбранная пара «оживает» стихией: свечение и характер движения каждой стихии */
+@keyframes elFire{from{box-shadow:0 0 6px #ff603977,inset 0 0 5px #f4512726}to{box-shadow:0 0 20px #ff6039ee,inset 0 0 14px #f451275e}}
+@keyframes elWater{from{box-shadow:0 0 5px #45b9ff66,inset 0 0 4px #45b9ff20}to{box-shadow:0 0 18px #45b9ffdd,inset 0 0 12px #45b9ff50}}
+@keyframes elEarth{from{box-shadow:0 0 5px #c99b4a55,inset 0 0 4px #c99b4a1c}to{box-shadow:0 0 16px #c99b4acc,inset 0 0 10px #c99b4a4a}}
+@keyframes elAir{from{box-shadow:0 0 5px #51dcc255,inset 0 0 4px #51dcc21a}to{box-shadow:0 0 16px #51dcc2cc,inset 0 0 10px #51dcc248}}
+@keyframes elSteam{from{box-shadow:0 0 6px #a97df055,inset 0 0 5px #a97df022}to{box-shadow:0 0 18px #a97df0dd,inset 0 0 12px #a97df055}}
+@keyframes elStorm{from{box-shadow:0 0 5px #a1c2db55,inset 0 0 4px #a1c2db1c}to{box-shadow:0 0 16px #a1c2dbcc,inset 0 0 10px #a1c2db45}}
+.card.el-fire{animation:elFire .55s ease-in-out infinite alternate;border-color:#f77753}
+.card.el-water{animation:elWater 1.5s ease-in-out infinite alternate;border-color:#60bdf8}
+.card.el-earth{animation:elEarth 2.1s ease-in-out infinite alternate;border-color:#d4ae65}
+.card.el-air{animation:elAir .95s ease-in-out infinite alternate;border-color:#71dfce}
+.card.el-steam{animation:elSteam 1.2s ease-in-out infinite alternate;border-color:#bd93f5}
+.card.el-storm{animation:elStorm .85s ease-in-out infinite alternate;border-color:#a5bdc8}
 .toast{font-size:10px;color:var(--muted);white-space:nowrap}
 .status{font-size:10px;line-height:1.3;margin-top:2px;min-height:13px;overflow:hidden}
 .actions,.tactic-panel{margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
