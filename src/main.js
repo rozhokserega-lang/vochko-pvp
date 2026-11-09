@@ -105,8 +105,8 @@ function render() {
       <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}</div></div>
       <div class="pill" id="roundBadge">Раунд ${view.round}</div></header>
     <div class="wrap">
-      <div class="score" id="nexusScore">${nexusPanel(view)}</div>
       <div class="battle" id="lanes">${Board(view, slots, myHand)}</div>
+      <div class="score" id="nexusScore">${nexusPanel(view)}</div>
       <section class="hand-area">
         <div class="hand-head"><div><strong>МОЯ РУКА</strong>
           <div class="sub">Тяни карту на башню или выбери две карты и нажми на цель.</div></div>
