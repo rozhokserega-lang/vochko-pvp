@@ -1,6 +1,6 @@
 // Стихии и контрстихии — портировано 1:1 из legacy_v15.html (type()/attackInfo()).
 // Каждое промежуточное округление (Math.round) сохранено в точности как в исходнике.
-import { combo } from './combos.js';
+import { combo } from '../shared/combos.js';
 
 const SUIT_ELEMENT = { '♥': '🔥', '♦': '💧', '♠': '🪨', '♣': '🌪️' };
 const ELEMENT_NAME = { '🔥': 'ОГОНЬ', '💧': 'ВОДА', '🪨': 'ЗЕМЛЯ', '🌪️': 'ВОЗДУХ', '♨️': 'ПАР', '🌫️': 'БУРЯ' };

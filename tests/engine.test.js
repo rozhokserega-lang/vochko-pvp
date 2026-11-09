@@ -1,12 +1,12 @@
 // Тесты этапа A: точный перенос правил v1.5. node --test tests/
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RANKS, SUITS, deck, deal } from '../src/game/cards.js';
-import { multiplier, combo, comboDetails } from '../src/game/combos.js';
-import { type, attackInfo } from '../src/game/elements.js';
-import * as E from '../src/game/engine.js';
-import { validateTurn, materializeTurn } from '../src/game/validation.js';
-import { mulberry32 } from '../src/game/rng.js';
+import { RANKS, SUITS, deck, deal } from '../shared/cards.js';
+import { multiplier, combo, comboDetails } from '../shared/combos.js';
+import { type, attackInfo } from '../shared/elements.js';
+import * as E from '../shared/engine.js';
+import { validateTurn, materializeTurn } from '../shared/validation.js';
+import { mulberry32 } from '../shared/rng.js';
 import { legacyCombo, legacyType, legacyAttackInfo } from './legacy-reference.js';
 
 const C = (s, r) => ({ id: s + r, s, r, v: r === 'A' ? 11 : r === 'J' || r === 'Q' || r === 'K' ? 10 : +r });
