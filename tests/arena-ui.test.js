@@ -79,22 +79,35 @@ test('battleHTML: 3 линии, 12 башен, 2 нексуса, активны�
   assert.equal((html.match(/class="lane"/g) || []).length, 3);
   assert.equal((html.match(/class="tower /g) || []).length, 12);
   assert.equal((html.match(/nexus-fortress nexus/g) || []).length, 2);
-  // карты кладутся сначала на БЛИЖНИЕ к центру башни (inner): их 6 активных
+  // карты кладутся сначала на ближние к центру башни (outer, 12 HP): их 6
   assert.equal((html.match(/tower tower-art[^"]*drop-target/g) || []).length, 6);
-  assert.match(html, /tower tower-art ally inner[^"]*drop-target/);
-  assert.match(html, /tower tower-art enemy inner[^"]*drop-target/);
-  assert.doesNotMatch(html, /tower tower-art ally outer[^"]*drop-target/);
+  assert.match(html, /tower tower-art ally outer[^"]*drop-target/);
+  assert.match(html, /tower tower-art enemy outer[^"]*drop-target/);
+  assert.doesNotMatch(html, /tower tower-art ally inner[^"]*drop-target/);
+  assert.doesNotMatch(html, /tower tower-art enemy inner[^"]*drop-target/);
+  assert.equal((html.match(/nexus-floor locked/g) || []).length, 6);
   // data-атрибуты для обработчиков main.js
   assert.match(html, /data-lane="0" data-kind="def"/);
   assert.match(html, /data-lane="0" data-kind="atk"/);
 });
 
-test('battleHTML: внутренняя разрушена — принимает внешняя', () => {
+test('battleHTML: ближняя разрушена — принимает дальняя (у Нексуса)', () => {
   const v = view();
-  v.board.me.inner = [0, 18, 18];
+  v.board.me.outer = [0, 12, 12];
   const html = battleHTML(v, emptySlots());
-  assert.match(html, /ally outer stage-\w+\s+drop-target[\s\S]{0,80}?data-lane="0"/);
-  assert.doesNotMatch(html, /ally inner stage-\w+\s+drop-target[\s\S]{0,80}?data-lane="0"/);
+  assert.match(html, /ally inner stage-\w+\s+drop-target[\s\S]{0,80}?data-lane="0"/);
+  assert.doesNotMatch(html, /ally outer stage-\w+\s+drop-target[\s\S]{0,80}?data-lane="0"/);
+});
+
+test('layout: ближние к центру башни (outer) стоят ближе к центру сцены', () => {
+  const outer = towerBox('ally', 'def', 1, 'outer', 'full');
+  const inner = towerBox('ally', 'def', 1, 'inner', 'full');
+  assert.ok(Math.abs(outer.cx - 800) < Math.abs(inner.cx - 800)); // outer ближе к центру
+  assert.ok(outer.cx > inner.cx);                                  // для ally — правее
+  const eOuter = towerBox('enemy', 'atk', 1, 'outer', 'full');
+  const eInner = towerBox('enemy', 'atk', 1, 'inner', 'full');
+  assert.ok(Math.abs(eOuter.cx - 800) < Math.abs(eInner.cx - 800));
+  assert.ok(eOuter.cx < eInner.cx);                                // для врага — левее
 });
 
 test('battleHTML: пробитая линия открывает этаж нексуса и слоты', () => {

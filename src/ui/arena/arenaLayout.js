@@ -16,7 +16,8 @@ export const ARENA_DESIGN = { w: 1600, h: 900 };
 const DEFAULTS = deepFreeze({
   platforms: {
     rowCy: [256, 475, 679],                      // ряды: верх / центр / низ
-    colCx: { allyOuter: 450, allyInner: 645, enemyInner: 959, enemyOuter: 1163 },
+    // outer (12 HP) — ближняя к центру, ломается первой; inner (18 HP) — ближе к Нексусу
+    colCx: { allyOuter: 645, allyInner: 450, enemyInner: 1163, enemyOuter: 959 },
     rx: 64,
     ry: 43,
     nexus: {

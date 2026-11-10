@@ -11,20 +11,19 @@ const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 const pctOf = (v, base) => +(((v / base) * 100)).toFixed(3) + '%';
 
 // Разметка боевой сцены — тот же контракт, что у старого Board(view, slots, myHand).
-// Карты кладутся сначала на ближние к центру башни (inner), после её разрушения —
-// на внешнюю. Пары привязаны к линии (серверу башня не важна), урон считается
-// по правилам: внешняя → внутренняя → Нексус.
+// Карты кладутся сначала на ближнюю к центру башню (outer, 12 HP) — она же
+// первая принимает урон по правилам; после её разрушения — на дальнюю (18 HP).
 export function battleHTML(view, mySlots) {
   const me = view.board.me, opp = view.board.opponent;
   const towers = (l) => `
     <div class="side">
-      ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ВНУТРЕННЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0, slots: mySlots })}
-      ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ ВНЕШНЯЯ', lane: l, kind: 'def', active: me.inner[l] <= 0 && me.outer[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots })}
+      ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ БЛИЖНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots })}
     </div>
     <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${l + 1}</small></div>
     <div class="side enemy">
-      ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: ВНЕШ.', lane: l, kind: 'atk', active: opp.inner[l] <= 0 && opp.outer[l] > 0, slots: mySlots })}
-      ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ВНУТР.', lane: l, kind: 'atk', active: opp.inner[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: БЛИЖНЯЯ', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ДАЛЬНЯЯ', lane: l, kind: 'atk', active: opp.inner[l] > 0 && opp.outer[l] <= 0, slots: mySlots })}
     </div>`;
   return `<div class="arena-scene" id="arenaScene">
     <img class="arena-bg" src="${ARENA_ASSETS.bg}" draggable="false" alt="" aria-hidden="true">
