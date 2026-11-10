@@ -15,8 +15,8 @@ export const ARENA_DESIGN = { w: 1600, h: 900 };
 // ── Значения по умолчанию (измерены по «Задний фон.png» 1671×941 и спрайтам) ──
 const DEFAULTS = deepFreeze({
   platforms: {
-    rowCy: [248, 464, 670],                      // ряды: верх / центр / низ
-    colCx: { allyOuter: 437, allyInner: 643, enemyInner: 960, enemyOuter: 1166 },
+    rowCy: [256, 475, 679],                      // ряды: верх / центр / низ
+    colCx: { allyOuter: 450, allyInner: 645, enemyInner: 959, enemyOuter: 1163 },
     rx: 64,
     ry: 43,
     nexus: {
@@ -28,7 +28,7 @@ const DEFAULTS = deepFreeze({
     h: 208,           // высота спрайта башни (целая/повреждённая)
     fullAspect: 0.6157,  // контент-bbox «Башня синяя.png» 431×700
     damagedAspect: 0.7186, // «…пол хп» 503×700 (обвал справа)
-    bottomK: 0.95,    // основание: platform.cy + ry × bottomK
+    bottomK: 1.72,    // основание: platform.cy + ry × bottomK (по референсу: cy + 74)
     ruinsW: 150,
     ruinsH: 94,
     // Арт в % контент-bbox: два нарисованных слота карт, круг стихии,
@@ -57,7 +57,7 @@ const DEFAULTS = deepFreeze({
   nexus: {
     h: 473,           // ширина при aspect 0.669 = 316 → края вровень с границей сцены (как в референсе)
     aspect: 0.669,    // контент-bbox «Синий нексус.png» 642×960
-    bottomK: 1.21,
+    bottomK: 0.95,    // база: cy платформы + ry × bottomK (по референсу: ~cy + 90)
     cx: { ally: 158, enemy: 1442 },
     // 3 независимых ряда: 2 слота + круг стихии, в % контент-bbox PNG.
     rows: [
