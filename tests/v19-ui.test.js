@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   nextReportRound, hasNewBattle, nexusFloorOpen, towerStage, damageSplit,
-  revealAssignments, shieldEntries,
+  revealAssignments, shieldEntries, fortifyLaneForSubmit,
 } from '../src/ui/combat-logic.js';
 import * as E from '../shared/engine.js';
 
@@ -180,3 +180,21 @@ test('в пробитой линии ни одна башня не активн�
     if (opened) assert.ok(p.outer[lane] <= 0 && p.inner[lane] <= 0);
   }
 });
+
+// ── 15. Регресс «Ошибка: fortify-used» в середине матча ────────────────────
+test('укрепление не уходит в submit повторно после использования (1 раз за матч)', () => {
+  // До использования — выбранная линия отправляется как есть.
+  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: 0 }), 0);
+  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: 2 }), 2);
+  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: null }), null);
+  // После использования — всегда null, иначе сервер отвечает 400 fortify-used
+  // и игрок не может отправить ни один следующий раунд.
+  for (const lane of [null, 0, 1, 2]) {
+    assert.equal(fortifyLaneForSubmit({ fortifyUsed: true, lane }), null, `lane=${lane}`);
+  }
+  // Мусорные значения не отправляются вовсе.
+  for (const lane of [-1, 3, 1.5, '1', undefined, NaN]) {
+    assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane }), null, `lane=${String(lane)}`);
+  }
+});
+

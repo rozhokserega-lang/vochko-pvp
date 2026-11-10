@@ -14,6 +14,14 @@ export function hasNewBattle(rep, repRound, lastReportRound) {
   return !!rep && Array.isArray(rep.events) && repRound > 0 && repRound > lastReportRound;
 }
 
+// Укрепление разрешено один раз ЗА МАТЧ. Если сервер уже засчитал его,
+// выбранная локально линия НЕ должна уходить в submit: иначе 400 fortify-used
+// блокирует игрока до конца матча. Чистая функция — покрыта тестом.
+export function fortifyLaneForSubmit({ fortifyUsed, lane }) {
+  if (fortifyUsed) return null;
+  return Number.isInteger(lane) && lane >= 0 && lane <= 2 ? lane : null;
+}
+
 // Этаж Нексуса принимает карты только когда обе башни линии разрушены
 // и сам Нексус жив — карты не дублируются на башне и Нексусе.
 export function nexusFloorOpen(board, lane) {

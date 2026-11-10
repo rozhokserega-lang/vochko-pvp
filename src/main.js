@@ -9,7 +9,7 @@ import { Board, nexusPhaseBar } from './ui/Board.js';
 import { renderPreview, roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { animateMeters, METER_LAST } from './ui/Board.js';
-import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
+import { nextReportRound, hasNewBattle as hasNewBattleReport, fortifyLaneForSubmit } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -122,6 +122,10 @@ async function refresh(matchId, afterEvents = false) {
     return;
   }
   myHand = view.me.hand;
+  // Укрепление — строго 1 раз ЗА МАТЧ. Если сервер уже засчитал его, локальный
+  // выбор снимаем: иначе он уходил бы в каждый следующий submit, и сервер
+  // отвечал бы 400 fortify-used до конца матча (игрок «застревал»).
+  if (view.me.fortifyUsed && (fortifyLane !== null || fortifyMode)) { fortifyLane = null; fortifyMode = false; }
   if (view.round !== slotsState.round) { slots = resetSlots(); METER_LAST.clear(); slotsState.round = view.round; }
   // Финал без нового боя: переход в реванш или финальный экран.
   if (finished && !hasNewBattle) {
@@ -286,11 +290,23 @@ async function submit(attempt = 0) {
     return setStatus('Собери 3 атакующие и 3 защитные пары.');
   byId('fightBtn').disabled = true;
   try {
-    const r = await api.submitTurn({ matchId: view.matchId, round: view.round, expectedVersion: view.version, placements, fortifyLane });
+    // Укрепление отправляем только если сервер ещё не засчитал его за матч.
+    const r = await api.submitTurn({ matchId: view.matchId, round: view.round, expectedVersion: view.version, placements, fortifyLane: fortifyLaneForSubmit({ fortifyUsed: view.me.fortifyUsed, lane: fortifyLane }) });
+    // Укрепление ушло этим ходом — повторно не отправляем (оно 1 раз за матч).
+    if (fortifyLane !== null) { fortifyLane = null; fortifyMode = false; }
     lastVersion = 0;
     await refresh(view.matchId, !!r.resolved);
   } catch (e) {
     const msg = String(e.message ?? '');
+    // Самовосстановление: если сервер говорит «укрепление уже использовано»,
+    // снимаем локальный выбор и просим отправить раунд ещё раз. Иначе игрок
+    // застревал бы до конца матча на каждом submit.
+    if (msg === 'fortify-used') {
+      fortifyLane = null; fortifyMode = false;
+      await refresh(view.matchId);
+      setStatus('Укрепление уже использовано в этом матче — оно снято. Нажми «Готов» ещё раз.');
+      return;
+    }
     const retryable = msg.includes('stale') || msg.includes('таймаут') || msg.includes('timeout') || e.name === 'AbortError';
     if (retryable && attempt < 2) {
       if (e.name === 'AbortError') await refresh(view.matchId); // ход мог доехать — сверимся (идемпотентно)
