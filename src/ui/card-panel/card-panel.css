@@ -117,6 +117,23 @@
 .panel-ready:hover:not(:disabled) { filter: brightness(1.14); }
 .panel-ready:active:not(:disabled) img:first-child { opacity: 0; }
 .panel-ready:active:not(:disabled) img:last-child { opacity: 1; transform: translateY(1px); }
+.panel-progress {
+  position: absolute;
+  top: 70%;
+  right: 2%;
+  width: 12.45%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 .45em;
+  color: #ffdf9e;
+  font-size: clamp(7px, .9cqw, 12px);
+  line-height: 1.15;
+  font-weight: 700;
+  text-shadow: 0 1px 3px #000;
+}
+.panel-progress span { white-space: nowrap; }
+.panel-progress[aria-hidden="true"] { visibility: hidden; }
 
 .card-panel-area.hand-area { background: transparent; backdrop-filter: none; box-shadow: none; }
 .panel-tools { position: relative; display: flex; align-items: center; gap: 8px; min-height: 26px; font-size: 11px; }
@@ -140,7 +157,7 @@
     aspect-ratio: auto;
     display: grid;
     grid-template-columns: 1fr 56px 1fr;
-    grid-template-areas: "round round round" "defense defense defense" "attack attack attack" ". power ready" ". sphere ready";
+    grid-template-areas: "round round round" "defense defense defense" "attack attack attack" ". power ready" ". sphere ready" ". . progress";
     gap: 4px;
     padding: 4px;
     background: #171b2a;
@@ -173,6 +190,12 @@
     width: min(100%, 140px);
     min-height: 44px;
     justify-self: center;
+  }
+  .card-panel:not(.panel-debug) .panel-progress {
+    grid-area: progress;
+    position: static;
+    width: 100%;
+    font-size: 10px;
   }
 }
 

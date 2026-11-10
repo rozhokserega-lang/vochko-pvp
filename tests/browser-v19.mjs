@@ -95,6 +95,8 @@ const runBrowser = async () => {
     const h2 = await wrapA.evaluate((el) => el.scrollHeight);
     await attack.nth(1).click();
     ok(await preview.count() === 1 && /^⚔ \d+$/.test(await power.textContent()), 'предпросмотр атакующей пары');
+    ok(await pageA.locator('.pair-target[data-kind="atk"]').count() === 3
+      && await pageA.locator('.pair-target[data-kind="def"]').count() === 0, 'красная пара подсвечивает только цели атаки');
     await hand.screenshot({ path: 'tests/.shots/panel-attack.png' });
     ok(await pageA.locator('#fortifyBtn').count() === 0, 'кнопки укрепления нет');
     ok(await pageA.locator('.tower.outer .tower-hp').count() === 6
@@ -104,16 +106,24 @@ const runBrowser = async () => {
     // снять выделение высотного теста, чтобы не мешать раскладке;
     await pageA.locator('#hand .card.selected').first().click();
     ok(await preview.count() === 0 && !(await power.textContent()), 'отмена одной карты очищает предпросмотр');
+    ok(await pageA.locator('.pair-target').count() === 0, 'при отмене пары подсветка пропадает');
     await pageA.locator('#hand .card.selected').first().click();
     await defense.first().click();
     await defense.nth(1).click();
     ok(await preview.count() === 1 && /^🛡 \d+$/.test(await power.textContent()), 'предпросмотр защитной пары');
+    ok(await pageA.locator('.pair-target[data-kind="def"]').count() === 3
+      && await pageA.locator('.pair-target[data-kind="atk"]').count() === 0, 'чёрная пара подсвечивает только цели защиты');
     await hand.screenshot({ path: 'tests/.shots/panel-defense.png' });
     await pageA.locator('#clearBtn').click();
     ok(await preview.count() === 0, 'очистка снимает пару и её анимацию');
 
     // Раунд 1: оба игрока раскладывают и сдают
-    for (const lane of [0, 1, 2]) await placeTurn(pageA, lane);
+    await placeTurn(pageA, 0);
+    ok(await pageA.locator('.lane[data-row="0"] .lane-pair-mark.placed').count() === 2
+      && (await pageA.locator('.panel-progress').textContent()).includes('Атака 1/3')
+      && (await pageA.locator('.panel-progress').textContent()).includes('Защита 1/3')
+      && (await pageA.locator('#status').textContent()).includes('Центр'), 'готовые пары отмечаются, подсказка называет следующую линию');
+    for (const lane of [1, 2]) await placeTurn(pageA, lane);
     for (const lane of [0, 1, 2]) await placeTurn(pageB, lane);
     ok(true, 'раскладка обоих принята локально');
     const metersMatch = await pageA.evaluate(() => {
@@ -176,6 +186,7 @@ const runBrowser = async () => {
     ok(JSON.stringify(await incoming.allTextContents()) === JSON.stringify(enemyAttack)
       && JSON.stringify(await defending.allTextContents()) === JSON.stringify(enemyDefense), 'во время удара видны именно карты атаки и защиты соперника');
     ok(await pageA.locator('.tower .tower-shield.combat-shield-meter:visible').count() > 0, 'во время боя щит появляется в боковой шкале башни');
+    ok(await pageA.locator('.combat-result.shield-damage-number', { hasText: 'Щит −' }).count() > 0, 'у цели показана потеря щита');
     await pageA.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'), null, { timeout: 25000 });
     await pageB.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'), null, { timeout: 25000 });
     ok(true, 'оба игрока видят раунд 2 после анимации');
@@ -293,6 +304,12 @@ ok(sidesOk.enemy.length === 6 && sidesOk.enemy.every((t) => '♥♦'.includes(t.
     ok(!layout.handOffscreen, `мобильный: нижняя панель на экране`);
     ok(layout.lanesNoScroll, 'мобильный: линии внутри контейнера');
     ok(layout.cardsInside, 'мобильный: карты в пределах своих групп');
+    const redCards = mobPage.locator('#hand .card.red');
+    await redCards.nth(0).tap();
+    await redCards.nth(1).tap();
+    ok(await mobPage.locator('.pair-target[data-kind="atk"]:visible').count() === 3
+      && await mobPage.locator('.lane-pair-marks:visible').count() === 3, 'на телефоне касание подсвечивает цели, отметки линий видны');
+    await mobPage.locator('#clearBtn').tap();
     await mobPage.screenshot({ path: 'tests/.shots/mobile.png', fullPage: true });
 
     // PvE: полноценный раунд с ботом на мобильном

@@ -182,7 +182,10 @@ function doRematch(btn) {
 
 function render(force = false) {
   if (!force && isCombatPlaying()) return; // UI заморожен на время боевой хореографии
-  const panelState = { round: view.round, blocked: turnLocked(),
+  const blocked = turnLocked();
+  const panelState = { round: view.round, blocked, hint: blocked ? '' : missingPairHint(),
+    progress: { attack: slots.filter((s) => s.atk.length === 2).length,
+      defense: slots.filter((s) => s.def.length === 2).length, total: slots.length },
     ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
   root.innerHTML = `
@@ -192,7 +195,7 @@ function render(force = false) {
     <div class="wrap">
       <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
       <div class="arena-and-hand">
-        <div class="battle" id="lanes">${Board(view, slots, myHand)}</div>
+        <div class="battle" id="lanes">${Board(view, slots, { showProgress: !blocked })}</div>
         ${cardPanelHTML(panelState)}
       </div>
       <section class="hand-area card-panel-area">
@@ -240,7 +243,15 @@ function render(force = false) {
   wireDrag();
 }
 
-function setStatus(text) { const el = byId('status'); if (el) el.textContent = text; }
+function missingPairHint() {
+  const lane = slots.findIndex((s) => s.atk.length !== 2 || s.def.length !== 2);
+  if (lane < 0) return '';
+  const { atk, def } = slots[lane];
+  const missing = [atk.length !== 2 && 'атака', def.length !== 2 && 'защита'].filter(Boolean);
+  return `Линия «${PANEL_LANES[lane]}» — осталось заполнить: ${missing.join(' и ')}.`;
+}
+
+function setStatus(text) { const el = byId('status'); if (el) el.textContent = text || el.dataset.hint; }
 
 // Экран финала — вызывается и из refresh, и из хореографии боя.
 // Идемпотентный: повторные Realtime-события не наслаивают оверлеи.
@@ -263,7 +274,12 @@ function showEndScreen(v) {
 bindCombatUI({ render, showEndScreen, renderFinal: () => render(true) });
 
 function updatePreview() {
-  renderPanelPreview(byId('hand'), selected.map(cardById));
+  const cards = selected.map(cardById);
+  renderPanelPreview(byId('hand'), cards);
+  const kind = !turnLocked() && cards.length === 2 ? (isAttackCard(cards[0]) ? 'atk' : 'def') : null;
+  byId('lanes').querySelectorAll('.drop-target[data-kind]').forEach((target) => {
+    target.classList.toggle('pair-target', target.dataset.kind === kind);
+  });
 }
 
 function placeCards(target, ids) {
@@ -282,13 +298,13 @@ function placeCards(target, ids) {
 
 async function submit() {
   if (turnLocked()) return;
+  const missing = missingPairHint();
+  if (missing) return setStatus(missing);
   const placements = slots.map((s, l) => ({
     lane: l,
     attack: s.atk.map((c) => c.id),
     defense: s.def.map((c) => c.id),
   }));
-  if (placements.some((p) => p.attack.length !== 2 || p.defense.length !== 2))
-    return setStatus('Собери 3 атакующие и 3 защитные пары.');
   const { matchId, round, version: expectedVersion } = view;
   const turn = { matchId, round, expectedVersion, placements };
   const pending = submission = { matchId, round, accepted: false };

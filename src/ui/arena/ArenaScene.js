@@ -13,14 +13,21 @@ const pctOf = (v, base) => +(((v / base) * 100)).toFixed(3) + '%';
 // Разметка боевой сцены — тот же контракт, что у старого Board(view, slots, myHand).
 // Карты кладутся сначала на ближнюю к центру башню (outer, 12 HP) — она же
 // первая принимает урон по правилам; после её разрушения — на дальнюю (18 HP).
-export function battleHTML(view, mySlots) {
+export function battleHTML(view, mySlots, { showProgress = false } = {}) {
   const me = view.board.me, opp = view.board.opponent;
+  const mark = (ready, icon, label) => `<span class="lane-pair-mark${ready ? ' placed' : ''}" role="img"
+    aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
   const towers = (l) => `
     <div class="side">
       ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots })}
       ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ БЛИЖНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots })}
     </div>
-    <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${l + 1}</small></div>
+    <div class="centerlane"><b>${LANE_NAMES[l]}</b>
+      ${showProgress ? `<span class="lane-pair-marks">
+        ${mark(mySlots[l].atk.length === 2, '⚔', 'Атака')}
+        ${mark(mySlots[l].def.length === 2, '🛡', 'Защита')}
+      </span>` : ''}
+    </div>
     <div class="side enemy">
       ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: БЛИЖНЯЯ', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots })}
       ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ДАЛЬНЯЯ', lane: l, kind: 'atk', active: opp.inner[l] > 0 && opp.outer[l] <= 0, slots: mySlots })}

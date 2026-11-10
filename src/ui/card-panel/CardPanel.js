@@ -37,7 +37,7 @@ function applyZone(element, box) {
   for (const key of ['x', 'y', 'w', 'h']) element.style.setProperty('--zone-' + key, box[key] + '%');
 }
 
-export function cardPanelHTML({ round, blocked, ready }) {
+export function cardPanelHTML({ round, blocked, ready, progress }) {
   return `
     <div id="hand" class="card-panel${debug ? ' panel-debug' : ''}"
       style="--panel-art:url('${panel}')" aria-label="Управление картами">
@@ -51,14 +51,18 @@ export function cardPanelHTML({ round, blocked, ready }) {
         <img src="${readyNormal}" alt="" draggable="false">
         <img src="${readyPressed}" alt="" draggable="false">
       </button>
+      ${progress ? `<div class="panel-progress" role="group" aria-label="Готовность хода" ${blocked ? 'aria-hidden="true"' : ''}>
+        <span>Атака ${progress.attack}/${progress.total}</span>
+        <span>Защита ${progress.defense}/${progress.total}</span>
+      </div>` : ''}
     </div>`;
 }
 
-export function cardPanelToolsHTML({ blocked, ready }) {
+export function cardPanelToolsHTML({ blocked, ready, hint = '' }) {
   return `
     <div class="panel-tools">
       <button type="button" class="btn" id="clearBtn" ${blocked ? 'disabled' : ''}>↩ Очистить</button>
-      <div class="panel-status" id="status" role="status">${ready ? 'Ход отправлен. Ждём соперника.' : ''}</div>
+      <div class="panel-status" id="status" role="status" data-hint="${hint}">${ready ? 'Ход отправлен. Ждём соперника.' : hint}</div>
     </div>`;
 }
 

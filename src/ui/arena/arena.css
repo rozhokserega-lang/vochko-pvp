@@ -27,7 +27,10 @@
   padding:1px 8px;border-radius:99px;background:#0b1524b8;border:1px solid #a78c5366;color:#e8dfc6;
   font-size:1cqw;pointer-events:none!important;z-index:3}
 .arena-scene .centerlane b{font-size:1cqw;letter-spacing:.6px}
-.arena-scene .centerlane small{font-size:.9cqw;color:#9fb2cc}
+.arena-scene .lane-pair-marks{display:flex;gap:.4em;font-size:clamp(7px,1.05cqw,13px);line-height:1}
+.arena-scene .lane-pair-mark{opacity:.55;filter:grayscale(1)}
+.arena-scene .lane-pair-mark.placed{opacity:1;filter:drop-shadow(0 0 4px #f6ca66);color:#ffe094}
+#lanes.is-resolving .lane-pair-marks{visibility:hidden}
 
 /* ── Башня ── */
 .arena-scene .tower{
@@ -81,6 +84,10 @@
 .arena-scene .tower.drop-target:hover .tower-sprite{filter:drop-shadow(0 0 1.2cqw #f7dc9acc) drop-shadow(0 0 .5cqw #f7dc9a9c);
   transition:filter .2s ease}
 .arena-scene .tower.drop-target .tower-sprite{transition:filter .2s ease}
+#lanes:not(.is-resolving) .tower.drop-target.pair-target .tower-sprite{
+  filter:drop-shadow(0 0 .45cqw #fff3ad) drop-shadow(0 0 1.1cqw #ffbd3d)
+}
+#lanes:not(.is-resolving) .tower.drop-target.pair-target .platform-glow{opacity:1}
 
 /* Выбор атаки (красная) / защиты (голубая) — свечение по контуру спрайта. */
 .arena-scene .tower.is-sel-atk .platform-glow{opacity:.85;
@@ -163,6 +170,9 @@
 .arena-scene .nexus-floor .card-slot .slot-card{font-size:1.2cqw}
 .arena-scene .nexus-floor .card-slot .slot-card .rank{font-size:1.6cqw}
 .arena-scene .nexus-floor .card-slot .slot-card .suit{font-size:1.25cqw}
+#lanes:not(.is-resolving) .nexus-floor.open.pair-target{
+  outline:2px solid #ffda78;animation:none;background:#ffdc582b;box-shadow:0 0 9px #ffbf56bb
+}
 
 /* Показатели помещаются на боковых опорах спрайта Нексуса. */
 .arena-scene .nexus-floor :is(.tower-meter,.tower-attack){
@@ -220,7 +230,8 @@
 @media(max-width:740px){
   .arena-scene{border-radius:10px;box-shadow:0 6px 20px #000a,0 0 0 1px #a78c5333,0 0 0 3px #0b1524}
   .arena-scene .tower-hp .tag{display:none}
-  .arena-scene .centerlane{display:none}
+  .arena-scene .centerlane{padding:1px 2px;gap:2px}
+  .arena-scene .centerlane b{font-size:clamp(6px,1.45cqw,10px);letter-spacing:0}
   .arena-scene .battle-head{font-size:1.6cqw;gap:3cqw}
   .arena-scene .nexus-fortress-stats b{font-size:1.6cqw}
   .arena-scene .nexus-fortress-stats .hp{font-size:2.2cqw}

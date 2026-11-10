@@ -1,4 +1,4 @@
-import { revealAssignments, shieldEntries } from './combat-logic.js';
+import { damageSplit, revealAssignments, shieldEntries } from './combat-logic.js';
 
 // Боевая хореография v19 (эталон vochko_pvp_enemy_defense_reveal_v19.html):
 // 1) под обеих сторон раскрываютсяcommitted пары (падение карт на цели),
@@ -183,41 +183,32 @@ function combatHpSnapshot(events, seat) {
     bar.classList.add('combat-hp-restore');
     // На всякий случай фиксируем стартовое значение (без анимации).
     bar.style[axis] = (start / max) * 100 + '%';
-    items.push({ target, val, bar, axis, start, final, max, hits });
+    items.push({ target, val, bar, axis, start, final, max });
   });
   return items;
 }
 
-function combatShieldPopup(target, amount, element) {
-  if (!target) return;
+function combatResultPopup(target, text, kind, blocked = false) {
   const r = target.getBoundingClientRect();
   const el = document.createElement('div');
-  el.className = 'combat-damage-number shield-damage-number';
-  const glyph = document.createElement('span');
-  glyph.textContent = element || '⚔️';
+  el.className = `combat-damage-number combat-result ${kind}-damage-number`;
   const number = document.createElement('strong');
-  number.textContent = '−' + amount + ' 🛡';
-  el.append(glyph, number);
-  el.style.left = Math.max(35, Math.min(innerWidth - 35, r.left + r.width / 2)) + 'px';
-  el.style.top = Math.max(30, r.top + 12) + 'px';
+  number.textContent = text;
+  el.append(number);
+  if (blocked) {
+    const status = document.createElement('span');
+    status.textContent = 'Заблокировано';
+    el.append(status);
+  }
+  el.style.left = Math.max(50, Math.min(innerWidth - 50, r.left + r.width / 2)) + 'px';
+  const anchorY = r.top + r.height * (target.classList.contains('nexus-floor') ? 1 : 0.8);
+  el.style.top = Math.min(innerHeight - 34, anchorY) + 'px';
   document.body.appendChild(el);
-  combatLater(() => el.remove(), 1400);
+  combatLater(() => el.remove(), 1250);
 }
 
-function combatHpPopup(target, amount, element) {
-  if (!target || amount <= 0) return;
-  const r = target.getBoundingClientRect();
-  const el = document.createElement('div');
-  el.className = 'combat-damage-number hp-damage-number';
-  const glyph = document.createElement('span');
-  glyph.textContent = element || '⚔️';
-  const number = document.createElement('strong');
-  number.textContent = '−' + amount + ' HP';
-  el.append(glyph, number);
-  el.style.left = Math.max(35, Math.min(innerWidth - 35, r.left + r.width / 2)) + 'px';
-  el.style.top = Math.max(30, r.top + r.height * 0.35) + 'px';
-  document.body.appendChild(el);
-  combatLater(() => el.remove(), 1500);
+function combatHpPopup(target, amount) {
+  combatResultPopup(target, 'HP −' + amount, 'hp');
   target.classList.remove('vfx-impact');
   void target.offsetWidth;
   target.classList.add('vfx-impact');
@@ -279,7 +270,7 @@ export function playRoundAnimation(view) {
     const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
     const meter = combatShieldMeter(target, e);
     if (!meter) continue; // мёртвая цель без боковой шкалы: останется только цифра урона
-    shields.push({ ...meter, full: e.full, attack: e.attack, element: e.attackElement });
+    shields.push({ ...meter, full: e.full, attack: e.attack });
   }
   const revealedCards = combatRevealAttackCards(rep.report, seat);
   (window.__animLog = window.__animLog || []).push({ fn: 'anim', overlays: revealedCards.length, shields: shields.length, hp: hpItems.length });
@@ -291,24 +282,21 @@ export function playRoundAnimation(view) {
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '⚔️ Атака по щитам';
-    shields.forEach(({ target, meter, track, num, full, attack, element }) => {
-      const absorbed = Math.min(full, attack);
-      const remaining = Math.max(0, full - attack);
+    shields.forEach(({ target, meter, track, num, full, attack }) => {
+      const { absorbed, remaining, hpDamage } = damageSplit(attack, full);
       track.style.transition = 'height 1000ms cubic-bezier(.22,.65,.3,1)';
       track.style.height = (full ? remaining / full * 100 : 0) + '%';
       num.textContent = String(remaining);
       meter.setAttribute('aria-label', `Щит: ${remaining}`);
-      if (absorbed) combatShieldPopup(target, absorbed, element);
+      if (absorbed) combatResultPopup(target, 'Щит −' + absorbed, 'shield', hpDamage === 0);
     });
   }, 1900);
   // 3.25с: только теперь падает HP — по фактическим серверным событиям.
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '💥 Урон башням';
-    hpItems.forEach(({ target, val, bar, axis, final, max, hits }) => {
-      const total = hits.reduce((sum, e) => sum + Math.max(0, +e.amount || 0), 0);
-      const icon = hits.find((e) => !e.burn)?.element || '🔥';
-      combatHpPopup(target, total, icon);
+    hpItems.forEach(({ target, val, bar, axis, start, final, max }) => {
+      combatHpPopup(target, start - final);
       bar.style.transition = axis + ' 1100ms cubic-bezier(.25,.7,.25,1)';
       bar.style[axis] = (final / max) * 100 + '%';
       val.textContent = final + ' / ' + max;
