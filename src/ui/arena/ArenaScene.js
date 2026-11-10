@@ -2,7 +2,7 @@
 // 12 башен и 2 Нексуса поверх него. Разметка совместима с боевой хореографией
 // (selectors #lanes .lane, .side .tower, .nexus-fortress, .nexus-floor) и
 // с обработчиками main.js (.drop-target + data-lane/data-kind).
-import { ARENA_DESIGN, LAYOUT, towerBox, nexusBox, towerId, nexusId } from './arenaLayout.js';
+import { ARENA_DESIGN, LAYOUT, towerArt, towerBox, nexusBox, towerId, nexusId } from './arenaLayout.js';
 import { towerHTML } from './TowerView.js';
 import { nexusHTML } from './NexusView.js';
 import { ARENA_ASSETS } from './arena-assets.js';
@@ -64,7 +64,7 @@ export function applyArenaLayout(root = document) {
     const stage = t.classList.contains('stage-ruins') ? 'ruins' : t.classList.contains('stage-damaged') ? 'damaged' : 'full';
     const box = towerBox(team, kind, +lane, size, stage);
     boxStyle(t, box);
-    const art = stage === 'damaged' ? LAYOUT.tower.artDamaged : stage === 'ruins' ? LAYOUT.tower.artRuins : LAYOUT.tower.artFull;
+    const art = towerArt(team, stage);
     // Слоты карт поверх нарисованных рамок.
     t.querySelectorAll('.card-slot').forEach((slot, i) => {
       const s = art.slots[i];
@@ -112,8 +112,9 @@ export function applyArenaLayout(root = document) {
       // Полоса ряда = bbox двух слотов и круга (+2%): зона клика/дропа ряда.
       const x0 = Math.min(row.slots[0]?.x ?? 100, row.slots[1]?.x ?? 100, row.circle ? row.circle.cx - row.circle.d / 2 : 100) - 2;
       const x1 = Math.max(row.slots[0]?.x + (row.slots[0]?.w ?? 0) ?? 0, row.slots[1]?.x + (row.slots[1]?.w ?? 0) ?? 0, row.circle ? row.circle.cx + row.circle.d / 2 : 0) + 2;
-      const y0 = Math.min(...row.slots.map((s) => s.y), row.circle ? row.circle.cy - 1 : 100) - 1.5;
-      const y1 = Math.max(...row.slots.map((s) => s.y + s.h), row.circle ? row.circle.cy + 1 : 0) + 1.5;
+      const radiusY = row.circle ? row.circle.d * LAYOUT.nexus.aspect / 2 : 0;
+      const y0 = Math.min(...row.slots.map((s) => s.y), row.circle ? row.circle.cy - radiusY : 100) - 1.5;
+      const y1 = Math.max(...row.slots.map((s) => s.y + s.h), row.circle ? row.circle.cy + radiusY : 0) + 1.5;
       floor.style.left = x0 + '%';
       floor.style.top = y0 + '%';
       floor.style.width = (x1 - x0) + '%';
@@ -134,7 +135,7 @@ export function applyArenaLayout(root = document) {
         const d = row.circle.d;
         circle.style.display = '';
         circle.style.left = rel(row.circle.cx - d / 2, x0) + '%';
-        circle.style.top = relY(row.circle.cy - d * LAYOUT.nexus.aspect / 2, y0) + '%';
+        circle.style.top = relY(row.circle.cy - radiusY, y0) + '%';
         circle.style.width = +((d / (x1 - x0)) * 100).toFixed(3) + '%';
         circle.style.aspectRatio = '1';
       } else if (circle) circle.style.display = 'none';

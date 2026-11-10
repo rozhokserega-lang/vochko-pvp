@@ -7,7 +7,7 @@
 // перетаскивание указателем, стрелки с шагом 1 design-px, числовые поля;
 // тестовый режим (демо-карты, круг стихии, переключение состояний башни);
 // «Скопировать JSON» / «Экспорт координат» / «Сбросить изменения».
-import { ARENA_DESIGN, LAYOUT, saveLayoutOverrides, resetLayoutOverrides, exportLayoutJSON, arenaStage } from './arenaLayout.js';
+import { ARENA_DESIGN, LAYOUT, saveLayoutOverrides, resetLayoutOverrides, exportLayoutJSON, arenaStage, towerArt } from './arenaLayout.js';
 import { applyArenaLayout } from './ArenaScene.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 
@@ -143,7 +143,7 @@ function renderOverlay() {
     const selectedCls = t.id === state.selected ? ' dbg-selected' : '';
     shapes.push(`<div class="dbg-box dbg-green${selectedCls}" data-dbg-id="${t.id}" style="left:${pctOf(x, W)};top:${pctOf(y, H)};width:${pctOf(tbox.w, W)};height:${pctOf(tbox.h, H)};--dbg-color:#39e75f;--dbg-dash:0 none"></div>`);
     cross(tbox.cx, tbox.bottom, '#39e75f');
-    const art = stage === 'damaged' ? LAYOUT.tower.artDamaged : stage === 'ruins' ? LAYOUT.tower.artRuins : LAYOUT.tower.artFull;
+    const art = towerArt(t.id.split('-')[1], stage);
     for (const s of art.slots ?? []) {
       box(x + (s.x / 100) * tbox.w, y + (s.y / 100) * tbox.h, (s.w / 100) * tbox.w, (s.h / 100) * tbox.h, '#35d6ff');
     }

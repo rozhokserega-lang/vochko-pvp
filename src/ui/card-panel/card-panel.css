@@ -87,6 +87,7 @@
   place-items: center;
   font-size: min(7.5cqw, 39cqh);
 }
+.panel-card-element svg { width: 1.1em; height: 1.1em; }
 @media (hover: hover) {
   .panel-card.card:hover:not(:disabled) {
     transform: translateY(-4cqh);

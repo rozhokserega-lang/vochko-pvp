@@ -16,6 +16,20 @@ export const cardPanelLayout = {
 
 export const PANEL_LANES = ['Верх', 'Центр', 'Низ'];
 export const isAttackCard = (card) => card.s === '♥' || card.s === '♦';
+const elementIcons = {
+  '♠': `<svg viewBox="0 0 32 32" aria-hidden="true">
+    <path fill="#9b643d" stroke="#563520" stroke-width="1.6" stroke-linejoin="round" d="M2 22l5-11 9-8 9 4 5 14-5 7H10z"/>
+    <path fill="#d7ac76" d="M7 11l9-8 9 4-9 6-3 8-11 1z"/>
+    <path fill="#69462f" d="M25 7l5 14-5 7H10l3-7 3-8z"/>
+    <path fill="none" stroke="#eed3ab" stroke-width="1.4" stroke-linecap="round" d="m16 13 3 5-2 5"/>
+  </svg>`,
+  '♣': `<svg viewBox="0 0 32 32" aria-hidden="true">
+    <g fill="none" stroke="#087b91" stroke-width="2.8" stroke-linecap="round">
+      <path d="M3 12h17a3.5 3.5 0 1 0-3.5-3.5M6 18h20a3.5 3.5 0 1 0-3.5-3.5M3 24h12a3 3 0 1 1-3 3"/>
+    </g>
+    <path fill="none" stroke="#5ac3ce" stroke-width="1.2" stroke-linecap="round" d="M4 10h7m-4 6h9m-11 6h5"/>
+  </svg>`,
+};
 const debug = new URLSearchParams(location.search).get('panelDebug') === '1';
 const layout = structuredClone(cardPanelLayout);
 
@@ -61,7 +75,7 @@ export function renderPanelCards(hand, cards, selected, used, blocked) {
       button.setAttribute('aria-label', card.r + card.s);
       button.setAttribute('aria-pressed', chosen);
       button.innerHTML = `<span class="panel-card-corner">${card.r}<span>${card.s}</span></span>
-        <span class="panel-card-element" aria-hidden="true">${SUIT_ELEMENT[card.s]}</span>`;
+        <span class="panel-card-element" aria-hidden="true">${elementIcons[card.s] ?? SUIT_ELEMENT[card.s]}</span>`;
       return button;
     }));
   }

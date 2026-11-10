@@ -39,7 +39,7 @@ const DEFAULTS = deepFreeze({
         { x: 31.5, y: 36.5, w: 14, h: 14.5 },
         { x: 52, y: 36.5, w: 14, h: 14.5 },
       ],
-      circle: { cx: 47.2, cy: 65, d: 30 },
+      circle: { cx: 50, cy: 64.5, d: 26 },
       glow: { cy: 97, w: 118, h: 46 },
       hp: { cx: 50, cy: -2 },
     },
@@ -48,7 +48,7 @@ const DEFAULTS = deepFreeze({
         { x: 27, y: 36.5, w: 12, h: 14.5 },
         { x: 44.6, y: 36.5, w: 12, h: 14.5 },
       ],
-      circle: { cx: 40.5, cy: 65, d: 26 },
+      circle: { cx: 43, cy: 64.4, d: 22.3 },
       glow: { cy: 97, w: 103, h: 40 },
       hp: { cx: 50, cy: -2 },
     },
@@ -64,24 +64,24 @@ const DEFAULTS = deepFreeze({
     rows: [
       {
         slots: [
-          { x: 26, y: 30.5, w: 12.5, h: 11.7 },
-          { x: 40.5, y: 30.5, w: 12.5, h: 11.7 },
+          { x: 26.1, y: 30.7, w: 11.6, h: 11.3 },
+          { x: 40.9, y: 30.7, w: 11.6, h: 11.3 },
         ],
-        circle: { cx: 66.2, cy: 36.2, d: 18.5 },
+        circle: { cx: 64.8, cy: 36.3, d: 15.5 },
       },
       {
         slots: [
-          { x: 26, y: 46, w: 12.5, h: 11.7 },
-          { x: 40.5, y: 46, w: 12.5, h: 11.7 },
+          { x: 26.1, y: 47.4, w: 11.6, h: 11.3 },
+          { x: 40.9, y: 47.4, w: 11.6, h: 11.3 },
         ],
-        circle: { cx: 66.2, cy: 52, d: 18.5 },
+        circle: { cx: 64.8, cy: 53.1, d: 15.5 },
       },
       {
         slots: [
-          { x: 26, y: 62, w: 12.5, h: 11.7 },
-          { x: 40.5, y: 62, w: 12.5, h: 11.7 },
+          { x: 26.1, y: 64.3, w: 11.6, h: 11.3 },
+          { x: 40.9, y: 64.3, w: 11.6, h: 11.3 },
         ],
-        circle: { cx: 66.2, cy: 67.8, d: 18.5 },
+        circle: { cx: 64.8, cy: 70, d: 15.5 },
       },
     ],
   },
@@ -171,6 +171,15 @@ export const nexusId = (side) => `nexus-${side}`;
 export function arenaStage(hp, max) {
   if (hp <= 0) return 'ruins';
   return hp / max > (LAYOUT.tower.thresholds?.damagedBelow ?? 0.5) ? 'full' : 'damaged';
+}
+
+export function towerArt(team, stage) {
+  if (stage === 'ruins') return LAYOUT.tower.artRuins;
+  if (stage === 'full') return LAYOUT.tower.artFull;
+  const art = LAYOUT.tower.artDamaged;
+  if (team !== 'enemy' || !art.circle) return art;
+  // Ось шахты одинакова в пикселях, но правый край красного спрайта обрезан раньше.
+  return { ...art, circle: { ...art.circle, cx: art.circle.cx * 503 / 461 } };
 }
 
 if (!LAYOUT.towers) withDerivedObjects(LAYOUT);
