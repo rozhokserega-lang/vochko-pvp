@@ -92,16 +92,12 @@ export function applyArenaLayout(root = document) {
       glow.style.width = art.glow.w + '%';
       glow.style.height = art.glow.h + '%';
     }
-    // HP-полоска: сбоку от башни (внешние — к краям сцены, ближние — к центру).
-    const hp = t.querySelector('.tower-hp');
-    if (hp) {
-      hp.style.left = '';
-      hp.style.right = '';
-      hp.style.bottom = '';
-      const toLeft = (team === 'ally') === (size === 'outer');
-      hp.classList.toggle('hp-left', toLeft);
-      hp.classList.toggle('hp-right', !toLeft);
-    }
+    const hpOnLeft = (team === 'ally') === (size === 'inner');
+    t.querySelectorAll('.tower-meter, .tower-attack').forEach((meter) => {
+      const left = meter.classList.contains('tower-hp') ? hpOnLeft : !hpOnLeft;
+      meter.classList.toggle('meter-left', left);
+      meter.classList.toggle('meter-right', !left);
+    });
   });
   // ── Нексусы ──
   scene.querySelectorAll('.nexus-fortress').forEach((n) => {

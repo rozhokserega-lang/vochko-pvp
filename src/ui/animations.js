@@ -87,8 +87,12 @@ export function cancelCombat() {
   document.querySelectorAll('.combat-shield,.combat-stage,.combat-card-reveal,.combat-damage-number').forEach((x) => x.remove());
   document.querySelectorAll('.combat-hp-restore').forEach((x) => {
     x.classList.remove('combat-hp-restore');
-    if (x.dataset.combatFinalText !== undefined) { x.textContent = x.dataset.combatFinalText; delete x.dataset.combatFinalText; }
-    if (x.dataset.combatFinalWidth !== undefined) { x.style.width = x.dataset.combatFinalWidth; delete x.dataset.combatFinalWidth; }
+    if (x.dataset.combatRestoreText !== undefined) { x.textContent = x.dataset.combatRestoreText; delete x.dataset.combatRestoreText; }
+    if (x.dataset.combatRestoreFill !== undefined) {
+      x.style[x.dataset.combatFillAxis || 'width'] = x.dataset.combatRestoreFill;
+      delete x.dataset.combatRestoreFill;
+      delete x.dataset.combatFillAxis;
+    }
   });
 }
 
@@ -115,35 +119,30 @@ function combatShieldTarget(lane, side, seat, stage) {
   return laneEl.querySelector((mine ? '.side:not(.enemy)' : '.side.enemy') + ' .tower.drop-target') || towers[mine ? 1 : 0] || null;
 }
 
-function combatBubble(target, icon, power, lane) {
+// Остаток щита показываем в шкале цели.
+function combatShieldMeter(target, entry) {
   if (!target) return null;
-  const bubble = document.createElement('div');
-  bubble.className = 'combat-shield';
-  bubble.innerHTML = '<div class="combat-shield-title">🛡 <span class="combat-shield-icon"></span> <b class="combat-shield-number"></b></div><div class="combat-shield-track"><i></i></div>';
-  bubble.querySelector('.combat-shield-icon').textContent = icon || '🛡️';
-  bubble.querySelector('.combat-shield-number').textContent = String(power);
-  target.appendChild(bubble);
-  // Шкала щита живёт внутри своей линии: position:fixed + clamp не даёт ей
-  // уехать на соседнюю башню или обрезаться контейнерами поля.
-  const targetRect = target.getBoundingClientRect();
-  const nexusMeter = target.classList.contains('nexus-floor') ? target.querySelector('.nexus-floor-meter') : null;
-  const meterRect = nexusMeter?.getBoundingClientRect();
-  const laneNode = target.closest('.lane') || document.querySelectorAll('#lanes .lane')[Math.max(0, Math.min(2, Number(lane) || 0))];
-  const laneRect = laneNode?.getBoundingClientRect();
-  const meterWidth = meterRect ? Math.max(86, meterRect.width) : Math.min(128, Math.max(86, targetRect.width));
-  const anchor = meterRect || targetRect;
-  const x = Math.max(meterWidth / 2 + 8, Math.min(innerWidth - meterWidth / 2 - 8, anchor.left + anchor.width / 2));
-  const desiredY = meterRect ? meterRect.top - 4 : targetRect.top - 48;
-  const minY = laneRect ? laneRect.top + 8 : 8;
-  const maxY = laneRect ? laneRect.bottom - 52 : innerHeight - 52;
-  const y = Math.max(minY, Math.min(Math.max(minY, maxY), desiredY));
-  bubble.style.setProperty('position', 'fixed', 'important');
-  bubble.style.setProperty('left', x + 'px', 'important');
-  bubble.style.setProperty('top', y + 'px', 'important');
-  bubble.style.setProperty('bottom', 'auto', 'important');
-  bubble.style.setProperty('width', meterWidth + 'px', 'important');
-  requestAnimationFrame(() => bubble.classList.add('combat-shield-ready'));
-  return bubble;
+  const meter = target.querySelector('.tower-shield, .nexus-floor-meter');
+  if (!meter) return null;
+  const track = meter.querySelector('.tower-meter-track i, .nexus-floor-meter-track i');
+  const cap = meter.querySelector('.nexus-floor-meter-caption');
+  const num = meter.querySelector('b');
+  if (!track || !num) return null;
+  const axis = cap ? 'width' : 'height';
+  if (cap) {
+    const text = [...cap.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+    if (text) text.nodeValue = '🛡 ЩИТ ';
+    const element = cap.querySelector('span');
+    if (element) element.textContent = entry.element || '';
+  }
+  num.textContent = String(entry.full);
+  meter.classList.add('combat-shield-meter');
+  meter.setAttribute('aria-label', `Щит: ${entry.full}`);
+  track.style.transition = 'none';
+  track.style[axis] = entry.full ? '100%' : '0%';
+  void track.offsetWidth;
+  track.style.transition = '';
+  return { target, meter, track, num, axis };
 }
 
 function combatStage(label) {
@@ -156,9 +155,10 @@ function combatStage(label) {
   combatLater(() => el.remove(), 700);
 }
 
-// HP-снимок: мгновенно откатываем полоски к ДО-ударным значениям, чтобы
-// на фазе урона красиво упасть до финальных (серверных) значений.
-// Возвращает map counter для восстановления HP Нексуса на этажах.
+// HP-снимок: DOM ещё показывает состояние ДО раунда, поэтому финальное HP
+// считаем как «старт − суммарный урон» из отчёта. На фазе урона полоска
+// плавно падает до этого значения.
+// Возвращает map counter для восстановления HP при отмене хореографии.
 function combatHpSnapshot(events, seat) {
   const grouped = new Map();
   for (const ev of events) {
@@ -174,25 +174,24 @@ function combatHpSnapshot(events, seat) {
   const items = [];
   grouped.forEach((hits, target) => {
     const val = target.querySelector('.value') || target.querySelector('.hp');
-    const bar = target.querySelector('.tinybar i') || target.querySelector('.bar .fill');
+    const bar = target.querySelector('.tower-hp .tower-meter-track i, .tinybar i, .bar .fill');
     if (!val || !bar) return;
     const match = val.textContent.match(/(\d+)\s*\/\s*(\d+)/);
     if (!match) return;
-    const final = +match[1], max = +match[2];
+    const start = +match[1], max = +match[2];
     const damage = hits.reduce((sum, ev) => sum + Math.max(0, +ev.amount || 0), 0);
-    const start = Math.min(max, final + damage);
-    if (start <= final) return;
-    val.dataset.combatFinalText = val.textContent;
-    bar.dataset.combatFinalWidth = bar.style.width;
+    const final = Math.max(0, start - damage);
+    if (final >= start) return;
+    // Вертикальные полоски (арена v20) растут по height, v19 — по width.
+    const axis = bar.dataset.vertical === '1' ? 'height' : 'width';
+    val.dataset.combatRestoreText = val.textContent;
+    bar.dataset.combatRestoreFill = bar.style[axis];
+    bar.dataset.combatFillAxis = axis;
     val.classList.add('combat-hp-restore');
     bar.classList.add('combat-hp-restore');
-    // Откат без transition: текущий кадр показывает ДО-ударное HP.
-    bar.style.transition = 'none';
-    val.textContent = start + ' / ' + max;
-    bar.style.width = (start / max) * 100 + '%';
-    void bar.offsetWidth;
-    bar.style.transition = '';
-    items.push({ target, val, bar, start, final, max, hits });
+    // На всякий случай фиксируем стартовое значение (без анимации).
+    bar.style[axis] = (start / max) * 100 + '%';
+    items.push({ target, val, bar, axis, start, final, max, hits });
   });
   return items;
 }
@@ -275,8 +274,8 @@ export function combatRevealAttackCards(report, seat) {
 }
 
 // Хореография раунда v19. Порядок фаз со стабильным таймлайном:
-// 0.0–1.75с карты падают и раскрываются → 1.9с щиты пробиты → 3.25с HP падает
-// → 4.75с щиты уплывают → 5.25с свежий авторитетный рендер (+ финиш-экран).
+// 0.0–1.75с карты падают и раскрываются → 1.9с щит тает в боковой шкале
+// → 3.25с HP падает → 5.25с свежий авторитетный рендер (+ финиш-экран).
 export function playRoundAnimation(view) {
   const rep = view.latestRoundReport;
   if (!rep || !Array.isArray(rep.events)) return;
@@ -291,17 +290,9 @@ export function playRoundAnimation(view) {
   const shields = [];
   for (const e of shieldEntries(rep.report)) {
     const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
-    const bubble = combatBubble(target, e.element, e.full, e.lane);
-    if (!bubble) continue;
-    const track = bubble.querySelector('.combat-shield-track i');
-    const number = bubble.querySelector('.combat-shield-number');
-    // Щит сразу полный — без искусственной зарядки после «Готова».
-    bubble.classList.add('combat-shield-ready', 'combat-shield-initial');
-    track.style.transition = 'none';
-    track.style.width = '100%';
-    number.textContent = String(e.full);
-    void track.offsetWidth;
-    shields.push({ bubble, target, track, number, full: e.full, attack: e.attack, element: e.attackElement });
+    const meter = combatShieldMeter(target, e);
+    if (!meter) continue; // мёртвая цель без боковой шкалы: останется только цифра урона
+    shields.push({ ...meter, full: e.full, attack: e.attack, element: e.attackElement });
   }
   const revealedCards = combatRevealAttackCards(rep.report, seat);
   (window.__animLog = window.__animLog || []).push({ fn: 'anim', overlays: revealedCards.length, shields: shields.length, hp: hpItems.length });
@@ -309,42 +300,38 @@ export function playRoundAnimation(view) {
   if (phase) phase.textContent = '🃏 Раскрытие атак';
   combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 1300);
   combatLater(() => revealedCards.forEach((el) => el.remove()), 1750);
-  // 1.9с: удар по щитам. Цифры показывают поглощённые щитом очки.
+  // 1.9с: удар по щитам. Защита тает в боковой шкале цели.
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '⚔️ Атака по щитам';
-    shields.forEach(({ bubble, target, track, number, full, attack, element }) => {
+    shields.forEach(({ target, meter, track, num, axis, full, attack, element }) => {
       const absorbed = Math.min(full, attack);
       const remaining = Math.max(0, full - attack);
-      bubble.classList.add('combat-shield-hit');
-      track.style.transition = 'width 1000ms cubic-bezier(.22,.65,.3,1)';
-      track.style.width = (full ? remaining / full * 100 : 0) + '%';
-      number.textContent = String(remaining);
+      track.style.transition = axis + ' 1000ms cubic-bezier(.22,.65,.3,1)';
+      track.style[axis] = (full ? remaining / full * 100 : 0) + '%';
+      num.textContent = String(remaining);
+      meter.setAttribute('aria-label', `Щит: ${remaining}`);
       if (absorbed) combatShieldPopup(target, absorbed, element);
-      if (remaining === 0) combatLater(() => bubble.classList.add('combat-shield-broken'), 900);
     });
   }, 1900);
   // 3.25с: только теперь падает HP — по фактическим серверным событиям.
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '💥 Урон башням';
-    hpItems.forEach(({ target, val, bar, final, max, hits }) => {
+    hpItems.forEach(({ target, val, bar, axis, final, max, hits }) => {
       const total = hits.reduce((sum, e) => sum + Math.max(0, +e.amount || 0), 0);
       const icon = hits.find((e) => !e.burn)?.element || '🔥';
       combatHpPopup(target, total, icon);
-      bar.style.transition = 'width 1100ms cubic-bezier(.25,.7,.25,1)';
-      bar.style.width = (final / max) * 100 + '%';
+      bar.style.transition = axis + ' 1100ms cubic-bezier(.25,.7,.25,1)';
+      bar.style[axis] = (final / max) * 100 + '%';
       val.textContent = final + ' / ' + max;
-      val.classList.remove('combat-hp-restore');
-      bar.classList.remove('combat-hp-restore');
-      delete val.dataset.combatFinalText;
-      delete bar.dataset.combatFinalWidth;
     });
   }, 3250);
-  // 4.75с: щиты уплывают.
+  // 4.75с: полоски HP уже упали — только теперь меняем модели башен/руины,
+  // чтобы исход раунда не был виден до анимации урона.
   combatLater(() => {
     if (!valid()) return;
-    shields.forEach(({ bubble }) => bubble.classList.add('combat-shield-out'));
+    if (combatUI.renderFinal) combatUI.renderFinal();
   }, 4750);
   // 5.25с: UI разморожен, рендерим свежее авторитетное состояние; финальный
   // экран показывается ТОЛЬКО после полного проигрыша последнего боя.
@@ -354,7 +341,9 @@ export function playRoundAnimation(view) {
       return;
     }
     combatPlaying = false;
-    shields.forEach(({ bubble }) => bubble.remove());
+    shields.forEach(({ meter }) => {
+      meter.classList.remove('combat-shield-meter');
+    });
     document.querySelectorAll('.combat-damage-number').forEach((el) => el.remove());
     document.querySelector('#lanes')?.classList.remove('is-resolving');
     if (combatUI.render) combatUI.render();

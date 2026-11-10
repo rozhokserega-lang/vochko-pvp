@@ -101,26 +101,36 @@
 /* Drag-over — усиленное контурное свечение цели. */
 .arena-scene .tower.drag-over .tower-sprite{filter:drop-shadow(0 0 1.6cqw #ffe3a2ee) drop-shadow(0 0 .7cqw #ffd98acc)}
 
-/* HP-полоска и шкала силы — СБОКУ от башни, чтобы не слипались:
-   внешние башни — к краям сцены, ближние к центру — к центру. */
-.arena-scene .tower-hp{display:flex;flex-direction:column;align-items:center;gap:.15cqw;
-  pointer-events:none;z-index:7;white-space:nowrap}
-.arena-scene .tower-hp.hp-left{right:100%;margin-right:.7cqw;top:50%;transform:translateY(-50%)}
-.arena-scene .tower-hp.hp-right{left:100%;margin-left:.7cqw;top:50%;transform:translateY(-50%)}
-.arena-scene .tower-hp .tinybar{width:5.6cqw;height:.7cqw;background:#0b1524d9;border:1px solid #4a5f7d;border-radius:99px;overflow:hidden}
-.arena-scene .tower-hp .tinybar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3f9dd6,#8ce0ff);transition:width .8s ease-out!important}
-.arena-scene .tower.enemy .tower-hp .tinybar i{background:linear-gradient(90deg,#d64b4b,#ffb08c)}
-
-/* Шкалы силы пар — сбоку от башни, с той же стороны, что и HP. */
-.arena-scene .tower .power-meter{position:absolute;top:50%;bottom:auto;left:auto;right:auto;
-  transform:translateY(-50%);width:7.5cqw;z-index:6}
-.arena-scene .tower.ally.outer .power-meter{right:100%;margin-right:.7cqw}
-.arena-scene .tower.ally.inner .power-meter{left:100%;margin-left:.7cqw}
-.arena-scene .tower.enemy.inner .power-meter{right:100%;margin-right:.7cqw}
-.arena-scene .tower.enemy.outer .power-meter{left:100%;margin-left:.7cqw}
-.arena-scene .tower .power-meter-track{height:.7cqw}
-.arena-scene .tower .power-meter-head{font-size:.85cqw}
-.arena-scene .tower .power-meter-head strong{font-size:1.15cqw}
+/* HP и щит используют одинаковую геометрию, по разные стороны башни. */
+.arena-scene .tower-meter,
+.arena-scene .tower-attack{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:7;pointer-events:none;
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+  font-size:clamp(7px,.85cqw,13px);font-weight:800;line-height:1.1;
+  text-shadow:0 1px 3px #000,0 0 6px #000
+}
+.arena-scene .meter-left{right:100%;margin-right:1.15cqw}
+.arena-scene .meter-right{left:100%;margin-left:1.15cqw}
+.arena-scene .tower-meter-label{
+  position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:.35cqw
+}
+.arena-scene .tower-meter-track{
+  width:max(4px,.8cqw);height:5.6cqw;background:#0b1524eb;border-radius:99px;
+  overflow:hidden;display:flex;align-items:flex-end
+}
+.arena-scene .tower-meter-track i{
+  display:block;width:100%;border-radius:99px;transition:height .8s ease-out
+}
+.arena-scene .tower-hp{color:#d8f3ff}
+.arena-scene .tower-hp .tower-meter-track i{background:linear-gradient(0deg,#388fbc,#88e1ff)}
+.arena-scene .tower-shield{color:#ffe0a0}
+.arena-scene .tower-shield .tower-meter-track i{background:linear-gradient(0deg,#b77529,#ffda82)}
+.arena-scene .tower-shield[data-empty]:not(.combat-shield-meter){visibility:hidden}
+.arena-scene .tower-attack{color:#ffc2a3}
+.arena-scene.is-resolving .tower-attack,#lanes.is-resolving .tower-attack{visibility:hidden}
+.arena-scene .tower-shield.combat-shield-meter{filter:drop-shadow(0 0 6px #edb75a88)}
+.arena-scene .nexus-floor-meter.combat-shield-meter{filter:drop-shadow(0 0 8px #8fe6ff66)}
+.arena-scene .combat-shield-meter .nexus-floor-meter-track i{box-shadow:0 0 10px #d8f6ff99}
 
 /* ── Нексус ── */
 .arena-scene .nexus-fortress{position:absolute;z-index:6;display:block;background:none;border:none}

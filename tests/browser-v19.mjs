@@ -116,6 +116,13 @@ const runBrowser = async () => {
     for (const lane of [0, 1, 2]) await placeTurn(pageA, lane);
     for (const lane of [0, 1, 2]) await placeTurn(pageB, lane);
     ok(true, 'раскладка обоих принята локально');
+    const metersMatch = await pageA.evaluate(() => {
+      const tower = document.querySelector('.tower.ally.drop-target');
+      const hp = tower.querySelector('.tower-hp .tower-meter-track').getBoundingClientRect();
+      const shield = tower.querySelector('.tower-shield .tower-meter-track').getBoundingClientRect();
+      return hp.width === shield.width && hp.height === shield.height && hp.top === shield.top && hp.x !== shield.x;
+    });
+    ok(metersMatch, 'HP и щит одинакового размера и стоят по разные стороны башни');
 
     // Оба игрока видят карты на правильных сторонах: у A на своих башнях — чёрные ♠♣,
     // на вражеских — красные ♥♦ (наши атакующие пары при планировании).
@@ -163,16 +170,18 @@ const runBrowser = async () => {
     // Анимация: раскрытие карт → щиты → урон; финиш до взаимодействия.
     await waitAnimEnd(pageA);
     await waitAnimEnd(pageB);
-    let revealSeen = 0, shieldSeen = 0;
+    let revealSeen = 0, shieldSeen = 0, sideShieldSeen = false;
     for (let i = 0; i < 48; i++) {
       const snap = await pageA.evaluate(() => ({
         reveals: document.querySelectorAll('.combat-card-reveal').length,
-        shields: document.querySelectorAll('.combat-shield').length,
+        shields: document.querySelectorAll('.combat-shield-meter').length,
+        sideShield: !!document.querySelector('.tower-shield.combat-shield-meter'),
         anims: (window.__animLog || []).filter((x) => x.fn === 'anim').length,
       }));
       // Хореография фиксируется в animLog даже если DOM-фаза уже прошла.
       revealSeen = Math.max(revealSeen, snap.reveals, snap.anims);
       shieldSeen = Math.max(shieldSeen, snap.shields, snap.anims);
+      sideShieldSeen ||= snap.sideShield;
       const round2 = await pageA.evaluate(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'));
       if (round2 && i * 250 > 6500) break;
       if (i * 250 > 11500) break;
@@ -182,6 +191,7 @@ const runBrowser = async () => {
     await pageB.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'), null, { timeout: 25000 });
     ok(revealSeen > 0, `раскрытие run-карт видно у A (${revealSeen})`);
     ok(shieldSeen > 0, `щиты хореографии видны у A (${shieldSeen})`);
+    ok(sideShieldSeen, 'во время боя щит появляется в боковой шкале башни');
     ok(true, 'оба игрока видят раунд 2 после анимации');
     ok(await pageA.locator('#battleReports, .battle-reports').count() === 0, 'после хода статистика под панелью не появляется');
 

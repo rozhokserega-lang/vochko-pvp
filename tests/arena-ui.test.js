@@ -124,7 +124,14 @@ test('battleHTML: пробитая линия открывает этаж нек
 
 test('в начале HP показывается только у шести ближних башен', () => {
   const html = battleHTML(view(), emptySlots());
-  assert.equal((html.match(/class="tower-hp"/g) || []).length, 6);
+  assert.equal((html.match(/class="tower-hp tower-meter"/g) || []).length, 6);
+  assert.equal((html.match(/class="value"/g) || []).length, 6);
+  assert.equal((html.match(/data-vertical="1"/g) || []).length, 6);
+  assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 6);
+  assert.match(html, /height:100%"><\/i><\/div>/);
+  // Числа нужны combatHpSnapshot(), иначе полоска HP не анимируется от удара.
+  assert.match(html, /class="value">12 \/ 12</);
+  assert.doesNotMatch(html, /class="value">18 \/ 18</);
 });
 
 test('при разрушении ближней башни HP появляется у дальней башни той же линии', () => {
@@ -134,8 +141,20 @@ test('при разрушении ближней башни HP появляет�
   v.board.me.inner[0] = 9;
   v.board.opponent.inner[1] = 9;
   const html = battleHTML(v, emptySlots());
-  assert.equal((html.match(/class="tower-hp"/g) || []).length, 6);
-  assert.equal((html.match(/width:50%/g) || []).length, 2);
+  assert.equal((html.match(/class="tower-hp tower-meter"/g) || []).length, 6);
+  assert.equal((html.match(/class="value">9 \/ 18</g) || []).length, 2);
+  assert.equal((html.match(/class="value">12 \/ 12</g) || []).length, 4);
+  assert.doesNotMatch(html, /class="value">0 \/ 12/);
+});
+
+test('щит показывает силу защиты, атака показана отдельным числом', () => {
+  const slots = emptySlots();
+  slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
+  slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
+  const html = battleHTML(view(), slots);
+  assert.match(html, /Щит <b>8<\/b>/);
+  assert.match(html, /class="tower-attack" aria-label="Атака: 7"/);
+  assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 5);
 });
 
 test('карты в слотах: пара кладётся в свои слоты, красные — атака (класс red)', () => {

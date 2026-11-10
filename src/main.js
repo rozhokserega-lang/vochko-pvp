@@ -12,7 +12,6 @@ import { initArenaLayoutEditor, isArenaDebugEnabled } from './ui/arena/ArenaLayo
 import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
 import { cardPanelHTML, cardPanelToolsHTML, initCardPanel, isAttackCard, PANEL_LANES, renderPanelCards, renderPanelPreview } from './ui/card-panel/CardPanel.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
-import { animateMeters, METER_LAST } from './ui/meters.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
 
@@ -144,7 +143,7 @@ async function refresh(matchId) {
   myHand = view.me.hand;
   if (view.matchId !== slotsState.matchId || view.round !== slotsState.round) {
     slots = resetSlots(); selected = [];
-    METER_LAST.clear(); slotsState.matchId = view.matchId; slotsState.round = view.round;
+    slotsState.matchId = view.matchId; slotsState.round = view.round;
   } else {
     const handIds = new Set(myHand.map((card) => card.id));
     keepDraftCards((id) => handIds.has(id));
@@ -160,13 +159,13 @@ async function refresh(matchId) {
     showEndScreen(view);
     return;
   }
-  render(hasNewBattle);
   if (hasNewBattle) {
     // Финальный бой тоже играется полностью ДО экрана победы (v19 §6).
     lastReportRound = repRound;
     playRoundAnimation(view);
     return;
   }
+  render();
   // Флажок «только что положено» гаснет — повторные перерисовки не переигрывают прилёт.
   setTimeout(() => { for (const s of slots) for (const c of [...s.atk, ...s.def]) c.justPlaced = false; }, 500);
 }
@@ -181,9 +180,9 @@ function doRematch(btn) {
   }).catch(() => { if (btn) { btn.disabled = false; btn.textContent = '🔁 Реванш'; } });
 }
 
-function render(resolving = false) {
-  if (isCombatPlaying()) return; // UI заморожен на время боевой хореографии
-  const panelState = { round: view.round, blocked: resolving || turnLocked(),
+function render(force = false) {
+  if (!force && isCombatPlaying()) return; // UI заморожен на время боевой хореографии
+  const panelState = { round: view.round, blocked: turnLocked(),
     ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
   root.innerHTML = `
@@ -206,8 +205,7 @@ function render(resolving = false) {
 
   const hand = byId('hand');
   initCardPanel(hand);
-  renderPanelCards(hand, myHand, selected, usedIds(), panelState.blocked);
-  animateMeters();
+  renderPanelCards(hand, myHand, selected, usedIds(), turnLocked());
   updatePreview();
 
   hand.addEventListener('click', (e) => {
@@ -262,7 +260,7 @@ function showEndScreen(v) {
 }
 
 // Хореография боя рендерит финальное состояние и финальный экран сама.
-bindCombatUI({ render, showEndScreen });
+bindCombatUI({ render, showEndScreen, renderFinal: () => render(true) });
 
 function updatePreview() {
   renderPanelPreview(byId('hand'), selected.map(cardById));
