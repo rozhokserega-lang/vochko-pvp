@@ -141,6 +141,21 @@
   background:radial-gradient(ellipse at center,#4db8ff30 0%,transparent 72%);box-shadow:0 0 4cqw #4db8ff3d}
 .arena-scene .nexus-fortress.enemy .platform-glow{opacity:.6;
   background:radial-gradient(ellipse at center,#ff4d4d30 0%,transparent 72%);box-shadow:0 0 4cqw #ff4d4d3d}
+.arena-scene .nexus-fortress:is(:hover,:focus-visible){z-index:10}
+.arena-scene .nexus-fortress:is(:hover,:focus-visible) .nexus-sprite{
+  filter:drop-shadow(0 0 .7cqw #ffce70dd) drop-shadow(0 0 .2cqw #fff0be)
+}
+.arena-scene .nexus-damage-hint{
+  position:absolute;top:13%;z-index:12;visibility:hidden;pointer-events:none;
+  display:grid;gap:3px;width:max-content;max-width:min(42cqw,190px);
+  padding:6px 8px;border:1px solid #bb9255;border-radius:7px;
+  background:#0b1423f5;color:#e5edf7;box-shadow:0 3px 12px #0009;
+  font-size:clamp(10px,1cqw,13px);line-height:1.25
+}
+.arena-scene .nexus-damage-hint strong{color:#ffdb91}
+.arena-scene .nexus-fortress.ally .nexus-damage-hint{left:96%}
+.arena-scene .nexus-fortress.enemy .nexus-damage-hint{right:96%}
+.arena-scene .nexus-fortress:is(:hover,:focus-visible) .nexus-damage-hint{visibility:visible}
 
 /* Ряд нексуса: зона дропа = bbox слотов и круга (позиции из applyArenaLayout). */
 .arena-scene .nexus-floor{position:absolute;z-index:7}
@@ -172,7 +187,6 @@
 .arena-scene .nexus-fortress-stats .bar{width:88%;height:.8cqw;background:#0b1524;border:1px solid #4a5f7d;border-radius:99px;overflow:hidden}
 .arena-scene .nexus-fortress-stats .bar .fill{display:block;height:100%;background:linear-gradient(90deg,#3f9dd6,#8ce0ff);border-radius:99px}
 .arena-scene .nexus-fortress.enemy .nexus-fortress-stats .bar .fill{background:linear-gradient(90deg,#d64b4b,#ffb08c)}
-.arena-scene .nexus-fortress-stats small{font-size:.9cqw;color:#a8b9d4}
 
 /* Шапка линий — ненавязчивый оверлей сверху сцены. */
 .arena-scene .battle-head{position:absolute;top:1.2%;left:50%;transform:translateX(-50%);z-index:4;
@@ -200,7 +214,6 @@
   .arena-scene .nexus-floor-meter-track{height:6px}
   .arena-scene .nexus-fortress-stats b{font-size:1.6cqw}
   .arena-scene .nexus-fortress-stats .hp{font-size:2.2cqw}
-  .arena-scene .nexus-fortress-stats small{font-size:1.4cqw}
 }
 
 @media(prefers-reduced-motion:reduce){

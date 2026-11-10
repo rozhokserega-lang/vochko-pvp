@@ -11,6 +11,7 @@ import {
   exportLayoutJSON,
 } from '../src/ui/arena/arenaLayout.js';
 import { battleHTML } from '../src/ui/arena/ArenaScene.js';
+import { nexusHTML } from '../src/ui/arena/NexusView.js';
 import { cardSlotHTML } from '../src/ui/arena/CardSlot.js';
 import { elementAnimHTML, ELEMENT_CLASS } from '../src/ui/arena/ElementEffect.js';
 import { towerHighlightClass } from '../src/ui/arena/TowerHighlight.js';
@@ -120,6 +121,17 @@ test('battleHTML: пробитая линия открывает этаж нек
   v.board.opponent.inner = [0, 18, 18];
   const html = battleHTML(v, emptySlots());
   assert.match(html, /nexus-floor open drop-target"\s+data-lane="0" data-kind="atk"/);
+});
+
+test('подсказка Нексуса показывает процент входящего урона по числу пробитых линий', () => {
+  const board = view().board.opponent;
+  board.outer.fill(0);
+  for (const [count, percent] of [[0, 0], [1, 40], [2, 70], [3, 100]]) {
+    board.inner.fill(0, 0, count);
+    const html = nexusHTML(board, emptySlots(), true);
+    assert.match(html, new RegExp(`Получает ${percent}% урона`));
+    assert.match(html, new RegExp(`Пробито линий: ${count} из 3`));
+  }
 });
 
 test('в начале HP показывается только у шести ближних башен', () => {
