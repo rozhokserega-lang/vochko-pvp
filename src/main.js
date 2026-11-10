@@ -28,7 +28,6 @@ let fortifyLane = null;   // выбранная линия укрепления 
 let fortifyMode = false;
 let submission = null;
 let unwatch = null;
-let lastVersion = 0;
 let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
 let refreshEpoch = 0;    // защита от «зависшего» get-state при смене экрана/матча
 
@@ -36,6 +35,15 @@ const cardById = (id) => myHand.find((c) => c.id === id);
 const usedIds = () => new Set(slots.flatMap((s) => [...s.atk, ...s.def].map((c) => c.id)));
 const currentSubmission = () => submission?.matchId === view?.matchId && submission?.round === view?.round ? submission : null;
 const turnLocked = () => view.status !== 'planning' || view.me.ready || !!currentSubmission() || isCombatPlaying();
+const missingCardPrefix = 'Карты нет в руке: ';
+
+function keepDraftCards(keep) {
+  selected = selected.filter(keep);
+  for (const slot of slots) {
+    slot.atk = slot.atk.filter((card) => keep(card.id));
+    slot.def = slot.def.filter((card) => keep(card.id));
+  }
+}
 
 // ── Лобби ──────────────────────────────────────────────────────────────────
 async function boot() {
@@ -109,7 +117,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   history.replaceState(null, '', location.pathname + (params.size ? '?' + params : ''));
   if (unwatch) { unwatch(); unwatch = null; }
   clearFloats();
-  lastVersion = 0; lastReportRound = 0;
+  lastReportRound = 0;
   selected = []; fortifyLane = null; fortifyMode = false;
   submission = null;
   slots = resetSlots(); slotsState.round = 0;
@@ -118,12 +126,12 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   renderLobby();
 }
 
-async function refresh(matchId, afterEvents = false) {
+async function refresh(matchId) {
   const epoch = refreshEpoch; // сменился pantalla/матч — устаревший get-state игнорируем
   const next = await api.getState(matchId);
   if (epoch !== refreshEpoch || (view?.matchId === matchId && next.version < view.version)) return;
   view = next;
-  (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, afterEvents, playing: isCombatPlaying(), at: Date.now() % 100000 });
+  (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, playing: isCombatPlaying(), at: Date.now() % 100000 });
   // Хореография боя захватывает UI: новое состояние применяется после неё.
   if (isCombatPlaying()) return;
   const finished = view.status === 'finished' || !!view.winner;
@@ -131,8 +139,6 @@ async function refresh(matchId, afterEvents = false) {
   // Анимация играет обоим, когда появляется НОВЫЙ отчёт раунда.
   const repRound = nextReportRound(rep, { finished, round: view.round });
   const hasNewBattle = hasNewBattleReport(rep, repRound, lastReportRound);
-  if (view.version <= lastVersion && !afterEvents && !hasNewBattle && !finished) return render();
-  lastVersion = view.version;
   // Второй ещё не вошёл — показываем экран ожидания вместо поля.
   if (view.status === 'waiting') {
     app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link, { onExit: () => exitMatch(view.matchId, 'Отменить комнату и вернуться в лобби?') }));
@@ -143,15 +149,18 @@ async function refresh(matchId, afterEvents = false) {
   // выбор снимаем: иначе он уходил бы в каждый следующий submit, и сервер
   // отвечал бы 400 fortify-used до конца матча (игрок «застревал»).
   if (view.me.fortifyUsed && (fortifyLane !== null || fortifyMode)) { fortifyLane = null; fortifyMode = false; }
-  if (view.round !== slotsState.round) {
+  if (view.matchId !== slotsState.matchId || view.round !== slotsState.round) {
     slots = resetSlots(); selected = []; fortifyLane = null; fortifyMode = false;
-    METER_LAST.clear(); slotsState.round = view.round;
+    METER_LAST.clear(); slotsState.matchId = view.matchId; slotsState.round = view.round;
+  } else {
+    const handIds = new Set(myHand.map((card) => card.id));
+    keepDraftCards((id) => handIds.has(id));
   }
   // Финал без нового боя: переход в реванш или финальный экран.
   if (finished && !hasNewBattle) {
     // Аудит п.5: оба игрока автоматически уходят в новый матч после реванша.
     if (view.nextMatchId && view.nextMatchId !== view.matchId) {
-      lastVersion = 0; lastReportRound = 0; slots = resetSlots(); slotsState.round = 0;
+      lastReportRound = 0; slots = resetSlots(); slotsState.round = 0;
       return enterMatch(view.nextMatchId);
     }
     render();
@@ -169,13 +178,13 @@ async function refresh(matchId, afterEvents = false) {
   setTimeout(() => { for (const s of slots) for (const c of [...s.atk, ...s.def]) c.justPlaced = false; }, 500);
 }
 
-const slotsState = { round: 0 };
+const slotsState = { matchId: null, round: 0 };
 const resetSlots = () => Array.from({ length: 3 }, () => ({ atk: [], def: [] }));
 
 function doRematch(btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Ждём соперника…'; }
   api.rematch(view.matchId).then((r) => {
-    if (!r.waiting) { lastVersion = 0; lastReportRound = 0; slots = resetSlots(); slotsState.round = 0; enterMatch(r.matchId); }
+    if (!r.waiting) { lastReportRound = 0; slots = resetSlots(); slotsState.round = 0; enterMatch(r.matchId); }
   }).catch(() => { if (btn) { btn.disabled = false; btn.textContent = '🔁 Реванш'; } });
 }
 
@@ -338,15 +347,19 @@ async function submit() {
       setStatus('Ход принят. Обнови страницу, чтобы получить состояние матча.');
     } else {
       const alreadyUsed = e.message === 'fortify-used';
-      if (alreadyUsed) {
-        fortifyLane = null; fortifyMode = false;
+      const missingCard = e.message?.startsWith(missingCardPrefix) ? e.message.slice(missingCardPrefix.length) : null;
+      if (alreadyUsed || missingCard) {
+        if (alreadyUsed) { fortifyLane = null; fortifyMode = false; }
         await refresh(matchId).catch(() => {});
         if (currentSubmission() !== pending) return;
+        if (missingCard && !view.me.ready) keepDraftCards((id) => id !== missingCard);
       }
       submission = null;
       render();
-      setStatus(alreadyUsed ? 'Укрепление уже использовано. Отправь ход ещё раз.'
-        : 'Ошибка отправки: ' + (e.message || 'повтори попытку'));
+      if (view.me.ready) return;
+      if (missingCard) setStatus(`Сервер отклонил карту ${missingCard}. Выбери другую карту для освободившегося места.`);
+      else if (alreadyUsed) setStatus('Укрепление уже использовано. Отправь ход ещё раз.');
+      else setStatus('Ошибка отправки: ' + (e.message || 'повтори попытку'));
     }
   }
 }

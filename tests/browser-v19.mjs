@@ -16,7 +16,7 @@ const watch = (ctx, key) => {
   errors.set(key, []);
   ctx.on('console', (msg) => {
     const url = msg.location().url;
-    const expected = url.endsWith('/favicon.ico') || (key === 'A' && url.endsWith('/submit-turn') && msg.text().includes('503'));
+    const expected = url.endsWith('/favicon.ico') || (key === 'A' && url.endsWith('/submit-turn') && /422|503/.test(msg.text()));
     if (msg.type() === 'error' && !expected) errors.get(key).push(`console: ${msg.text()} (${url})`);
   });
   ctx.on('pageerror', (err) => errors.get(key).push('pageerror:' + err.message));
@@ -138,6 +138,18 @@ const runBrowser = async () => {
     await pageA.locator('#fightBtn').click();
     await pageA.waitForFunction(() => document.querySelector('#status')?.textContent.includes('test-submit-unavailable'));
     ok(await pageA.locator('#fightBtn').isEnabled(), 'ошибка отправки разблокирует кнопку и сохраняет раскладку');
+    let rejectedCard;
+    await pageA.route('**/functions/v1/submit-turn', (route) => {
+      rejectedCard = route.request().postDataJSON().placements[0].attack[0];
+      return route.fulfill({ status: 422, json: { error: 'Карты нет в руке: ' + rejectedCard } });
+    }, { times: 1 });
+    await pageA.locator('#fightBtn').click();
+    await pageA.getByText(/Сервер отклонил карту/).waitFor();
+    const firstAttack = pageA.locator('#lanes .drop-target[data-kind="atk"][data-lane="0"]');
+    ok(await hand.locator('.used').count() === 11 && await firstAttack.locator('.slot-card').count() === 1,
+      'отклонение карты освобождает только её место');
+    await hand.locator(`.card.red:not(.used):not([data-card="${rejectedCard}"])`).click();
+    await firstAttack.click();
     let submitCount = 0;
     pageA.on('request', (r) => { if (r.method() === 'POST' && r.url().endsWith('/submit-turn')) submitCount++; });
     await pageA.locator('#fightBtn').dblclick();
