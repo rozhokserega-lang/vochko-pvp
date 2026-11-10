@@ -60,18 +60,21 @@ test('arenaStage: пороги 50% — целая / повреждённая / �
   assert.equal(arenaStage(0, 18), 'ruins');
 });
 
-test('towerBox: башня стоит основанием на платформе, масштаб не скачет между состояниями', () => {
-  const full = towerBox('ally', 'def', 0, 'outer', 'full');
-  const damaged = towerBox('ally', 'def', 0, 'outer', 'damaged');
-  const ruins = towerBox('ally', 'def', 0, 'outer', 'ruins');
-  assert.equal(full.bottom, damaged.bottom);          // смена состояния не двигает базу
-  assert.equal(full.h, damaged.h);
-  assert.ok(Math.abs(full.cx - damaged.cx) < 0.01);
-  assert.ok(Math.abs(full.cx - damaged.cx) < 0.01);
-  // фундамент лежит НА площадке: низ по её переднему краю (cy + ry)
-  assert.equal(ruins.bottom, LAYOUT.platforms.rowCy[0] + LAYOUT.platforms.ry);
-  assert.ok(ruins.bottom < full.bottom);              // выше линии основания башен
-  assert.ok(ruins.w > full.w);                        // груда камней шире башни
+test('towerBox: основание остаётся в одной точке во всех состояниях', () => {
+  for (const [team, kind, damagedAxis, ruinsAxis] of [
+    ['ally', 'def', 216 / 503, 428 / 898],
+    ['enemy', 'atk', 216 / 461, 448 / 940],
+  ]) {
+    const full = towerBox(team, kind, 0, 'outer', 'full');
+    const damaged = towerBox(team, kind, 0, 'outer', 'damaged');
+    const ruins = towerBox(team, kind, 0, 'outer', 'ruins');
+    assert.equal(full.bottom, damaged.bottom);
+    assert.equal(full.bottom, ruins.bottom);
+    assert.equal(full.h, damaged.h);
+    for (const [box, axis] of [[damaged, damagedAxis], [ruins, ruinsAxis]]) {
+      assert.ok(Math.abs(box.cx - box.w / 2 + box.w * axis - full.cx) < 0.01, team);
+    }
+  }
 });
 
 test('battleHTML: 3 линии, 12 башен, 2 нексуса, активные — drop-target', () => {

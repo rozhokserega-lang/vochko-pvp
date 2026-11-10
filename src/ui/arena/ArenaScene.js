@@ -87,6 +87,7 @@ export function applyArenaLayout(root = document) {
     // Овал подсветки платформы.
     const glow = t.querySelector('.platform-glow');
     if (glow && art.glow) {
+      glow.style.left = box.anchorX * 100 + '%';
       glow.style.top = art.glow.cy + '%';
       glow.style.width = art.glow.w + '%';
       glow.style.height = art.glow.h + '%';

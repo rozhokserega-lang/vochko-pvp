@@ -12,6 +12,14 @@
 
 export const ARENA_DESIGN = { w: 1600, h: 900 };
 
+// Ось передней ступени в каждом спрайте. Края обломков асимметричны.
+const FOUNDATION_X = {
+  full: { ally: 0.5, enemy: 0.5 },
+  damaged: { ally: 216 / 503, enemy: 216 / 461 },
+  ruins: { ally: 428 / 898, enemy: 448 / 940 },
+};
+const DAMAGED_WIDTH_RATIO = 461 / 503;
+
 // ── Значения по умолчанию (измерены по «Задний фон.png» и референсу) ──
 const DEFAULTS = deepFreeze({
   platforms: {
@@ -178,8 +186,12 @@ export function towerArt(team, stage) {
   if (stage === 'full') return LAYOUT.tower.artFull;
   const art = LAYOUT.tower.artDamaged;
   if (team !== 'enemy' || !art.circle) return art;
-  // Ось шахты одинакова в пикселях, но правый край красного спрайта обрезан раньше.
-  return { ...art, circle: { ...art.circle, cx: art.circle.cx * 503 / 461 } };
+  // Красный спрайт имеет ту же высоту, но меньше обломков справа.
+  return {
+    ...art,
+    slots: art.slots.map((slot) => ({ ...slot, x: slot.x / DAMAGED_WIDTH_RATIO, w: slot.w / DAMAGED_WIDTH_RATIO })),
+    circle: { ...art.circle, cx: art.circle.cx / DAMAGED_WIDTH_RATIO, d: art.circle.d / DAMAGED_WIDTH_RATIO },
+  };
 }
 
 if (!LAYOUT.towers) withDerivedObjects(LAYOUT);
@@ -192,16 +204,16 @@ export function platformOf(team, kind, lane, size) {
   return { cx, cy, rx: p.rx, ry: p.ry, bottom: cy + p.ry * LAYOUT.tower.bottomK };
 }
 
-// Бокс спрайта башни: {cx, bottom, w, h} в design-px (с учётом правок редактора).
+// Бокс спрайта в design-px. anchorX задаёт ось основания внутри бокса.
 export function towerBox(team, kind, lane, size, stage) {
   const id = towerId(team, kind, lane, size);
   const obj = LAYOUT.towers.find((x) => x.id === id) ?? platformOf(team, kind, lane, size);
   const t = LAYOUT.tower;
-  const plat = platformOf(team, kind, lane, size);
-  // Фундамент (груда камней) лежит на площадке: низ по её переднему краю.
-  if (stage === 'ruins') return { cx: obj.cx, bottom: plat.cy + plat.ry, w: obj.ruinsW, h: obj.ruinsH };
-  const aspect = stage === 'damaged' ? t.damagedAspect : t.fullAspect;
-  return { cx: obj.cx, bottom: obj.bottom, w: obj.h * aspect, h: obj.h };
+  const aspect = stage === 'damaged' ? t.damagedAspect * (team === 'enemy' ? DAMAGED_WIDTH_RATIO : 1) : t.fullAspect;
+  const w = stage === 'ruins' ? obj.ruinsW ?? t.ruinsW : (obj.h ?? t.h) * aspect;
+  const h = stage === 'ruins' ? obj.ruinsH ?? t.ruinsH : obj.h ?? t.h;
+  const anchorX = FOUNDATION_X[stage][team];
+  return { cx: obj.cx + (0.5 - anchorX) * w, bottom: obj.bottom, w, h, anchorX };
 }
 
 // Бокс спрайта нексуса (с учётом правок редактора).
