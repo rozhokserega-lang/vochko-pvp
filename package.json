@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js",
+    "test": "node --test tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js tests/arena-ui.test.js",
     "test:browser": "node tests/browser-v19.mjs",
     "build": "vite build",
     "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",
@@ -15,6 +15,7 @@
     "vite": "^8.3.7"
   },
   "devDependencies": {
-    "playwright": "^1.65.0"
+    "playwright": "^1.65.0",
+    "sharp": "^0.35.5"
   }
 }
