@@ -129,8 +129,6 @@
 .arena-scene .tower-attack{color:#ffc2a3}
 .arena-scene.is-resolving .tower-attack,#lanes.is-resolving .tower-attack{visibility:hidden}
 .arena-scene .tower-shield.combat-shield-meter{filter:drop-shadow(0 0 6px #edb75a88)}
-.arena-scene .nexus-floor-meter.combat-shield-meter{filter:drop-shadow(0 0 8px #8fe6ff66)}
-.arena-scene .combat-shield-meter .nexus-floor-meter-track i{box-shadow:0 0 10px #d8f6ff99}
 
 /* ── Нексус ── */
 .arena-scene .nexus-fortress{position:absolute;z-index:6;display:block;background:none;border:none}
@@ -166,18 +164,35 @@
 .arena-scene .nexus-floor .card-slot .slot-card .rank{font-size:1.6cqw}
 .arena-scene .nexus-floor .card-slot .slot-card .suit{font-size:1.25cqw}
 
-/* Шкалы атак/защиты Нексуса — сбоку от ряда (как в v19, поверх арта). */
-.arena-scene .nexus-floor-meter{position:absolute;z-index:8;top:50%;transform:translateY(-50%);
-  width:clamp(88px,8vw,126px);display:flex;flex-direction:column;gap:4px;
-  pointer-events:none!important;filter:drop-shadow(0 2px 3px #000c)}
-.arena-scene .nexus-fortress.ally .nexus-floor-meter{left:calc(100% + 10px)}
-.arena-scene .nexus-fortress.enemy .nexus-floor-meter{right:calc(100% + 10px)}
-.arena-scene .nexus-floor-meter-caption{white-space:nowrap;text-align:center;font-size:clamp(9px,.78vw,12px);
-  font-weight:800;color:#7de5d2;text-shadow:0 1px 4px #000}
-.arena-scene .nexus-attack .nexus-floor-meter-caption{color:#ff958b}
-.arena-scene .nexus-floor-meter-track{height:8px;width:100%;background:#091526;border:1px solid #4a6981;border-radius:12px;overflow:hidden}
-.arena-scene .nexus-floor-meter-track i{display:block;height:100%;background:linear-gradient(90deg,#2b9d9d,#69e4c9);border-radius:12px;transition:width .5s ease}
-.arena-scene .nexus-attack .nexus-floor-meter-track i{background:linear-gradient(90deg,#bf3b53,#ff8065)}
+/* Показатели помещаются на боковых опорах спрайта Нексуса. */
+.arena-scene .nexus-floor :is(.tower-meter,.tower-attack){
+  left:var(--nexus-meter-x);top:57%;transform:translate(-50%,-50%)
+}
+.arena-scene .nexus-floor .tower-shield{height:64%}
+.arena-scene .nexus-floor .tower-meter-track{height:100%}
+.arena-scene .nexus-floor .shield-caption{display:none}
+
+/* Раскрытые карты совпадают со слотами цели и остаются видны во время удара. */
+.arena-scene .combat-card-reveal{position:absolute;inset:0;z-index:9;pointer-events:none;transition:opacity .3s ease}
+.arena-scene .combat-card-reveal.fade{opacity:0}
+.arena-scene .combat-reveal-card{
+  position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.05em;line-height:1;font-size:clamp(6px,1.1cqw,15px);font-weight:900;
+  color:#1c2840;background:#fff3d6;box-shadow:0 0 0 1px #f7c16c,0 2px 6px #000a;
+  border-radius:8%;animation:revealSlotCard .24s ease-out both
+}
+.arena-scene .combat-reveal-card.red{color:#bd283c}
+.arena-scene .combat-reveal-label{
+  position:absolute;transform:translate(-50%,-100%);margin-top:-2px;
+  white-space:nowrap;line-height:1.1;font-size:clamp(6px,.74cqw,10px);font-weight:800;
+  color:#ffd9a0;text-shadow:0 1px 3px #000,0 0 5px #000
+}
+.arena-scene .defending .combat-reveal-label{color:#a9f1dd}
+@keyframes revealSlotCard{from{opacity:0;transform:translateY(-20%)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .arena-scene .combat-card-reveal{transition:none}
+  .arena-scene .combat-reveal-card{animation:none}
+}
 
 /* Панель HP Нексуса — под спрайтом. */
 .arena-scene .nexus-fortress-stats{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:1cqw;
@@ -207,11 +222,6 @@
   .arena-scene .tower-hp .tag{display:none}
   .arena-scene .centerlane{display:none}
   .arena-scene .battle-head{font-size:1.6cqw;gap:3cqw}
-  .arena-scene .nexus-floor-meter{width:64px}
-  .arena-scene .nexus-fortress.ally .nexus-floor-meter{left:calc(100% + 4px)}
-  .arena-scene .nexus-fortress.enemy .nexus-floor-meter{right:calc(100% + 4px)}
-  .arena-scene .nexus-floor-meter-caption{font-size:8px}
-  .arena-scene .nexus-floor-meter-track{height:6px}
   .arena-scene .nexus-fortress-stats b{font-size:1.6cqw}
   .arena-scene .nexus-fortress-stats .hp{font-size:2.2cqw}
 }

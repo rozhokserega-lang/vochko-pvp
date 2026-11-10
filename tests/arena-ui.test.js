@@ -164,9 +164,21 @@ test('щит показывает силу защиты, атака показа
   slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
   slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
   const html = battleHTML(view(), slots);
-  assert.match(html, /Щит <b>8<\/b>/);
+  assert.match(html, /aria-label="Щит: 8"/);
   assert.match(html, /class="tower-attack" aria-label="Атака: 7"/);
   assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 5);
+});
+
+test('открытые этажи Нексуса используют те же индикаторы атаки и щита, что башни', () => {
+  const board = view().board.me;
+  board.outer[0] = board.inner[0] = 0;
+  const slots = emptySlots();
+  slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
+  slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
+  assert.match(nexusHTML(board, slots, false), /aria-label="Щит: 8"/);
+  const enemy = nexusHTML(board, slots, true);
+  assert.match(enemy, /class="tower-attack" aria-label="Атака: 7"/);
+  assert.match(enemy, /class="tower-shield tower-meter" data-empty/);
 });
 
 test('карты в слотах: пара кладётся в свои слоты, красные — атака (класс red)', () => {

@@ -2,6 +2,7 @@
 // два интерактивных слота карт поверх нарисованных рамок и круг стихии.
 // Позиции элементов накладываются в ArenaScene.applyArenaLayout() по конфигу.
 import { attackInfo } from '../../../shared/elements.js';
+import { combatPowerHTML } from '../meters.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT, arenaStage, towerId } from './arenaLayout.js';
 import { cardSlotHTML } from './CardSlot.js';
@@ -25,7 +26,6 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
   const alive = hp > 0;
   const power = cards.length === 2 ? attackInfo(kind === 'atk' ? cards : [], kind === 'def' ? cards : []) : null;
   const element = power ? (kind === 'atk' ? power.at : power.dt) : '';
-  const shield = power?.d ?? 0;
   const elClass = element ? ` element-${ELEMENT_CLASS[element]}` : '';
   const art = ARENA_ASSETS[ART_KEY[`${team}-${stage}`]];
   const hl = towerHighlightClass({ kind, cards, dead: !alive, resolving: false });
@@ -47,11 +47,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
         <span class="tower-meter-label">HP <b class="value">${hp} / ${max}</b></span>
         <div class="tower-meter-track"><i data-vertical="1" style="height:${(hp / max) * 100}%"></i></div>
       </div>
-      <div class="tower-shield tower-meter" ${shield ? '' : 'data-empty'}>
-        <span class="tower-meter-label">Щит <b>${shield}</b></span>
-        <div class="tower-meter-track"><i style="height:${shield ? 100 : 0}%"></i></div>
-      </div>
-      ${kind === 'atk' && power ? `<span class="tower-attack" aria-label="Атака: ${power.a}">⚔ ${power.a}</span>` : ''}
+      ${combatPowerHTML(kind, power)}
     ` : ''}
   </div>`;
 }

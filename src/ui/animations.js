@@ -122,27 +122,19 @@ function combatShieldTarget(lane, side, seat, stage) {
 // Остаток щита показываем в шкале цели.
 function combatShieldMeter(target, entry) {
   if (!target) return null;
-  const meter = target.querySelector('.tower-shield, .nexus-floor-meter');
+  const meter = target.querySelector('.tower-shield');
   if (!meter) return null;
-  const track = meter.querySelector('.tower-meter-track i, .nexus-floor-meter-track i');
-  const cap = meter.querySelector('.nexus-floor-meter-caption');
+  const track = meter.querySelector('.tower-meter-track i');
   const num = meter.querySelector('b');
   if (!track || !num) return null;
-  const axis = cap ? 'width' : 'height';
-  if (cap) {
-    const text = [...cap.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
-    if (text) text.nodeValue = '🛡 ЩИТ ';
-    const element = cap.querySelector('span');
-    if (element) element.textContent = entry.element || '';
-  }
   num.textContent = String(entry.full);
   meter.classList.add('combat-shield-meter');
   meter.setAttribute('aria-label', `Щит: ${entry.full}`);
   track.style.transition = 'none';
-  track.style[axis] = entry.full ? '100%' : '0%';
+  track.style.height = entry.full ? '100%' : '0%';
   void track.offsetWidth;
   track.style.transition = '';
-  return { target, meter, track, num, axis };
+  return { target, meter, track, num };
 }
 
 function combatStage(label) {
@@ -240,41 +232,36 @@ export function combatRevealAttackCards(report, seat) {
   const overlays = [];
   for (const a of revealAssignments(report, seat)) {
     const target = combatShieldTarget(a.lane, a.defenderSide, seat, a.stage);
-    if (!target) continue;
-    const cards = a.cards;
-    const rect = target.getBoundingClientRect();
-    const laneEl = document.querySelectorAll('#lanes .lane')[a.lane];
-    const laneRect = laneEl?.getBoundingClientRect();
+    const slots = target?.querySelectorAll('.card-slot');
+    if (slots?.length !== 2) continue;
     const el = document.createElement('div');
     el.className = 'combat-card-reveal ' + (a.isMine ? 'incoming' : 'defending');
     const label = document.createElement('div');
     label.className = 'combat-reveal-label';
     label.textContent = a.label;
-    const pair = document.createElement('div');
-    pair.className = 'combat-reveal-pair';
-    el.append(label, pair);
-    for (const card of cards) {
+    const left = parseFloat(slots[0].style.left);
+    const right = parseFloat(slots[1].style.left) + parseFloat(slots[1].style.width);
+    label.style.left = (left + right) / 2 + '%';
+    label.style.top = slots[0].style.top;
+    el.append(label);
+    a.cards.forEach((card, index) => {
       const c = document.createElement('span');
       c.className = 'combat-reveal-card' + ('♥♦'.includes(card.s) ? ' red' : '');
+      c.style.cssText = slots[index].style.cssText;
       const rank = document.createElement('b'); rank.textContent = card.r;
       const suit = document.createElement('span'); suit.textContent = card.s;
-      c.append(rank, suit); pair.appendChild(c);
-    }
-    const width = 104;
-    const x = Math.max(width / 2 + 8, Math.min(innerWidth - width / 2 - 8, rect.left + rect.width / 2));
-    const minY = (laneRect?.top ?? 0) + 35;
-    const maxY = (laneRect?.bottom ?? innerHeight) - 100;
-    const y = Math.max(minY, Math.min(Math.max(minY, maxY), rect.top + rect.height * 0.30));
-    el.style.left = x + 'px'; el.style.top = y + 'px';
-    document.body.appendChild(el);
+      c.append(rank, suit);
+      el.appendChild(c);
+    });
+    target.appendChild(el);
     overlays.push(el);
-    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('fall')));
   }
   return overlays;
 }
 
 // Хореография раунда v19. Порядок фаз со стабильным таймлайном:
-// 0.0–1.75с карты падают и раскрываются → 1.9с щит тает в боковой шкале
+// Карты открываются сразу и остаются видны при ударе по щиту и начале урона.
+// 1.9с щит тает в боковой шкале
 // → 3.25с HP падает → 5.25с свежий авторитетный рендер (+ финиш-экран).
 export function playRoundAnimation(view) {
   const rep = view.latestRoundReport;
@@ -298,17 +285,17 @@ export function playRoundAnimation(view) {
   (window.__animLog = window.__animLog || []).push({ fn: 'anim', overlays: revealedCards.length, shields: shields.length, hp: hpItems.length });
   const phase = document.querySelector('#phase');
   if (phase) phase.textContent = '🃏 Раскрытие атак';
-  combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 1300);
-  combatLater(() => revealedCards.forEach((el) => el.remove()), 1750);
+  combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 3900);
+  combatLater(() => revealedCards.forEach((el) => el.remove()), 4250);
   // 1.9с: удар по щитам. Защита тает в боковой шкале цели.
   combatLater(() => {
     if (!valid()) return;
     if (phase) phase.textContent = '⚔️ Атака по щитам';
-    shields.forEach(({ target, meter, track, num, axis, full, attack, element }) => {
+    shields.forEach(({ target, meter, track, num, full, attack, element }) => {
       const absorbed = Math.min(full, attack);
       const remaining = Math.max(0, full - attack);
-      track.style.transition = axis + ' 1000ms cubic-bezier(.22,.65,.3,1)';
-      track.style[axis] = (full ? remaining / full * 100 : 0) + '%';
+      track.style.transition = 'height 1000ms cubic-bezier(.22,.65,.3,1)';
+      track.style.height = (full ? remaining / full * 100 : 0) + '%';
       num.textContent = String(remaining);
       meter.setAttribute('aria-label', `Щит: ${remaining}`);
       if (absorbed) combatShieldPopup(target, absorbed, element);

@@ -1,10 +1,10 @@
 // Нексус арены v20: спрайт с тремя независимыми рядами. В каждом ряду —
 // два интерактивных слота карт и круг стихии. Карты кладутся в ряд только
 // когда линия пробита (nexusFloorOpen), правила доступа — из combat-logic.
-import { type } from '../../../shared/elements.js';
-import { combo } from '../../../shared/combos.js';
+import { attackInfo } from '../../../shared/elements.js';
 import { breaches, shieldPct } from '../../../shared/engine.js';
 import { nexusFloorOpen } from '../combat-logic.js';
+import { combatPowerHTML } from '../meters.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT, nexusId } from './arenaLayout.js';
 import { cardSlotHTML } from './CardSlot.js';
@@ -18,19 +18,14 @@ export function nexusHTML(board, placements, isEnemy) {
     const opened = nexusFloorOpen(board, lane);
     const cards = opened ? (placements[lane][kind] || []) : [];
     const slotsHTML = cardSlotHTML(0, cards) + cardSlotHTML(1, cards);
-    const complete = cards.length === 2;
-    const power = complete ? combo(cards) : 0;
-    const element = complete ? type(cards) : '';
-    const meter = `<div class="nexus-floor-meter ${kind === 'atk' ? 'nexus-attack' : 'nexus-defense'}" aria-label="${kind === 'atk' ? 'Атака' : 'Защита'} Нексуса ${power} ${element}">
-      <div class="nexus-floor-meter-caption">${kind === 'atk' ? '⚔ АТАКА' : '🛡 ЗАЩИТА'} <b>${power}</b> <span>${element}</span></div>
-      <div class="nexus-floor-meter-track"><i style="width:${complete ? 100 : 0}%"></i></div>
-    </div>`;
+    const power = cards.length === 2 ? attackInfo(kind === 'atk' ? cards : [], kind === 'def' ? cards : []) : null;
+    const element = power ? (kind === 'atk' ? power.at : power.dt) : '';
     return `<div class="nexus-floor ${opened ? 'open drop-target' : 'locked'}"
       data-lane="${lane}" data-kind="${kind}" data-row="${lane}"
       title="${['Верх', 'Центр', 'Низ'][lane]} — ${opened ? 'доступно размещение карт' : 'сначала разрушьте обе башни'}">
       <div class="nexus-floor-cards">${slotsHTML}</div>
       <div class="element-circle" data-element="${element}">${elementAnimHTML(element)}</div>
-      ${opened ? meter : ''}
+      ${opened ? combatPowerHTML(kind, power) : ''}
     </div>`;
   }).join('');
   return `<div class="nexus-fortress nexus ${side}" data-arena-id="${nexusId(side)}" role="group" tabindex="0"

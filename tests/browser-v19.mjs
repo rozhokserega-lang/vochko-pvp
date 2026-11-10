@@ -165,33 +165,19 @@ const runBrowser = async () => {
     await pageA.reload();
     await pageA.waitForSelector('#hand .card');
     ok(await pageA.locator('#fightBtn').isDisabled(), 'после перезагрузки подтверждённый ход остаётся заблокирован');
+    const enemyAttack = await pageB.locator('.tower.drop-target[data-lane="0"][data-kind="atk"] .slot-card').allTextContents();
+    const enemyDefense = await pageB.locator('.tower.drop-target[data-lane="0"][data-kind="def"] .slot-card').allTextContents();
+    ok(await pageA.locator('.combat-card-reveal').count() === 0, 'до обоих ходов карты врага скрыты');
     await pageB.locator('#fightBtn').click();
 
-    // Анимация: раскрытие карт → щиты → урон; финиш до взаимодействия.
-    await waitAnimEnd(pageA);
-    await waitAnimEnd(pageB);
-    let revealSeen = 0, shieldSeen = 0, sideShieldSeen = false;
-    for (let i = 0; i < 48; i++) {
-      const snap = await pageA.evaluate(() => ({
-        reveals: document.querySelectorAll('.combat-card-reveal').length,
-        shields: document.querySelectorAll('.combat-shield-meter').length,
-        sideShield: !!document.querySelector('.tower-shield.combat-shield-meter'),
-        anims: (window.__animLog || []).filter((x) => x.fn === 'anim').length,
-      }));
-      // Хореография фиксируется в animLog даже если DOM-фаза уже прошла.
-      revealSeen = Math.max(revealSeen, snap.reveals, snap.anims);
-      shieldSeen = Math.max(shieldSeen, snap.shields, snap.anims);
-      sideShieldSeen ||= snap.sideShield;
-      const round2 = await pageA.evaluate(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'));
-      if (round2 && i * 250 > 6500) break;
-      if (i * 250 > 11500) break;
-      await pageA.waitForTimeout(250);
-    }
+    await pageA.waitForFunction(() => document.querySelector('#phase')?.textContent.includes('Атака по щитам'), null, { timeout: 25000 });
+    const incoming = pageA.locator('.tower.ally[data-lane="0"] .combat-card-reveal.incoming .combat-reveal-card:visible');
+    const defending = pageA.locator('.tower.enemy[data-lane="0"] .combat-card-reveal.defending .combat-reveal-card:visible');
+    ok(JSON.stringify(await incoming.allTextContents()) === JSON.stringify(enemyAttack)
+      && JSON.stringify(await defending.allTextContents()) === JSON.stringify(enemyDefense), 'во время удара видны именно карты атаки и защиты соперника');
+    ok(await pageA.locator('.tower .tower-shield.combat-shield-meter:visible').count() > 0, 'во время боя щит появляется в боковой шкале башни');
     await pageA.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'), null, { timeout: 25000 });
     await pageB.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('Раунд 2'), null, { timeout: 25000 });
-    ok(revealSeen > 0, `раскрытие run-карт видно у A (${revealSeen})`);
-    ok(shieldSeen > 0, `щиты хореографии видны у A (${shieldSeen})`);
-    ok(sideShieldSeen, 'во время боя щит появляется в боковой шкале башни');
     ok(true, 'оба игрока видят раунд 2 после анимации');
     ok(await pageA.locator('#battleReports, .battle-reports').count() === 0, 'после хода статистика под панелью не появляется');
 

@@ -118,6 +118,7 @@ export function applyArenaLayout(root = document) {
       floor.style.height = (y1 - y0) + '%';
       const rel = (v, base) => +(((v - base) / (x1 - x0)) * 100).toFixed(3);
       const relY = (v, base) => +(((v - base) / (y1 - y0)) * 100).toFixed(3);
+      floor.style.setProperty('--nexus-meter-x', rel(side === 'ally' ? 86 : 14, x0) + '%');
       floor.querySelectorAll('.card-slot').forEach((slot, i) => {
         const s = row.slots[i];
         if (!s) { slot.style.display = 'none'; return; }
