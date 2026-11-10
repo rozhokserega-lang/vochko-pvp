@@ -96,13 +96,9 @@ const runBrowser = async () => {
     await attack.nth(1).click();
     ok(await preview.count() === 1 && /^⚔ \d+$/.test(await power.textContent()), 'предпросмотр атакующей пары');
     await hand.screenshot({ path: 'tests/.shots/panel-attack.png' });
-    const attackPower = Number((await power.textContent()).split(' ')[1]);
-    await pageA.locator('#fortifyBtn').click();
-    await pageA.locator('[data-fort="1"]').click();
-    await pageA.locator('.drop-target[data-kind="atk"][data-lane="1"]').hover();
-    ok(await power.textContent() === `⚔ ${Math.round(attackPower * .85)}`, 'предпросмотр учитывает укрепление выбранной линии');
-    await pageA.locator('#fortifyBtn').click();
-    await pageA.locator('[data-fort="cancel"]').click();
+    ok(await pageA.locator('#fortifyBtn').count() === 0, 'кнопки укрепления нет');
+    ok(await pageA.locator('.tower.outer .tower-hp').count() === 6
+      && await pageA.locator('.tower.inner .tower-hp').count() === 0, 'HP только у ближних башен');
     const h3 = await wrapA.evaluate((el) => el.scrollHeight);
     ok(h1 === h2 && h2 === h3, `выбор карт не скачёт по высоте (${h1}/${h2}/${h3})`);
     // снять выделение высотного теста, чтобы не мешать раскладке;
@@ -130,8 +126,6 @@ const runBrowser = async () => {
     });
     ok(sidesOk.own.length === 6 && sidesOk.own.every((t) => '♠♣'.includes(t.slice(-1))), `A: чёрные карты на своих башнях ${JSON.stringify(sidesOk.own)}`);
     
-    await pageA.locator('#fortifyBtn').click();
-    await pageA.locator('[data-fort="1"]').click();
     await pageA.route('**/functions/v1/submit-turn', (route) => route.fulfill({
       status: 503, json: { error: 'test-submit-unavailable' },
     }), { times: 1 });
@@ -151,10 +145,16 @@ const runBrowser = async () => {
     await hand.locator(`.card.red:not(.used):not([data-card="${rejectedCard}"])`).click();
     await firstAttack.click();
     let submitCount = 0;
-    pageA.on('request', (r) => { if (r.method() === 'POST' && r.url().endsWith('/submit-turn')) submitCount++; });
+    let turnPayload;
+    pageA.on('request', (r) => {
+      if (r.method() !== 'POST' || !r.url().endsWith('/submit-turn')) return;
+      submitCount++;
+      turnPayload = r.postDataJSON();
+    });
     await pageA.locator('#fightBtn').dblclick();
     await pageA.waitForFunction(() => document.querySelector('#status')?.textContent.includes('Ждём соперника'));
     ok(submitCount === 1 && await pageA.locator('#fightBtn').isDisabled(), 'двойное нажатие отправляет один ход, ожидание блокирует кнопку');
+    ok(turnPayload && !Object.hasOwn(turnPayload, 'fortifyLane'), 'ход отправляется без укрепления');
     await pageA.reload();
     await pageA.waitForSelector('#hand .card');
     ok(await pageA.locator('#fightBtn').isDisabled(), 'после перезагрузки подтверждённый ход остаётся заблокирован');
@@ -183,7 +183,7 @@ const runBrowser = async () => {
     ok(revealSeen > 0, `раскрытие run-карт видно у A (${revealSeen})`);
     ok(shieldSeen > 0, `щиты хореографии видны у A (${shieldSeen})`);
     ok(true, 'оба игрока видят раунд 2 после анимации');
-    ok(await pageA.locator('#fortifyBtn').getAttribute('aria-disabled') === 'true', 'сервер засчитал укрепление один раз');
+    ok(await pageA.locator('#battleReports, .battle-reports').count() === 0, 'после хода статистика под панелью не появляется');
 
 ok(sidesOk.enemy.length === 6 && sidesOk.enemy.every((t) => '♥♦'.includes(t.slice(-1))), `A: красные карты на башнях врага ${JSON.stringify(sidesOk.enemy)}`);
 

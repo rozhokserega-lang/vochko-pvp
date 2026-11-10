@@ -100,16 +100,14 @@
 .panel-card-ghost .panel-card-corner { font-size: 13px; }
 .panel-card-ghost .panel-card-element { font-size: 22px; }
 
-.panel-reinforce, .panel-ready {
+.panel-ready {
   border: 0;
   background: transparent;
   padding: 0;
   border-radius: 9%;
 }
-.panel-reinforce[aria-disabled="true"], .panel-ready:disabled { cursor: default; filter: brightness(.55) saturate(.65); }
-.panel-reinforce[aria-disabled="true"] { background-color: #0006; }
-.panel-reinforce:is([aria-pressed="true"], [aria-expanded="true"]) { box-shadow: inset 0 0 0 2px #f6cd78, 0 0 8px #f6cd78; }
-.panel-reinforce:focus-visible, .panel-ready:focus-visible, .panel-card:focus-visible {
+.panel-ready:disabled { cursor: default; filter: brightness(.55) saturate(.65); }
+.panel-ready:focus-visible, .panel-card:focus-visible {
   outline: 2px solid #8de4ff;
   outline-offset: 2px;
 }
@@ -122,19 +120,6 @@
 .card-panel-area.hand-area { background: transparent; backdrop-filter: none; box-shadow: none; }
 .panel-tools { position: relative; display: flex; align-items: center; gap: 8px; min-height: 26px; font-size: 11px; }
 .panel-tools .btn { padding: 3px 7px; font-size: 11px; }
-.panel-fortify-options:not([hidden]) {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  position: absolute;
-  z-index: 10;
-  right: 0;
-  bottom: 100%;
-  padding: 6px;
-  border: 1px solid #a28347;
-  border-radius: 7px;
-  background: #161e30;
-}
 .panel-status { color: #f4deae; }
 .panel-editor { top: 72px; right: auto; left: 12px; }
 .panel-debug .panel-zone { outline: 1px dashed #6dedff; outline-offset: -1px; }
@@ -154,7 +139,7 @@
     aspect-ratio: auto;
     display: grid;
     grid-template-columns: 1fr 56px 1fr;
-    grid-template-areas: "round . fortify" "defense defense defense" "attack attack attack" ". power ready" ". sphere ready";
+    grid-template-areas: "round round round" "defense defense defense" "attack attack attack" ". power ready" ". sphere ready";
     gap: 4px;
     padding: 4px;
     background: #171b2a;
@@ -182,14 +167,12 @@
     background: var(--panel-art) 50.1% 69% / 1080% 175% no-repeat;
   }
   .card-panel:not(.panel-debug) #panelEffect { padding: 4px; }
-  .card-panel:not(.panel-debug) .panel-reinforce {
-    grid-area: fortify;
+  .card-panel:not(.panel-debug) .panel-ready {
+    grid-area: ready;
     width: min(100%, 140px);
-    min-height: 36px;
-    justify-self: end;
-    background: var(--panel-art) 97.5% 44.8% / 830% 540% no-repeat;
+    min-height: 44px;
+    justify-self: center;
   }
-  .card-panel:not(.panel-debug) .panel-ready { grid-area: ready; min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) { .panel-card.card { transition: none; } }

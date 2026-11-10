@@ -119,6 +119,22 @@ test('battleHTML: пробитая линия открывает этаж нек
   assert.match(html, /nexus-floor open drop-target"\s+data-lane="0" data-kind="atk"/);
 });
 
+test('в начале HP показывается только у шести ближних башен', () => {
+  const html = battleHTML(view(), emptySlots());
+  assert.equal((html.match(/class="tower-hp"/g) || []).length, 6);
+});
+
+test('при разрушении ближней башни HP появляется у дальней башни той же линии', () => {
+  const v = view();
+  v.board.me.outer = [0, 12, 12];
+  v.board.opponent.outer = [12, 0, 12];
+  v.board.me.inner[0] = 9;
+  v.board.opponent.inner[1] = 9;
+  const html = battleHTML(v, emptySlots());
+  assert.equal((html.match(/class="tower-hp"/g) || []).length, 6);
+  assert.equal((html.match(/width:50%/g) || []).length, 2);
+});
+
 test('карты в слотах: пара кладётся в свои слоты, красные — атака (класс red)', () => {
   const html = cardSlotHTML(0, [{ r: '10', s: '♥', id: 'c1' }]);
   assert.match(html, /slot-card red/);

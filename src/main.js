@@ -10,11 +10,10 @@ import { battleHTML as Board, nexusPhaseBar } from './ui/arena/ArenaScene.js';
 import { applyArenaLayout } from './ui/arena/ArenaScene.js';
 import { initArenaLayoutEditor, isArenaDebugEnabled } from './ui/arena/ArenaLayoutEditor.js';
 import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
-import { roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
 import { cardPanelHTML, cardPanelToolsHTML, initCardPanel, isAttackCard, PANEL_LANES, renderPanelCards, renderPanelPreview } from './ui/card-panel/CardPanel.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { animateMeters, METER_LAST } from './ui/meters.js';
-import { nextReportRound, hasNewBattle as hasNewBattleReport, fortifyLaneForSubmit } from './ui/combat-logic.js';
+import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -24,8 +23,6 @@ let view = null;          // персональный PlayerView с сервер
 let myHand = [];          // объекты карт моей руки
 let slots = [];           // локальная раскладка: [{atk:[card,card], def:[card,card]}×3]
 let selected = [];        // id выбранных карт (0..2)
-let fortifyLane = null;   // выбранная линия укрепления до submit
-let fortifyMode = false;
 let submission = null;
 let unwatch = null;
 let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
@@ -118,7 +115,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   if (unwatch) { unwatch(); unwatch = null; }
   clearFloats();
   lastReportRound = 0;
-  selected = []; fortifyLane = null; fortifyMode = false;
+  selected = [];
   submission = null;
   slots = resetSlots(); slotsState.round = 0;
   myHand = []; view = null;
@@ -145,12 +142,8 @@ async function refresh(matchId) {
     return;
   }
   myHand = view.me.hand;
-  // Укрепление — строго 1 раз ЗА МАТЧ. Если сервер уже засчитал его, локальный
-  // выбор снимаем: иначе он уходил бы в каждый следующий submit, и сервер
-  // отвечал бы 400 fortify-used до конца матча (игрок «застревал»).
-  if (view.me.fortifyUsed && (fortifyLane !== null || fortifyMode)) { fortifyLane = null; fortifyMode = false; }
   if (view.matchId !== slotsState.matchId || view.round !== slotsState.round) {
-    slots = resetSlots(); selected = []; fortifyLane = null; fortifyMode = false;
+    slots = resetSlots(); selected = [];
     METER_LAST.clear(); slotsState.matchId = view.matchId; slotsState.round = view.round;
   } else {
     const handIds = new Set(myHand.map((card) => card.id));
@@ -190,8 +183,8 @@ function doRematch(btn) {
 
 function render(resolving = false) {
   if (isCombatPlaying()) return; // UI заморожен на время боевой хореографии
-  const panelState = { round: view.round, blocked: resolving || turnLocked(), fortifyUsed: view.me.fortifyUsed,
-    ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted), fortifyMode, fortifyLane };
+  const panelState = { round: view.round, blocked: resolving || turnLocked(),
+    ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
@@ -205,7 +198,6 @@ function render(resolving = false) {
       </div>
       <section class="hand-area card-panel-area">
         ${cardPanelToolsHTML(panelState)}
-        <div class="battle-reports" id="battleReports">${roundReportHTML(view, view.seat)}</div>
       </section>
     </div>`;
   app.replaceChildren(root);
@@ -217,7 +209,6 @@ function render(resolving = false) {
   renderPanelCards(hand, myHand, selected, usedIds(), panelState.blocked);
   animateMeters();
   updatePreview();
-  wireReportClicks(byId('battleReports'), view, view.seat);
 
   hand.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-card]');
@@ -243,24 +234,8 @@ function render(resolving = false) {
     target.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); target.click(); }
     };
-    target.onpointerenter = target.onfocus = () => updatePreview(target);
-    target.onpointerleave = target.onblur = () => updatePreview();
   });
 
-  byId('fortifyBtn').onclick = () => {
-    if (turnLocked() || view.me.fortifyUsed) return setStatus(byId('fortifyBtn').title);
-    fortifyMode = !fortifyMode;
-    render();
-    if (fortifyMode) root.querySelector('[data-fort]').focus();
-    else byId('fortifyBtn').focus();
-  };
-  root.querySelectorAll('[data-fort]').forEach((button) => button.onclick = () => {
-    if (turnLocked() || view.me.fortifyUsed) return;
-    fortifyLane = button.dataset.fort === 'cancel' ? null : +button.dataset.fort;
-    fortifyMode = false;
-    render();
-    byId('fortifyBtn').focus();
-  });
   byId('clearBtn').onclick = () => { if (turnLocked()) return; selected = []; slots = resetSlots(); render(); };
   byId('fightBtn').onclick = submit;
   byId('exitBtn').onclick = () => exitMatch();
@@ -289,11 +264,8 @@ function showEndScreen(v) {
 // Хореография боя рендерит финальное состояние и финальный экран сама.
 bindCombatUI({ render, showEndScreen });
 
-function updatePreview(target) {
-  const cards = selected.map(cardById);
-  const fortified = target && +target.dataset.lane === fortifyLane && cards.length === 2
-    && isAttackCard(cards[0]) === (target.dataset.kind === 'atk');
-  renderPanelPreview(byId('hand'), cards, fortified);
+function updatePreview() {
+  renderPanelPreview(byId('hand'), selected.map(cardById));
 }
 
 function placeCards(target, ids) {
@@ -320,8 +292,7 @@ async function submit() {
   if (placements.some((p) => p.attack.length !== 2 || p.defense.length !== 2))
     return setStatus('Собери 3 атакующие и 3 защитные пары.');
   const { matchId, round, version: expectedVersion } = view;
-  const turn = { matchId, round, expectedVersion, placements,
-    fortifyLane: fortifyLaneForSubmit({ fortifyUsed: view.me.fortifyUsed, lane: fortifyLane }) };
+  const turn = { matchId, round, expectedVersion, placements };
   const pending = submission = { matchId, round, accepted: false };
   render();
   setStatus('Отправляем ход…');
@@ -346,19 +317,16 @@ async function submit() {
     if (pending.accepted) {
       setStatus('Ход принят. Обнови страницу, чтобы получить состояние матча.');
     } else {
-      const alreadyUsed = e.message === 'fortify-used';
       const missingCard = e.message?.startsWith(missingCardPrefix) ? e.message.slice(missingCardPrefix.length) : null;
-      if (alreadyUsed || missingCard) {
-        if (alreadyUsed) { fortifyLane = null; fortifyMode = false; }
+      if (missingCard) {
         await refresh(matchId).catch(() => {});
         if (currentSubmission() !== pending) return;
-        if (missingCard && !view.me.ready) keepDraftCards((id) => id !== missingCard);
+        if (!view.me.ready) keepDraftCards((id) => id !== missingCard);
       }
       submission = null;
       render();
       if (view.me.ready) return;
       if (missingCard) setStatus(`Сервер отклонил карту ${missingCard}. Выбери другую карту для освободившегося места.`);
-      else if (alreadyUsed) setStatus('Укрепление уже использовано. Отправь ход ещё раз.');
       else setStatus('Ошибка отправки: ' + (e.message || 'повтори попытку'));
     }
   }
@@ -391,7 +359,6 @@ window.addEventListener('pointermove', (e) => {
     document.querySelectorAll('.drag-over').forEach((x) => x.classList.remove('drag-over'));
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.drop-target');
     target?.classList.add('drag-over');
-    if (byId('hand')) updatePreview(target);
   }
 }, { passive: false });
 window.addEventListener('pointerup', (e) => {

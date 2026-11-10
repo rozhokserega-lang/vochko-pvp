@@ -41,9 +41,9 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
       </div>
       <div class="element-circle" data-element="${element}">${elementAnimHTML(element)}</div>` : ''}
     </div>
-    <div class="tower-hp">
+    ${active && alive ? `<div class="tower-hp">
       <div class="tinybar"><i style="width:${Math.max(0, (hp / max) * 100)}%"></i></div>
-    </div>
+    </div>` : ''}
   </div>`;
 }
 

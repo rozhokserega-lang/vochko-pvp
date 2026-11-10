@@ -2,7 +2,6 @@ import panel from './assets/panel.png';
 import readyNormal from './assets/ready_normal.png';
 import readyPressed from './assets/ready_pressed.png';
 import { attackInfo, elementName, SUIT_ELEMENT } from '../../../shared/elements.js';
-import { fortifiedAttack, fortifiedDefense } from '../../../shared/engine.js';
 import { elementAnimHTML } from '../arena/ElementEffect.js';
 
 // Percentages of panel.png, measured after trimming its transparent padding.
@@ -12,8 +11,7 @@ export const cardPanelLayout = {
   elementCircle: { x: 46.18, y: 34.6, w: 7.8, h: 47.06 },
   powerLabel: { x: 46.4, y: 8.8, w: 7.2, h: 15 },
   attackCards: { x: 56.95, y: 43, w: 26.9, h: 37 },
-  reinforceButton: { x: 85.75, y: 36.5, w: 12.05, h: 18.5 },
-  readyButton: { x: 86, y: 60, w: 11.55, h: 23.2 },
+  readyButton: { x: 85.55, y: 42.5, w: 12.45, h: 26 },
 };
 
 export const PANEL_LANES = ['Верх', 'Центр', 'Низ'];
@@ -25,11 +23,7 @@ function applyZone(element, box) {
   for (const key of ['x', 'y', 'w', 'h']) element.style.setProperty('--zone-' + key, box[key] + '%');
 }
 
-export function cardPanelHTML({ round, blocked, ready, fortifyUsed, fortifyMode, fortifyLane }) {
-  const fortifyHint = fortifyUsed ? 'Укрепление уже использовано в этом матче'
-    : blocked ? 'Укрепление доступно во время раскладки'
-    : fortifyLane === null ? 'Укрепить линию (1 из 1)'
-    : 'Укрепление: ' + PANEL_LANES[fortifyLane];
+export function cardPanelHTML({ round, blocked, ready }) {
   return `
     <div id="hand" class="card-panel${debug ? ' panel-debug' : ''}"
       style="--panel-art:url('${panel}')" aria-label="Управление картами">
@@ -38,9 +32,6 @@ export function cardPanelHTML({ round, blocked, ready, fortifyUsed, fortifyMode,
       <div class="panel-zone panel-sphere" data-zone="elementCircle"><div id="panelEffect"></div></div>
       <div class="panel-zone panel-power" data-zone="powerLabel" id="panelPower" role="status"></div>
       <div class="panel-zone panel-cards" data-zone="attackCards" role="group" aria-label="Атака"></div>
-      <button type="button" class="panel-zone panel-reinforce" data-zone="reinforceButton" id="fortifyBtn"
-        title="${fortifyHint}" aria-label="${fortifyHint}" aria-expanded="${fortifyMode}"
-        aria-pressed="${fortifyLane !== null}" aria-disabled="${blocked || fortifyUsed}"></button>
       <button type="button" class="panel-zone panel-ready" data-zone="readyButton" id="fightBtn"
         aria-label="${ready ? 'Ход отправлен' : 'Готово'}" ${blocked ? 'disabled' : ''}>
         <img src="${readyNormal}" alt="" draggable="false">
@@ -49,15 +40,10 @@ export function cardPanelHTML({ round, blocked, ready, fortifyUsed, fortifyMode,
     </div>`;
 }
 
-export function cardPanelToolsHTML({ blocked, ready, fortifyMode, fortifyLane }) {
+export function cardPanelToolsHTML({ blocked, ready }) {
   return `
     <div class="panel-tools">
       <button type="button" class="btn" id="clearBtn" ${blocked ? 'disabled' : ''}>↩ Очистить</button>
-      <div class="panel-fortify-options" ${fortifyMode && !blocked ? '' : 'hidden'} aria-label="Линия укрепления">
-        ${PANEL_LANES.map((label, lane) => `<button type="button" class="btn" data-fort="${lane}">${label}</button>`).join('')}
-        <button type="button" class="btn" data-fort="cancel">Снять</button>
-      </div>
-      ${fortifyLane === null ? '' : `<span>🛡 ${PANEL_LANES[fortifyLane]}</span>`}
       <div class="panel-status" id="status" role="status">${ready ? 'Ход отправлен. Ждём соперника.' : ''}</div>
     </div>`;
 }
@@ -81,7 +67,7 @@ export function renderPanelCards(hand, cards, selected, used, blocked) {
   }
 }
 
-export function renderPanelPreview(hand, cards, fortified = false) {
+export function renderPanelPreview(hand, cards) {
   const effect = hand.querySelector('#panelEffect');
   const power = hand.querySelector('#panelPower');
   const pair = cards.length === 2 && isAttackCard(cards[0]) === isAttackCard(cards[1]);
@@ -92,9 +78,7 @@ export function renderPanelPreview(hand, cards, fortified = false) {
     effect.dataset.element = element;
     effect.innerHTML = elementAnimHTML(element);
   }
-  const value = !info ? '' : attack ? (fortified ? fortifiedAttack(info.a) : info.a)
-    : (fortified ? fortifiedDefense(info.d) : info.d);
-  power.textContent = info ? `${attack ? '⚔' : '🛡'} ${value}` : '';
+  power.textContent = info ? (attack ? `⚔ ${info.a}` : `🛡 ${info.d}`) : '';
   power.dataset.kind = info ? (attack ? 'attack' : 'defense') : '';
   power.title = info ? `${elementName(cards)} · Сила до учёта скрытых карт соперника` : '';
 }
