@@ -92,11 +92,15 @@ export function applyArenaLayout(root = document) {
       glow.style.width = art.glow.w + '%';
       glow.style.height = art.glow.h + '%';
     }
-    // HP-индикатор.
+    // HP-полоска: сбоку от башни (внешние — к краям сцены, ближние — к центру).
     const hp = t.querySelector('.tower-hp');
-    if (hp && art.hp) {
-      hp.style.left = art.hp.cx + '%';
-      hp.style.bottom = (100 - art.hp.cy) + '%';
+    if (hp) {
+      hp.style.left = '';
+      hp.style.right = '';
+      hp.style.bottom = '';
+      const toLeft = (team === 'ally') === (size === 'outer');
+      hp.classList.toggle('hp-left', toLeft);
+      hp.classList.toggle('hp-right', !toLeft);
     }
   });
   // ── Нексусы ──

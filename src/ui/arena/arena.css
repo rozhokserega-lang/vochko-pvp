@@ -101,12 +101,26 @@
 /* Drag-over — усиленное контурное свечение цели. */
 .arena-scene .tower.drag-over .tower-sprite{filter:drop-shadow(0 0 1.6cqw #ffe3a2ee) drop-shadow(0 0 .7cqw #ffd98acc)}
 
-/* HP-блок над башней: только тонкая полоска (позиция — из конфига). */
-.arena-scene .tower-hp{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.15cqw;
+/* HP-полоска и шкала силы — СБОКУ от башни, чтобы не слипались:
+   внешние башни — к краям сцены, ближние к центру — к центру. */
+.arena-scene .tower-hp{display:flex;flex-direction:column;align-items:center;gap:.15cqw;
   pointer-events:none;z-index:7;white-space:nowrap}
+.arena-scene .tower-hp.hp-left{right:100%;margin-right:.7cqw;top:50%;transform:translateY(-50%)}
+.arena-scene .tower-hp.hp-right{left:100%;margin-left:.7cqw;top:50%;transform:translateY(-50%)}
 .arena-scene .tower-hp .tinybar{width:5.6cqw;height:.7cqw;background:#0b1524d9;border:1px solid #4a5f7d;border-radius:99px;overflow:hidden}
 .arena-scene .tower-hp .tinybar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3f9dd6,#8ce0ff);transition:width .8s ease-out!important}
 .arena-scene .tower.enemy .tower-hp .tinybar i{background:linear-gradient(90deg,#d64b4b,#ffb08c)}
+
+/* Шкалы силы пар — сбоку от башни, с той же стороны, что и HP. */
+.arena-scene .tower .power-meter{position:absolute;top:50%;bottom:auto;left:auto;right:auto;
+  transform:translateY(-50%);width:7.5cqw;z-index:6}
+.arena-scene .tower.ally.outer .power-meter{right:100%;margin-right:.7cqw}
+.arena-scene .tower.ally.inner .power-meter{left:100%;margin-left:.7cqw}
+.arena-scene .tower.enemy.inner .power-meter{right:100%;margin-right:.7cqw}
+.arena-scene .tower.enemy.outer .power-meter{left:100%;margin-left:.7cqw}
+.arena-scene .tower .power-meter-track{height:.7cqw}
+.arena-scene .tower .power-meter-head{font-size:.85cqw}
+.arena-scene .tower .power-meter-head strong{font-size:1.15cqw}
 
 /* ── Нексус ── */
 .arena-scene .nexus-fortress{position:absolute;z-index:6;display:block;background:none;border:none}
@@ -156,12 +170,8 @@
   background:#0b1524a8;border:1px solid #a78c5340;color:#cfe0f6;font-size:1.05cqw;letter-spacing:.8px;
   pointer-events:none;white-space:nowrap}
 
-/* Шкалы силы пар над башнями (стили в combat-v5.css) — позиция над HP. */
-.arena-scene .tower .power-meter{position:absolute;bottom:calc(100% + 2.6cqw);left:50%;transform:translateX(-50%);
-  width:8cqw;z-index:6}
+/* Шкалы силы пар над башнями (стили в combat-v5.css) — позиция задаётся выше, сбоку. */
 .arena-scene .tower .power-meter-track{height:.7cqw}
-.arena-scene .tower .power-meter-head{font-size:.85cqw}
-.arena-scene .tower .power-meter-head strong{font-size:1.15cqw}
 
 /* VFX удара по башням — из combat-v5.css (класс .vfx-impact вешается на цель). */
 .arena-scene .tower.vfx-impact{animation:vfxClassicImpact .42s ease-out!important}
