@@ -508,3 +508,36 @@ html,body{height:100%;overflow:hidden!important}
 
 /* ── Интеграция v19-online-ui: подсветка этажа Нексуса при перетаскивании карты ── */
 #lanes .nexus-floor.open.drag-over{background:#6fc7ff33!important;outline:2px solid #ffe3a2!important}
+
+/* ── Нексус: текстура в натуральных пропорциях (без вертикального растяжения) ──
+   Арт 470x695 (мой) / 470x714 (врага). Раньше колонна тянулась на всю высоту
+   трёх линий и object-fit:fill вытягивал башню по вертикали. Теперь картинка
+   задаёт высоту через aspect-ratio и центрируется по вертикали; проценты
+   этажей считаются от самой картинки — окна-слоты совпадают с артом. */
+#lanes .nexus-fortress{
+  top:6px!important;bottom:6px!important;height:fit-content!important;margin:auto 0!important;
+  width:clamp(150px,17vw,215px)!important;
+  display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;
+}
+#lanes .nexus-fortress-image{
+  flex:0 0 auto!important;width:100%!important;height:auto!important;max-height:none!important;
+  position:relative!important;display:block!important;
+}
+#lanes .nexus-fortress.ally .nexus-fortress-image{aspect-ratio:470/695!important}
+#lanes .nexus-fortress.enemy .nexus-fortress-image{aspect-ratio:470/714!important}
+#lanes .nexus-fortress-image>img{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center!important;
+}
+@media(max-width:1100px){#lanes .nexus-fortress{width:clamp(128px,15.5vw,180px)!important}}
+@media(max-width:820px){#lanes .nexus-fortress{width:clamp(108px,14vw,148px)!important}}
+@media(max-width:600px){#lanes .nexus-fortress{width:clamp(86px,21vw,118px)!important}}
+@media(max-height:700px){#lanes .nexus-fortress{width:clamp(86px,min(17vw,24vh),215px)!important}}
+
+/* карты в окнах этажей: область под карты выше, шрифт вписан в слот */
+#lanes .nexus-floor-cards{height:85%!important}
+#lanes .nexus-inserted-card{font-size:clamp(7px,1vw,12px)!important}
+@media(max-width:900px){#lanes .nexus-inserted-card{font-size:clamp(6px,1.6vw,9px)!important}}
+@media(max-width:600px){
+  #lanes .nexus-fortress .nexus-floor-stack{width:46%!important;left:27%!important}
+}
