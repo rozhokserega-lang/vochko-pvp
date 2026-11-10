@@ -14,6 +14,7 @@ export function clearFloats() {
   // Переход на другой экран/матч обязан отменять и боевую хореографию:
   // все таймеры сбрасываются, вставные узлы и маркеры HP убираются.
   cancelCombat();
+  document.querySelector('#lanes')?.classList.remove('is-resolving');
 }
 
 const VFX_ICONS = { '🔥': '🔥', '💧': '💧', '🪨': '🪨', '🌪️': '🌪️', '♨️': '♨️', '🌫️': '🌫️' };
@@ -284,6 +285,8 @@ export function playRoundAnimation(view) {
   const run = combatRun;
   const seat = view.seat;
   const valid = () => run === combatRun;
+  // Подсветка выбора гаснет на время разрешения раунда (состояние resolving).
+  document.querySelector('#lanes')?.classList.add('is-resolving');
   const hpItems = combatHpSnapshot(rep.events, seat);
   const shields = [];
   for (const e of shieldEntries(rep.report)) {
@@ -353,6 +356,7 @@ export function playRoundAnimation(view) {
     combatPlaying = false;
     shields.forEach(({ bubble }) => bubble.remove());
     document.querySelectorAll('.combat-damage-number').forEach((el) => el.remove());
+    document.querySelector('#lanes')?.classList.remove('is-resolving');
     if (combatUI.render) combatUI.render();
     if (view.status === 'finished' || view.winner) {
       if (combatUI.showEndScreen) combatUI.showEndScreen(view);

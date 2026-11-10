@@ -1,14 +1,17 @@
 import './styles.css';
 import './combat-v5.css';
-import './arena-v19.css';
+import './ui/arena/arena.css';
 import { ensureSession, supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';
 import { watchMatch } from './lib/realtime.js';
 import { Lobby, waitingRoom } from './ui/Lobby.js';
-import { Board, nexusPhaseBar } from './ui/Board.js';
+import { battleHTML as Board, nexusPhaseBar } from './ui/arena/ArenaScene.js';
+import { applyArenaLayout } from './ui/arena/ArenaScene.js';
+import { initArenaLayoutEditor, isArenaDebugEnabled } from './ui/arena/ArenaLayoutEditor.js';
+import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
 import { renderPreview, roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
-import { animateMeters, METER_LAST } from './ui/Board.js';
+import { animateMeters, METER_LAST } from './ui/meters.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport, fortifyLaneForSubmit } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
 
@@ -31,6 +34,7 @@ const usedIds = () => new Set(slots.flatMap((s) => [...s.atk, ...s.def].map((c) 
 
 // ── Лобби ──────────────────────────────────────────────────────────────────
 async function boot() {
+  loadLayoutOverrides(); // локальные правки геометрии арены (режим редактора)
   try { await ensureSession(); } catch (e) { return renderError('Не удалось войти: ' + e.message); }
   const roomParam = new URLSearchParams(location.search).get('room');
   // Аудит п.4: восстановление матча после F5 — и для создателя комнаты тоже.
@@ -191,6 +195,8 @@ function render() {
       </section>
     </div>`;
   app.replaceChildren(root);
+  applyArenaLayout();
+  initArenaLayoutEditor();
 
   renderHand();
   animateMeters();
