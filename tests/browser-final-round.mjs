@@ -2,15 +2,17 @@ import { chromium } from 'playwright';
 let passed = 0, failed = 0;
 const ok = (cond, name) => { if (cond) { passed++; console.log('  ✓', name); } else { failed++; console.log('  ✗', name); } };
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL });
 const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+page.on('console', (m) => {
+  if (m.type() === 'error' && !m.location().url.endsWith('/favicon.ico')) errors.push(m.text());
+});
 
 let retries = 0;
 for (; retries < 6;) {
-  await page.goto('http://localhost:5173/vochko-pvp/');
+  await page.goto(process.env.BASE_URL || 'http://127.0.0.1:5173/vochko-pvp/');
   if (await page.getByRole('button', { name: 'Играть с ботом' }).waitFor({ timeout: 6000 }).then(() => true).catch(() => false)) break;
   await page.waitForTimeout(45000);
   retries++;
@@ -39,7 +41,7 @@ while (guard++ < 600) {
   timeline.push(s);
   if (s.overlay) break;
   // во время анимации не трогаем руки — ждём завершения хореографии
-  if (s.reveals || s.shields || s.floats) { await page.waitForTimeout(300); continue; }
+  if (s.reveals || s.shields || s.floats || await page.locator('#fightBtn').isDisabled()) { await page.waitForTimeout(300); continue; }
   // planning: раскладка если рука не пустая, иначе ждём новые карты
   const ready = await page.evaluate(() => ({
     reds: document.querySelectorAll('#hand .card.red:not(.used)').length,
@@ -57,7 +59,7 @@ while (guard++ < 600) {
     await page.locator(def).first().click();
   }
   rounds++;
-  await page.getByRole('button', { name: '⚔ Готов' }).click();
+  await page.locator('#fightBtn').click();
   await page.waitForTimeout(400);
 }
 await waitAnimGone();

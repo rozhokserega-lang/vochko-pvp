@@ -2,7 +2,7 @@
 // Каждое промежуточное округление (Math.round) сохранено в точности как в исходнике.
 import { combo } from '../shared/combos.js';
 
-const SUIT_ELEMENT = { '♥': '🔥', '♦': '💧', '♠': '🪨', '♣': '🌪️' };
+export const SUIT_ELEMENT = { '♥': '🔥', '♦': '💧', '♠': '🪨', '♣': '🌪️' };
 const ELEMENT_NAME = { '🔥': 'ОГОНЬ', '💧': 'ВОДА', '🪨': 'ЗЕМЛЯ', '🌪️': 'ВОЗДУХ', '♨️': 'ПАР', '🌫️': 'БУРЯ' };
 
 export function type(cards) {

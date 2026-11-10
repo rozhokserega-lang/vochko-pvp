@@ -27,7 +27,10 @@
   padding:1px 8px;border-radius:99px;background:#0b1524b8;border:1px solid #a78c5366;color:#e8dfc6;
   font-size:1cqw;pointer-events:none!important;z-index:3}
 .arena-scene .centerlane b{font-size:1cqw;letter-spacing:.6px}
-.arena-scene .centerlane small{font-size:.9cqw;color:#9fb2cc}
+.arena-scene .lane-pair-marks{display:flex;gap:.4em;font-size:clamp(7px,1.05cqw,13px);line-height:1}
+.arena-scene .lane-pair-mark{opacity:.55;filter:grayscale(1)}
+.arena-scene .lane-pair-mark.placed{opacity:1;filter:drop-shadow(0 0 4px #f6ca66);color:#ffe094}
+#lanes.is-resolving .lane-pair-marks{visibility:hidden}
 
 /* ── Башня ── */
 .arena-scene .tower{
@@ -81,6 +84,10 @@
 .arena-scene .tower.drop-target:hover .tower-sprite{filter:drop-shadow(0 0 1.2cqw #f7dc9acc) drop-shadow(0 0 .5cqw #f7dc9a9c);
   transition:filter .2s ease}
 .arena-scene .tower.drop-target .tower-sprite{transition:filter .2s ease}
+#lanes:not(.is-resolving) .tower.drop-target.pair-target .tower-sprite{
+  filter:drop-shadow(0 0 .45cqw #fff3ad) drop-shadow(0 0 1.1cqw #ffbd3d)
+}
+#lanes:not(.is-resolving) .tower.drop-target.pair-target .platform-glow{opacity:1}
 
 /* Выбор атаки (красная) / защиты (голубая) — свечение по контуру спрайта. */
 .arena-scene .tower.is-sel-atk .platform-glow{opacity:.85;
@@ -101,26 +108,34 @@
 /* Drag-over — усиленное контурное свечение цели. */
 .arena-scene .tower.drag-over .tower-sprite{filter:drop-shadow(0 0 1.6cqw #ffe3a2ee) drop-shadow(0 0 .7cqw #ffd98acc)}
 
-/* HP-полоска и шкала силы — СБОКУ от башни, чтобы не слипались:
-   внешние башни — к краям сцены, ближние к центру — к центру. */
-.arena-scene .tower-hp{display:flex;flex-direction:column;align-items:center;gap:.15cqw;
-  pointer-events:none;z-index:7;white-space:nowrap}
-.arena-scene .tower-hp.hp-left{right:100%;margin-right:.7cqw;top:50%;transform:translateY(-50%)}
-.arena-scene .tower-hp.hp-right{left:100%;margin-left:.7cqw;top:50%;transform:translateY(-50%)}
-.arena-scene .tower-hp .tinybar{width:5.6cqw;height:.7cqw;background:#0b1524d9;border:1px solid #4a5f7d;border-radius:99px;overflow:hidden}
-.arena-scene .tower-hp .tinybar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3f9dd6,#8ce0ff);transition:width .8s ease-out!important}
-.arena-scene .tower.enemy .tower-hp .tinybar i{background:linear-gradient(90deg,#d64b4b,#ffb08c)}
-
-/* Шкалы силы пар — сбоку от башни, с той же стороны, что и HP. */
-.arena-scene .tower .power-meter{position:absolute;top:50%;bottom:auto;left:auto;right:auto;
-  transform:translateY(-50%);width:7.5cqw;z-index:6}
-.arena-scene .tower.ally.outer .power-meter{right:100%;margin-right:.7cqw}
-.arena-scene .tower.ally.inner .power-meter{left:100%;margin-left:.7cqw}
-.arena-scene .tower.enemy.inner .power-meter{right:100%;margin-right:.7cqw}
-.arena-scene .tower.enemy.outer .power-meter{left:100%;margin-left:.7cqw}
-.arena-scene .tower .power-meter-track{height:.7cqw}
-.arena-scene .tower .power-meter-head{font-size:.85cqw}
-.arena-scene .tower .power-meter-head strong{font-size:1.15cqw}
+/* HP и щит используют одинаковую геометрию, по разные стороны башни. */
+.arena-scene .tower-meter,
+.arena-scene .tower-attack{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:7;pointer-events:none;
+  white-space:nowrap;font-variant-numeric:tabular-nums;
+  font-size:clamp(7px,.85cqw,13px);font-weight:800;line-height:1.1;
+  text-shadow:0 1px 3px #000,0 0 6px #000
+}
+.arena-scene .meter-left{right:100%;margin-right:1.15cqw}
+.arena-scene .meter-right{left:100%;margin-left:1.15cqw}
+.arena-scene .tower-meter-label{
+  position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:.35cqw
+}
+.arena-scene .tower-meter-track{
+  width:max(4px,.8cqw);height:5.6cqw;background:#0b1524eb;border-radius:99px;
+  overflow:hidden;display:flex;align-items:flex-end
+}
+.arena-scene .tower-meter-track i{
+  display:block;width:100%;border-radius:99px;transition:height .8s ease-out
+}
+.arena-scene .tower-hp{color:#d8f3ff}
+.arena-scene .tower-hp .tower-meter-track i{background:linear-gradient(0deg,#388fbc,#88e1ff)}
+.arena-scene .tower-shield{color:#ffe0a0}
+.arena-scene .tower-shield .tower-meter-track i{background:linear-gradient(0deg,#b77529,#ffda82)}
+.arena-scene .tower-shield[data-empty]:not(.combat-shield-meter){visibility:hidden}
+.arena-scene .tower-attack{color:#ffc2a3}
+.arena-scene.is-resolving .tower-attack,#lanes.is-resolving .tower-attack{visibility:hidden}
+.arena-scene .tower-shield.combat-shield-meter{filter:drop-shadow(0 0 6px #edb75a88)}
 
 /* ── Нексус ── */
 .arena-scene .nexus-fortress{position:absolute;z-index:6;display:block;background:none;border:none}
@@ -131,6 +146,21 @@
   background:radial-gradient(ellipse at center,#4db8ff30 0%,transparent 72%);box-shadow:0 0 4cqw #4db8ff3d}
 .arena-scene .nexus-fortress.enemy .platform-glow{opacity:.6;
   background:radial-gradient(ellipse at center,#ff4d4d30 0%,transparent 72%);box-shadow:0 0 4cqw #ff4d4d3d}
+.arena-scene .nexus-fortress:is(:hover,:focus-visible){z-index:10}
+.arena-scene .nexus-fortress:is(:hover,:focus-visible) .nexus-sprite{
+  filter:drop-shadow(0 0 .7cqw #ffce70dd) drop-shadow(0 0 .2cqw #fff0be)
+}
+.arena-scene .nexus-damage-hint{
+  position:absolute;top:13%;z-index:12;visibility:hidden;pointer-events:none;
+  display:grid;gap:3px;width:max-content;max-width:min(42cqw,190px);
+  padding:6px 8px;border:1px solid #bb9255;border-radius:7px;
+  background:#0b1423f5;color:#e5edf7;box-shadow:0 3px 12px #0009;
+  font-size:clamp(10px,1cqw,13px);line-height:1.25
+}
+.arena-scene .nexus-damage-hint strong{color:#ffdb91}
+.arena-scene .nexus-fortress.ally .nexus-damage-hint{left:96%}
+.arena-scene .nexus-fortress.enemy .nexus-damage-hint{right:96%}
+.arena-scene .nexus-fortress:is(:hover,:focus-visible) .nexus-damage-hint{visibility:visible}
 
 /* Ряд нексуса: зона дропа = bbox слотов и круга (позиции из applyArenaLayout). */
 .arena-scene .nexus-floor{position:absolute;z-index:7}
@@ -140,19 +170,39 @@
 .arena-scene .nexus-floor .card-slot .slot-card{font-size:1.2cqw}
 .arena-scene .nexus-floor .card-slot .slot-card .rank{font-size:1.6cqw}
 .arena-scene .nexus-floor .card-slot .slot-card .suit{font-size:1.25cqw}
+#lanes:not(.is-resolving) .nexus-floor.open.pair-target{
+  outline:2px solid #ffda78;animation:none;background:#ffdc582b;box-shadow:0 0 9px #ffbf56bb
+}
 
-/* Шкалы атак/защиты Нексуса — сбоку от ряда (как в v19, поверх арта). */
-.arena-scene .nexus-floor-meter{position:absolute;z-index:8;top:50%;transform:translateY(-50%);
-  width:clamp(88px,8vw,126px);display:flex;flex-direction:column;gap:4px;
-  pointer-events:none!important;filter:drop-shadow(0 2px 3px #000c)}
-.arena-scene .nexus-fortress.ally .nexus-floor-meter{left:calc(100% + 10px)}
-.arena-scene .nexus-fortress.enemy .nexus-floor-meter{right:calc(100% + 10px)}
-.arena-scene .nexus-floor-meter-caption{white-space:nowrap;text-align:center;font-size:clamp(9px,.78vw,12px);
-  font-weight:800;color:#7de5d2;text-shadow:0 1px 4px #000}
-.arena-scene .nexus-attack .nexus-floor-meter-caption{color:#ff958b}
-.arena-scene .nexus-floor-meter-track{height:8px;width:100%;background:#091526;border:1px solid #4a6981;border-radius:12px;overflow:hidden}
-.arena-scene .nexus-floor-meter-track i{display:block;height:100%;background:linear-gradient(90deg,#2b9d9d,#69e4c9);border-radius:12px;transition:width .5s ease}
-.arena-scene .nexus-attack .nexus-floor-meter-track i{background:linear-gradient(90deg,#bf3b53,#ff8065)}
+/* Показатели помещаются на боковых опорах спрайта Нексуса. */
+.arena-scene .nexus-floor :is(.tower-meter,.tower-attack){
+  left:var(--nexus-meter-x);top:57%;transform:translate(-50%,-50%)
+}
+.arena-scene .nexus-floor .tower-shield{height:64%}
+.arena-scene .nexus-floor .tower-meter-track{height:100%}
+.arena-scene .nexus-floor .shield-caption{display:none}
+
+/* Раскрытые карты совпадают со слотами цели и остаются видны во время удара. */
+.arena-scene .combat-card-reveal{position:absolute;inset:0;z-index:9;pointer-events:none;transition:opacity .3s ease}
+.arena-scene .combat-card-reveal.fade{opacity:0}
+.arena-scene .combat-reveal-card{
+  position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.05em;line-height:1;font-size:clamp(6px,1.1cqw,15px);font-weight:900;
+  color:#1c2840;background:#fff3d6;box-shadow:0 0 0 1px #f7c16c,0 2px 6px #000a;
+  border-radius:8%;animation:revealSlotCard .24s ease-out both
+}
+.arena-scene .combat-reveal-card.red{color:#bd283c}
+.arena-scene .combat-reveal-label{
+  position:absolute;transform:translate(-50%,-100%);margin-top:-2px;
+  white-space:nowrap;line-height:1.1;font-size:clamp(6px,.74cqw,10px);font-weight:800;
+  color:#ffd9a0;text-shadow:0 1px 3px #000,0 0 5px #000
+}
+.arena-scene .defending .combat-reveal-label{color:#a9f1dd}
+@keyframes revealSlotCard{from{opacity:0;transform:translateY(-20%)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .arena-scene .combat-card-reveal{transition:none}
+  .arena-scene .combat-reveal-card{animation:none}
+}
 
 /* Панель HP Нексуса — под спрайтом. */
 .arena-scene .nexus-fortress-stats{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:1cqw;
@@ -162,7 +212,6 @@
 .arena-scene .nexus-fortress-stats .bar{width:88%;height:.8cqw;background:#0b1524;border:1px solid #4a5f7d;border-radius:99px;overflow:hidden}
 .arena-scene .nexus-fortress-stats .bar .fill{display:block;height:100%;background:linear-gradient(90deg,#3f9dd6,#8ce0ff);border-radius:99px}
 .arena-scene .nexus-fortress.enemy .nexus-fortress-stats .bar .fill{background:linear-gradient(90deg,#d64b4b,#ffb08c)}
-.arena-scene .nexus-fortress-stats small{font-size:.9cqw;color:#a8b9d4}
 
 /* Шапка линий — ненавязчивый оверлей сверху сцены. */
 .arena-scene .battle-head{position:absolute;top:1.2%;left:50%;transform:translateX(-50%);z-index:4;
@@ -181,16 +230,11 @@
 @media(max-width:740px){
   .arena-scene{border-radius:10px;box-shadow:0 6px 20px #000a,0 0 0 1px #a78c5333,0 0 0 3px #0b1524}
   .arena-scene .tower-hp .tag{display:none}
-  .arena-scene .centerlane{display:none}
+  .arena-scene .centerlane{padding:1px 2px;gap:2px}
+  .arena-scene .centerlane b{font-size:clamp(6px,1.45cqw,10px);letter-spacing:0}
   .arena-scene .battle-head{font-size:1.6cqw;gap:3cqw}
-  .arena-scene .nexus-floor-meter{width:64px}
-  .arena-scene .nexus-fortress.ally .nexus-floor-meter{left:calc(100% + 4px)}
-  .arena-scene .nexus-fortress.enemy .nexus-floor-meter{right:calc(100% + 4px)}
-  .arena-scene .nexus-floor-meter-caption{font-size:8px}
-  .arena-scene .nexus-floor-meter-track{height:6px}
   .arena-scene .nexus-fortress-stats b{font-size:1.6cqw}
   .arena-scene .nexus-fortress-stats .hp{font-size:2.2cqw}
-  .arena-scene .nexus-fortress-stats small{font-size:1.4cqw}
 }
 
 @media(prefers-reduced-motion:reduce){

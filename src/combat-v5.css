@@ -69,6 +69,14 @@
 .combat-damage-number span{font-size:1.1em}
 .shield-damage-number{color:#82e7f6}
 .hp-damage-number{color:#ffca75;font-size:clamp(19px,2.7vw,28px)}
+.combat-damage-number.combat-result{
+ flex-direction:column;gap:1px;line-height:1.1;text-align:center;
+ font-size:clamp(9px,1.25vw,16px);padding:.24em .45em;
+ background:#101824ed;border-radius:5px;animation:combatResult .23s ease-out both;
+}
+.combat-result span{color:#fff0b5;font-size:.85em}
+@keyframes combatResult{from{opacity:0;transform:translate(-50%,.35em)}to{opacity:1;transform:translate(-50%,0)}}
+@media(prefers-reduced-motion:reduce){.combat-damage-number.combat-result{animation:none}}
 @keyframes combatFloat{
  0%{opacity:0;transform:translate(-50%,12px) scale(.8)}
  15%{opacity:1;transform:translate(-50%,-4px) scale(1.14)}

@@ -16,7 +16,6 @@ const OUT_DIR = 'src/ui/arena/assets';
 const GEN_FILE = 'src/ui/arena/arena-assets.js';
 
 const FILES = {
-  bg: 'Задний фон.png',
   reference: 'референс.png',
   towerAllyFull: 'Башня синяя.png',
   towerAllyDamaged: 'синяя башня пол хп.png',
@@ -35,7 +34,6 @@ const FILES = {
 };
 
 const SIZES = {
-  bg: { width: 1280 },
   reference: null, // в бандл не идёт — только для сверки
   towerAllyFull: { height: 700 },
   towerAllyDamaged: { height: 700 },
@@ -117,8 +115,12 @@ async function removeCheckerboard(input) {
 }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const out = {};
-let total = 0;
+// Сгенерированный фон хранится в репозитории в готовом формате.
+const bgFile = 'bg.webp';
+const bg = fs.readFileSync(path.join(OUT_DIR, bgFile));
+const bgMeta = await sharp(bg).metadata();
+const out = { bg: { file: bgFile, w: bgMeta.width, h: bgMeta.height, pages: 1 } };
+let total = bg.length;
 
 for (const [key, file] of Object.entries(FILES)) {
   if (key === 'reference') continue; // референс не бандлим
@@ -132,7 +134,7 @@ for (const [key, file] of Object.entries(FILES)) {
   }
   const meta = await sharp(input).metadata();
   const animated = meta.format === 'gif' && meta.pages > 1;
-  if (!animated && key !== 'bg') input = await cropToContent(input); // спрайты — по контенту
+  if (!animated) input = await cropToContent(input); // спрайты — по контенту
   let pipe = sharp(input, animated ? { animated: true } : undefined);
   const size = SIZES[key];
   if (size?.width) pipe = pipe.resize({ width: size.width });

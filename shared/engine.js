@@ -8,6 +8,8 @@ export const INNER_HP = 18;
 export const NEXUS_HP = 80;
 export const MAX_ROUNDS = 45;
 export const SHIELD_BY_BREACHES = [0, 40, 70, 100];
+export const fortifiedAttack = (power) => Math.round(power * 0.85);
+export const fortifiedDefense = (power) => Math.round(power * 1.25);
 
 export const newState = () => ({
   nexus: NEXUS_HP,
@@ -50,10 +52,10 @@ export function resolveRound(state, turnA, turnB) {
   const lanes = [0, 1, 2].map((l) => {
     const A = attackInfo(turnA.placements[l].attack, turnB.placements[l].defense);
     const B = attackInfo(turnB.placements[l].attack, turnA.placements[l].defense);
-    if (turnA.fortifyLane === l) A.a = Math.round(A.a * 0.85);
-    if (turnB.fortifyLane === l) B.a = Math.round(B.a * 0.85);
-    if (turnA.fortifyLane === l) B.d = Math.round(B.d * 1.25);
-    if (turnB.fortifyLane === l) A.d = Math.round(A.d * 1.25);
+    if (turnA.fortifyLane === l) A.a = fortifiedAttack(A.a);
+    if (turnB.fortifyLane === l) B.a = fortifiedAttack(B.a);
+    if (turnA.fortifyLane === l) B.d = fortifiedDefense(B.d);
+    if (turnB.fortifyLane === l) A.d = fortifiedDefense(A.d);
     if (turnA.fortifyLane === l) { A.hit = Math.max(0, A.a - A.d); if (A.hit === 0) A.burn = 0; }
     if (turnB.fortifyLane === l) { B.hit = Math.max(0, B.a - B.d); if (B.hit === 0) B.burn = 0; }
     return { A, B };
