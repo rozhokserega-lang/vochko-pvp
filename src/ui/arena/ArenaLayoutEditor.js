@@ -137,7 +137,7 @@ function renderOverlay() {
   // Башни: зелёный контур PNG + голубые слоты + жёлтый круг + крестики.
   for (const t of LAYOUT.towers) {
     const towerEl = document.querySelector(`[data-arena-id="${t.id}"]`);
-    const stage = towerEl?.classList.contains('ruins') ? 'ruins' : towerEl?.classList.contains('damaged') ? 'damaged' : 'full';
+    const stage = towerEl?.classList.contains('stage-ruins') ? 'ruins' : towerEl?.classList.contains('stage-damaged') ? 'damaged' : 'full';
     const tbox = stage === 'ruins' ? { cx: t.cx, bottom: t.bottom, w: t.ruinsW, h: t.ruinsH } : { cx: t.cx, bottom: t.bottom, w: (stage === 'damaged' ? LAYOUT.tower.damagedAspect : LAYOUT.tower.fullAspect) * t.h, h: t.h };
     const x = tbox.cx - tbox.w / 2, y = tbox.bottom - tbox.h;
     const selectedCls = t.id === state.selected ? ' dbg-selected' : '';

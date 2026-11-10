@@ -1,4 +1,4 @@
-// Конфигурация арены v20: единое дизайн-пространство 1600×900 и координаты
+﻿// Конфигурация арены v20: единое дизайн-пространство 1600×900 и координаты
 // всех объектов. Все элементы (фон, башни, нексусы, слоты, круги стихий)
 // позиционируются в одной системе координат и масштабируются вместе со сценой.
 //
@@ -12,7 +12,7 @@
 
 export const ARENA_DESIGN = { w: 1600, h: 900 };
 
-// ── Значения по умолчанию (измерены по «Задний фон.png» 1671×941 и спрайтам) ──
+// ── Значения по умолчанию (измерены по «Задний фон.png» и референсу) ──
 const DEFAULTS = deepFreeze({
   platforms: {
     rowCy: [256, 475, 679],                      // ряды: верх / центр / низ
@@ -26,7 +26,7 @@ const DEFAULTS = deepFreeze({
   },
   tower: {
     h: 208,           // высота спрайта башни (целая/повреждённая)
-    fullAspect: 0.6157,  // контент-bbox «Башня синяя.png» 431×700
+    fullAspect: 0.6157,    // контент-bbox «Башня синяя.png» 431×700
     damagedAspect: 0.7186, // «…пол хп» 503×700 (обвал справа)
     bottomK: 1.72,    // основание: platform.cy + ry × bottomK (по референсу: cy + 74)
     ruinsW: 150,
@@ -38,7 +38,7 @@ const DEFAULTS = deepFreeze({
         { x: 31.5, y: 36.5, w: 14, h: 14.5 },
         { x: 52, y: 36.5, w: 14, h: 14.5 },
       ],
-      circle: { cx: 47.2, cy: 65, d: 26 },
+      circle: { cx: 47.2, cy: 65, d: 30 },
       glow: { cy: 97, w: 118, h: 46 },
       hp: { cx: 50, cy: -2 },
     },
@@ -47,7 +47,7 @@ const DEFAULTS = deepFreeze({
         { x: 27, y: 36.5, w: 12, h: 14.5 },
         { x: 44.6, y: 36.5, w: 12, h: 14.5 },
       ],
-      circle: { cx: 40.5, cy: 65, d: 22.3 },
+      circle: { cx: 40.5, cy: 65, d: 26 },
       glow: { cy: 97, w: 103, h: 40 },
       hp: { cx: 50, cy: -2 },
     },
@@ -66,21 +66,21 @@ const DEFAULTS = deepFreeze({
           { x: 26, y: 30.5, w: 12.5, h: 11.7 },
           { x: 40.5, y: 30.5, w: 12.5, h: 11.7 },
         ],
-        circle: { cx: 66.2, cy: 36.2, d: 16.5 },
+        circle: { cx: 66.2, cy: 36.2, d: 18.5 },
       },
       {
         slots: [
           { x: 26, y: 46, w: 12.5, h: 11.7 },
           { x: 40.5, y: 46, w: 12.5, h: 11.7 },
         ],
-        circle: { cx: 66.2, cy: 52, d: 16.5 },
+        circle: { cx: 66.2, cy: 52, d: 18.5 },
       },
       {
         slots: [
           { x: 26, y: 62, w: 12.5, h: 11.7 },
           { x: 40.5, y: 62, w: 12.5, h: 11.7 },
         ],
-        circle: { cx: 66.2, cy: 67.8, d: 16.5 },
+        circle: { cx: 66.2, cy: 67.8, d: 18.5 },
       },
     ],
   },
@@ -101,8 +101,25 @@ export const LAYOUT = deepClone(DEFAULTS);
 // Производные списки объектов (боксы башен/нексусов) — редактор правит их
 // поштучно; после сброса пересобираются из платформ.
 function withDerivedObjects(state) {
-  const p = state.platforms, t = state.tower;
-  state.towers = buildTowerObjects(state);
+  const p = state.platforms;
+  state.towers = [];
+  for (let lane = 0; lane < 3; lane++) {
+    for (const [team, kind, size, col] of [
+      ['ally', 'def', 'inner', 'allyInner'],
+      ['ally', 'def', 'outer', 'allyOuter'],
+      ['enemy', 'atk', 'outer', 'enemyOuter'],
+      ['enemy', 'atk', 'inner', 'enemyInner'],
+    ]) {
+      state.towers.push({
+        id: towerId(team, kind, lane, size),
+        cx: p.colCx[col],
+        bottom: p.rowCy[lane] + p.ry * state.tower.bottomK,
+        h: state.tower.h,
+        ruinsW: state.tower.ruinsW,
+        ruinsH: state.tower.ruinsH,
+      });
+    }
+  }
   state.nexusObjects = {
     ally: { cx: p.nexus.ally.cx, bottom: p.nexus.ally.cy + p.nexus.ally.ry * state.nexus.bottomK, h: state.nexus.h },
     enemy: { cx: p.nexus.enemy.cx, bottom: p.nexus.enemy.cy + p.nexus.enemy.ry * state.nexus.bottomK, h: state.nexus.h },
@@ -145,34 +162,16 @@ export function exportLayoutJSON() { return JSON.stringify(LAYOUT, null, 2); }
 
 // ── Геометрия ────────────────────────────────────────────────────────────────
 
+// ID арены-объекта (для data-arena-id и редактора).
+export const towerId = (team, kind, lane, size) => `tower-${team}-${kind}-${lane}-${size}`;
+export const nexusId = (side) => `nexus-${side}`;
+
 // Состояние башни для арта по HP (пороги — в конфиге).
 export function arenaStage(hp, max) {
   if (hp <= 0) return 'ruins';
   return hp / max > (LAYOUT.tower.thresholds?.damagedBelow ?? 0.5) ? 'full' : 'damaged';
 }
 
-// ID арены-объекта (для data-arena-id и редактора).
-export const towerId = (team, kind, lane, size) => `tower-${team}-${kind}-${lane}-${size}`;
-export const nexusId = (side) => `nexus-${side}`;
-
-// 12 башен: конкретные боксы (генерируются из платформ, правятся редактором).
-export function buildTowerObjects(state = LAYOUT) {
-  const list = [];
-  const p = state.platforms;
-  for (let lane = 0; lane < 3; lane++) {
-    for (const [team, kind, size, col] of [
-      ['ally', 'def', 'inner', 'allyInner'],
-      ['ally', 'def', 'outer', 'allyOuter'],
-      ['enemy', 'atk', 'outer', 'enemyOuter'],
-      ['enemy', 'atk', 'inner', 'enemyInner'],
-    ]) {
-      const cx = p.colCx[col];
-      const bottom = p.rowCy[lane] + p.ry * state.tower.bottomK;
-      list.push({ id: towerId(team, kind, lane, size), cx, bottom, h: state.tower.h, ruinsW: state.tower.ruinsW, ruinsH: state.tower.ruinsH });
-    }
-  }
-  return list;
-}
 if (!LAYOUT.towers) withDerivedObjects(LAYOUT);
 
 // Платформа башни: {cx, cy, rx, ry, bottom} в design-px.
@@ -186,9 +185,11 @@ export function platformOf(team, kind, lane, size) {
 // Бокс спрайта башни: {cx, bottom, w, h} в design-px (с учётом правок редактора).
 export function towerBox(team, kind, lane, size, stage) {
   const id = towerId(team, kind, lane, size);
-  const obj = LAYOUT.towers.find((t) => t.id === id) ?? platformOf(team, kind, lane, size);
+  const obj = LAYOUT.towers.find((x) => x.id === id) ?? platformOf(team, kind, lane, size);
   const t = LAYOUT.tower;
-  if (stage === 'ruins') return { cx: obj.cx, bottom: obj.bottom, w: obj.ruinsW, h: obj.ruinsH };
+  const plat = platformOf(team, kind, lane, size);
+  // Фундамент (груда камней) лежит на площадке: низ по её переднему краю.
+  if (stage === 'ruins') return { cx: obj.cx, bottom: plat.cy + plat.ry, w: obj.ruinsW, h: obj.ruinsH };
   const aspect = stage === 'damaged' ? t.damagedAspect : t.fullAspect;
   return { cx: obj.cx, bottom: obj.bottom, w: obj.h * aspect, h: obj.h };
 }
@@ -198,4 +199,3 @@ export function nexusBox(side) {
   const o = LAYOUT.nexusObjects[side];
   return { cx: o.cx, bottom: o.bottom, w: o.h * LAYOUT.nexus.aspect, h: o.h };
 }
-

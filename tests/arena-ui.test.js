@@ -8,7 +8,6 @@ import {
   towerBox,
   towerId,
   nexusBox,
-  buildTowerObjects,
   exportLayoutJSON,
 } from '../src/ui/arena/arenaLayout.js';
 import { battleHTML } from '../src/ui/arena/ArenaScene.js';
@@ -27,7 +26,7 @@ const view = () => ({
 const emptySlots = () => Array.from({ length: 3 }, () => ({ atk: [], def: [] }));
 
 test('layout: 12 башен с уникальными id, 3 ряда платформ, 2 нексуса', () => {
-  const towers = buildTowerObjects();
+  const towers = LAYOUT.towers;
   assert.equal(towers.length, 12);
   assert.equal(new Set(towers.map((t) => t.id)).size, 12);
   assert.equal(LAYOUT.platforms.rowCy.length, 3);
@@ -65,11 +64,14 @@ test('towerBox: башня стоит основанием на платформ
   const full = towerBox('ally', 'def', 0, 'outer', 'full');
   const damaged = towerBox('ally', 'def', 0, 'outer', 'damaged');
   const ruins = towerBox('ally', 'def', 0, 'outer', 'ruins');
-  assert.equal(full.bottom, damaged.bottom);
-  assert.equal(damaged.bottom, ruins.bottom);
+  assert.equal(full.bottom, damaged.bottom);          // смена состояния не двигает базу
   assert.equal(full.h, damaged.h);
   assert.ok(Math.abs(full.cx - damaged.cx) < 0.01);
-  assert.ok(ruins.w > full.w); // груда камней шире башни
+  assert.ok(Math.abs(full.cx - damaged.cx) < 0.01);
+  // фундамент лежит НА площадке: низ по её переднему краю (cy + ry)
+  assert.equal(ruins.bottom, LAYOUT.platforms.rowCy[0] + LAYOUT.platforms.ry);
+  assert.ok(ruins.bottom < full.bottom);              // выше линии основания башен
+  assert.ok(ruins.w > full.w);                        // груда камней шире башни
 });
 
 test('battleHTML: 3 линии, 12 башен, 2 нексуса, активные — drop-target', () => {
@@ -77,12 +79,22 @@ test('battleHTML: 3 линии, 12 башен, 2 нексуса, активны�
   assert.equal((html.match(/class="lane"/g) || []).length, 3);
   assert.equal((html.match(/class="tower /g) || []).length, 12);
   assert.equal((html.match(/nexus-fortress nexus/g) || []).length, 2);
-  // в planning активны только внешние башни (6 шт) + этажи нексусов закрыты
+  // карты кладутся сначала на БЛИЖНИЕ к центру башни (inner): их 6 активных
   assert.equal((html.match(/tower tower-art[^"]*drop-target/g) || []).length, 6);
-  assert.equal((html.match(/nexus-floor locked/g) || []).length, 6);
+  assert.match(html, /tower tower-art ally inner[^"]*drop-target/);
+  assert.match(html, /tower tower-art enemy inner[^"]*drop-target/);
+  assert.doesNotMatch(html, /tower tower-art ally outer[^"]*drop-target/);
   // data-атрибуты для обработчиков main.js
   assert.match(html, /data-lane="0" data-kind="def"/);
   assert.match(html, /data-lane="0" data-kind="atk"/);
+});
+
+test('battleHTML: внутренняя разрушена — принимает внешняя', () => {
+  const v = view();
+  v.board.me.inner = [0, 18, 18];
+  const html = battleHTML(v, emptySlots());
+  assert.match(html, /ally outer stage-\w+\s+drop-target[\s\S]{0,80}?data-lane="0"/);
+  assert.doesNotMatch(html, /ally inner stage-\w+\s+drop-target[\s\S]{0,80}?data-lane="0"/);
 });
 
 test('battleHTML: пробитая линия открывает этаж нексуса и слоты', () => {

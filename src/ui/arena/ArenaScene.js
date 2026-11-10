@@ -11,17 +11,20 @@ const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 const pctOf = (v, base) => +(((v / base) * 100)).toFixed(3) + '%';
 
 // Разметка боевой сцены — тот же контракт, что у старого Board(view, slots, myHand).
+// Карты кладутся сначала на ближние к центру башни (inner), после её разрушения —
+// на внешнюю. Пары привязаны к линии (серверу башня не важна), урон считается
+// по правилам: внешняя → внутренняя → Нексус.
 export function battleHTML(view, mySlots) {
   const me = view.board.me, opp = view.board.opponent;
   const towers = (l) => `
     <div class="side">
-      ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ВНУТРЕННЯЯ', lane: l, kind: 'def', active: me.outer[l] <= 0 && me.inner[l] > 0, slots: mySlots })}
-      ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ ВНЕШНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ВНУТРЕННЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ ВНЕШНЯЯ', lane: l, kind: 'def', active: me.inner[l] <= 0 && me.outer[l] > 0, slots: mySlots })}
     </div>
     <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${l + 1}</small></div>
     <div class="side enemy">
-      ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: ВНЕШ.', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots })}
-      ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ВНУТР.', lane: l, kind: 'atk', active: opp.outer[l] <= 0 && opp.inner[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: ВНЕШ.', lane: l, kind: 'atk', active: opp.inner[l] <= 0 && opp.outer[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ВНУТР.', lane: l, kind: 'atk', active: opp.inner[l] > 0, slots: mySlots })}
     </div>`;
   return `<div class="arena-scene" id="arenaScene">
     <img class="arena-bg" src="${ARENA_ASSETS.bg}" draggable="false" alt="" aria-hidden="true">
@@ -59,7 +62,7 @@ export function applyArenaLayout(root = document) {
   // ── Башни ──
   scene.querySelectorAll('.tower').forEach((t) => {
     const [, team, kind, lane, size] = t.dataset.arenaId.split('-');
-    const stage = t.classList.contains('ruins') ? 'ruins' : t.classList.contains('damaged') ? 'damaged' : 'full';
+    const stage = t.classList.contains('stage-ruins') ? 'ruins' : t.classList.contains('stage-damaged') ? 'damaged' : 'full';
     const box = towerBox(team, kind, +lane, size, stage);
     boxStyle(t, box);
     const art = stage === 'damaged' ? LAYOUT.tower.artDamaged : stage === 'ruins' ? LAYOUT.tower.artRuins : LAYOUT.tower.artFull;

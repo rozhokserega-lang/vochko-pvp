@@ -1,7 +1,7 @@
 // Башня арены v20: PNG с тремя состояниями (целая / «пол хп» / фундамент),
 // два интерактивных слота карт поверх нарисованных рамок и круг стихии.
 // Позиции элементов накладываются в ArenaScene.applyArenaLayout() по конфигу.
-import { type, elementName } from '../../../shared/elements.js';
+import { type } from '../../../shared/elements.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT, arenaStage, towerId } from './arenaLayout.js';
 import { cardSlotHTML } from './CardSlot.js';
@@ -42,10 +42,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
       <div class="element-circle" data-element="${element}">${elementAnimHTML(element)}</div>` : ''}
     </div>
     <div class="tower-hp">
-      <div class="tag">${label}</div>
-      <div class="value">${Math.max(0, hp)} / ${max}</div>
       <div class="tinybar"><i style="width:${Math.max(0, (hp / max) * 100)}%"></i></div>
-      ${active ? `<div class="element-label">${cards.length === 2 ? elementName(cards) : ''}</div>` : ''}
     </div>
   </div>`;
 }
