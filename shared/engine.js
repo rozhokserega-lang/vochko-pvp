@@ -1,5 +1,5 @@
 import { lineStats, type } from './elements.js';
-// Авторитетный бой: обе пары атакуют и защищают, без способностей.
+// Атакующая пара бьёт, защитная поглощает удар. Все линии одновременны.
 export const OUTER_HP = 12;
 export const INNER_HP = 18;
 export const NEXUS_HP = 80;
@@ -18,12 +18,12 @@ export const shieldPct = (p) => SHIELD_BY_BREACHES[breaches(p)];
 export const isOpen = (p, l) => p.outer[l] <= 0 && p.inner[l] <= 0;
 
 // Излишек урона намеренно НЕ переносится на следующую цель.
-export function damage(p, l, amount) {
+export function damage(p, l, amount, nexusPct = shieldPct(p)) {
   const remain = amount;
   if (remain <= 0) return;
   if (p.outer[l] > 0) { p.outer[l] = Math.max(0, p.outer[l] - remain); return; }
   if (p.inner[l] > 0) { p.inner[l] = Math.max(0, p.inner[l] - remain); return; }
-  p.nexus = Math.max(0, p.nexus - Math.round((remain * shieldPct(p)) / 100));
+  p.nexus = Math.max(0, p.nexus - Math.round((remain * nexusPct) / 100));
 }
 
 export function damageStage(p, l) {
@@ -40,6 +40,8 @@ export function recordDamage(before, after, l) {
 export function resolveRound(state, turnA, turnB) {
   const find = (turn, lane) => turn.placements.find(p => p.lane === lane);
   const events = [], report = [];
+  // Прорывы этого раунда влияют на Нексус только со следующего раунда.
+  const nexusPct = { a: shieldPct(state.a), b: shieldPct(state.b) };
   state.a.burn = [0, 0, 0]; state.b.burn = [0, 0, 0]; // старое поле неактивно
   const lanes = [0, 1, 2].map(l => {
     const pa = find(turnA, l), pb = find(turnB, l);
@@ -49,15 +51,15 @@ export function resolveRound(state, turnA, turnB) {
     const { pa, pb, a, b } = lanes[l];
     const entry = (own, opp, ownCards, oppCards, target, side) => {
       const info = { a: own.attack, d: opp.defense,
-        baseA: own.basePower, baseD: opp.basePower,
+        baseA: own.baseAttack, baseD: opp.baseDefense,
         hit: Math.max(0, own.attack - opp.defense), burn: 0, match: '',
         at: type(ownCards.attack), dt: type(oppCards.defense),
         pairs: own.pairs, opponentPairs: opp.pairs };
       const before = structuredClone(target), stage = damageStage(target, l);
-      damage(target, l, info.hit);
+      damage(target, l, info.hit, nexusPct[side]);
       const dealt = recordDamage(before, target, l);
       events.push({ side, l, stage, amount: dealt, element: info.at,
-        elements: own.pairs.map(p => p.element) });
+        elements: [own.pairs[0].element] });
       return { info, attack: ownCards.attack, defense: oppCards.defense,
         ownPairs: [ownCards.attack, ownCards.defense],
         opponentPairs: [oppCards.attack, oppCards.defense],

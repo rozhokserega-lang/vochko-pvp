@@ -58,8 +58,7 @@ export function revealAssignments(report, seat) {
       { combat: row.b, defenderSide: 'a' },
     ]) {
       const isMine = (entry.defenderSide === 'a' && seat === 1) || (entry.defenderSide === 'b' && seat === 2);
-      const cards = (isMine ? entry.combat?.ownPairs : entry.combat?.opponentPairs)?.flat()
-        ?? (isMine ? entry.combat?.attack : entry.combat?.defense);
+      const cards = isMine ? entry.combat?.attack : entry.combat?.defense;
       if (!Array.isArray(cards) || ![2, 4].includes(cards.length)) continue;
       out.push({
         lane,
@@ -67,7 +66,7 @@ export function revealAssignments(report, seat) {
         stage: entry.combat?.stage ?? null,
         isMine,
         cards,
-        label: 'ОБЕ ПАРЫ ВРАГА',
+        label: isMine ? 'АТАКА ВРАГА' : 'ЗАЩИТА ВРАГА',
       });
     }
   }

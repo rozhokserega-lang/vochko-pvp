@@ -18,14 +18,11 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
   const me = view.board.me, opp = view.board.opponent;
   const mark = (ready, icon, label) => `<span class="lane-pair-mark${ready ? ' placed' : ''}" role="img"
     aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
-  const preview = l => {
-    const pairs = [mySlots[l].atk, mySlots[l].def].map(pairStats);
-    return { shield: pairs.reduce((n,p) => n + (p?.defense ?? 0), 0), attack: pairs.reduce((n,p) => n + (p?.attack ?? 0), 0) };
-  };
-  const totals = l => {
-    const pairs = [mySlots[l].atk, mySlots[l].def].map(pairStats);
-    return `⚔ ${pairs.reduce((n,p) => n + (p?.attack ?? 0), 0)} · 🛡 ${pairs.reduce((n,p) => n + (p?.defense ?? 0), 0)}`;
-  };
+  const preview = l => ({
+    shield: pairStats(mySlots[l].def)?.defense ?? 0,
+    attack: pairStats(mySlots[l].atk)?.attack ?? 0,
+  });
+  const totals = l => `⚔ ${preview(l).attack} · 🛡 ${preview(l).shield}`;
   const towers = (l) => `
     <div class="side">
       ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots, preview: preview(l) })}
@@ -33,8 +30,8 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
     </div>
     <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${totals(l)}</small>
       ${showProgress ? `<span class="lane-pair-marks">
-        ${mark(mySlots[l].atk.length === 2, '1', 'Пара 1')}
-        ${mark(mySlots[l].def.length === 2, '2', 'Пара 2')}
+        ${mark(mySlots[l].atk.length === 2, '⚔', 'Атака')}
+        ${mark(mySlots[l].def.length === 2, '🛡', 'Защита')}
       </span>` : ''}
     </div>
     <div class="side enemy">

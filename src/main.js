@@ -234,7 +234,7 @@ function render(force = false) {
     const { lane, kind } = target.dataset;
     target.tabIndex = panelState.blocked ? -1 : 0;
     target.setAttribute('role', 'button');
-    target.setAttribute('aria-label', `${kind === 'atk' ? 'Пара 1' : 'Пара 2'}, ${PANEL_LANES[lane]}`);
+    target.setAttribute('aria-label', `${kind === 'atk' ? 'Атака' : 'Защита'}, ${PANEL_LANES[lane]}`);
     target.onclick = () => placeCards(target, selected);
     target.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); target.click(); }
@@ -250,7 +250,7 @@ function missingPairHint() {
   const lane = slots.findIndex((s) => s.atk.length !== 2 || s.def.length !== 2);
   if (lane < 0) return '';
   const { atk, def } = slots[lane];
-  const missing = [atk.length !== 2 && 'пара 1', def.length !== 2 && 'пара 2'].filter(Boolean);
+  const missing = [atk.length !== 2 && 'атака', def.length !== 2 && 'защита'].filter(Boolean);
   return `Линия «${PANEL_LANES[lane]}» — осталось заполнить: ${missing.join(' и ')}.`;
 }
 

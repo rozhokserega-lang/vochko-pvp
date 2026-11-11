@@ -20,11 +20,12 @@ export function renderPreview(container, cards) {
     <div class="muted">${pairExplanation(cards)}</div>`;
 }
 
-// Разбор обеих универсальных пар и фактически снятого HP.
+// Разбор атакующей пары, защиты соперника и фактически снятого HP.
 const side = (r) => `<div class="calc-box">
-  ${(r.ownPairs ?? [r.attack]).map((cards, i) => `<p>Пара ${i + 1}: ${cards.map(c => c.r + c.s).join(' + ')}<br>${pairExplanation(cards)}</p>`).join('')}
-  <div class="calc-row"><span>Суммарная атака линии</span><strong>${r.info.a}</strong></div>
-  <div class="calc-row"><span>Суммарная защита соперника</span><strong>${r.info.d}</strong></div>
+  <p>Атака: ${r.attack.map(c => c.r + c.s).join(' + ')}<br>${pairExplanation(r.attack)}</p>
+  <p>Защита соперника: ${r.defense.map(c => c.r + c.s).join(' + ')}<br>${pairExplanation(r.defense)}</p>
+  <div class="calc-row"><span>Сила атакующей пары</span><strong>${r.info.a}</strong></div>
+  <div class="calc-row"><span>Сила защитной пары соперника</span><strong>${r.info.d}</strong></div>
   <div class="calc-row"><span>Урон: max(0, атака − защита)</span><strong>${r.info.hit}</strong></div>
   <div class="calc-row"><span>Снято HP (${r.stage})</span><strong>${r.dealt}</strong></div></div>`;
 
@@ -37,7 +38,7 @@ export function roundReportHTML(view, mySeat) {
     const theirs = mySeat === 1 ? row.b : row.a;
     return `<button class="report-btn" data-lane="${row.lane}"><b>${['ВЕРХ', 'ЦЕНТР', 'НИЗ'][row.lane]}</b>
       <small>⚔ Нанесено: ${mine.dealt} HP · 🛡 Получено: ${theirs.dealt} HP</small>
-      <small>Обе пары атакуют и защищают · нажми для деталей</small></button>`;
+      <small>Атакующая пара против защитной · нажми для деталей</small></button>`;
   }).join('') + `<div class="explain-overlay" id="explainOverlay"><div class="explain-dialog">
       <button class="explain-close" data-close>✕</button><div id="explainContent"></div></div></div>`;
 }
