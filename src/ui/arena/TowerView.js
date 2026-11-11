@@ -2,7 +2,7 @@
 // два интерактивных слота карт поверх нарисованных рамок и круг стихии.
 // Позиции элементов накладываются в ArenaScene.applyArenaLayout() по конфигу.
 import { pairStats, type } from '../../../shared/elements.js';
-import { combatPowerHTML } from '../meters.js';
+import { towerHealthHTML } from './TowerHealth.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT, arenaStage, towerId } from './arenaLayout.js';
 import { cardSlotHTML } from './CardSlot.js';
@@ -43,11 +43,8 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
       <div class="element-circle" data-element="${element}">${elementAnimHTML(element)}</div>` : ''}
     </div>
     ${active && alive ? `
-      <div class="tower-hp tower-meter">
-        <span class="tower-meter-label">HP <b class="value">${hp} / ${max}</b></span>
-        <div class="tower-meter-track"><i data-vertical="1" style="height:${(hp / max) * 100}%"></i></div>
-      </div>
-      ${combatPowerHTML(kind, power)}
+      ${towerHealthHTML(hp, max, power?.defense ?? 0)}
+      ${power ? `<span class="tower-attack" aria-label="Атака: ${power.attack}">⚔ ${power.attack}</span>` : ''}
     ` : ''}
   </div>`;
 }

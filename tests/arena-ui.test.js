@@ -136,11 +136,11 @@ test('подсказка Нексуса показывает процент вх
 
 test('в начале HP показывается только у шести ближних башен', () => {
   const html = battleHTML(view(), emptySlots());
-  assert.equal((html.match(/class="tower-hp tower-meter"/g) || []).length, 6);
+  assert.equal((html.match(/class="tower-hp tower-meter tower-crystal /g) || []).length, 6);
   assert.equal((html.match(/class="value"/g) || []).length, 6);
   assert.equal((html.match(/data-vertical="1"/g) || []).length, 6);
-  assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 6);
-  assert.match(html, /height:100%"><\/i><\/div>/);
+  assert.equal((html.match(/class="tower-shield crystal-shield" data-empty/g) || []).length, 6);
+  assert.match(html, /class="crystal-fill" data-vertical="1" style="height:100%"/);
   // Числа нужны combatHpSnapshot(), иначе полоска HP не анимируется от удара.
   assert.match(html, /class="value">12 \/ 12</);
   assert.doesNotMatch(html, /class="value">18 \/ 18</);
@@ -153,7 +153,7 @@ test('при разрушении ближней башни HP появляет�
   v.board.me.inner[0] = 9;
   v.board.opponent.inner[1] = 9;
   const html = battleHTML(v, emptySlots());
-  assert.equal((html.match(/class="tower-hp tower-meter"/g) || []).length, 6);
+  assert.equal((html.match(/class="tower-hp tower-meter tower-crystal /g) || []).length, 6);
   assert.equal((html.match(/class="value">9 \/ 18</g) || []).length, 2);
   assert.equal((html.match(/class="value">12 \/ 12</g) || []).length, 4);
   assert.doesNotMatch(html, /class="value">0 \/ 12/);
@@ -167,16 +167,17 @@ test('щит показывает силу защиты, атака показа
   assert.match(html, /aria-label="Щит: 9"/);
   assert.match(html, /class="tower-attack" aria-label="Атака: 8"/);
   assert.match(html, /aria-label="Щит: 6"/);
-  assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 4);
+  assert.equal((html.match(/class="tower-shield crystal-shield" data-empty/g) || []).length, 4);
 });
 
-test('открытые этажи Нексуса используют те же индикаторы атаки и щита, что башни', () => {
+test('индикаторы открытых этажей Нексуса сохранены без кристаллов башен', () => {
   const board = view().board.me;
   board.outer[0] = board.inner[0] = 0;
   const slots = emptySlots();
   slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
   slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
   assert.match(nexusHTML(board, slots, false), /aria-label="Щит: 9"/);
+  assert.doesNotMatch(nexusHTML(board, slots, false), /tower-crystal|crystal-shell/);
   const enemy = nexusHTML(board, slots, true);
   assert.match(enemy, /class="tower-attack" aria-label="Атака: 8"/);
   assert.match(enemy, /aria-label="Щит: 6"/);

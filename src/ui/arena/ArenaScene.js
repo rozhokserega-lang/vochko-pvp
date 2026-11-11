@@ -105,7 +105,7 @@ export function applyArenaLayout(root = document) {
       glow.style.height = art.glow.h + '%';
     }
     const hpOnLeft = (team === 'ally') === (size === 'inner');
-    t.querySelectorAll('.tower-meter, .tower-attack').forEach((meter) => {
+    t.querySelectorAll(':scope > .tower-meter, :scope > .tower-attack').forEach((meter) => {
       const left = meter.classList.contains('tower-hp') ? hpOnLeft : !hpOnLeft;
       meter.classList.toggle('meter-left', left);
       meter.classList.toggle('meter-right', !left);

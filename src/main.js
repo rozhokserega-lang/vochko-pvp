@@ -1,5 +1,6 @@
 import { shuffled } from '../shared/cards.js';
 import './styles.css';
+import './ui/arena/tower-crystal.css';
 import './combat-v5.css';
 import './ui/arena/arena.css';
 import './ui/card-panel/card-panel.css';

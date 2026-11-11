@@ -1,3 +1,4 @@
+import { setTowerShield, setTowerHealth } from './arena/TowerHealth.js';
 import { ELEMENTS } from '../../shared/elements.js';
 import { damageSplit, revealAssignments, shieldEntries } from './combat-logic.js';
 
@@ -128,6 +129,7 @@ function combatShieldMeter(target, entry) {
   const track = meter.querySelector('.tower-meter-track i');
   const num = meter.querySelector('b');
   if (!track || !num) return null;
+  setTowerShield(target, entry.full, entry.full);
   num.textContent = String(entry.full);
   meter.classList.add('combat-shield-meter');
   meter.setAttribute('aria-label', `Щит: ${entry.full}`);
@@ -184,6 +186,12 @@ function combatHpSnapshot(events, seat) {
     bar.classList.add('combat-hp-restore');
     // На всякий случай фиксируем стартовое значение (без анимации).
     bar.style[axis] = (start / max) * 100 + '%';
+    const lag = target.querySelector('.crystal-lag');
+    if (lag) {
+      lag.dataset.combatRestoreFill = lag.style.height;
+      lag.dataset.combatFillAxis = 'height';
+      lag.classList.add('combat-hp-restore');
+    }
     items.push({ target, val, bar, axis, start, final, max });
   });
   return items;
@@ -294,6 +302,7 @@ export function playRoundAnimation(view) {
       const { absorbed, remaining, hpDamage } = damageSplit(attack, full);
       track.style.transition = 'height 1000ms cubic-bezier(.22,.65,.3,1)';
       track.style.height = (full ? remaining / full * 100 : 0) + '%';
+      setTowerShield(target, remaining, full);
       num.textContent = String(remaining);
       meter.setAttribute('aria-label', `Щит: ${remaining}`);
       if (absorbed) combatResultPopup(target, 'Щит −' + absorbed, 'shield', hpDamage === 0);
@@ -307,6 +316,7 @@ export function playRoundAnimation(view) {
       combatHpPopup(target, start - final);
       bar.style.transition = axis + ' 1100ms cubic-bezier(.25,.7,.25,1)';
       bar.style[axis] = (final / max) * 100 + '%';
+      setTowerHealth(target, final, max);
       val.textContent = final + ' / ' + max;
     });
   }, 3250);
