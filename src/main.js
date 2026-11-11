@@ -1,3 +1,4 @@
+import { shuffled } from '../shared/cards.js';
 import { pairExplanation, placementHTML, lineTotalsHTML } from './ui/Placement.js';
 import { roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
 import './styles.css';
@@ -21,6 +22,7 @@ const app = document.getElementById('app');
 const byId = (c) => document.getElementById(c);
 
 let view = null;          // персональный PlayerView с сервера
+let dealAnimationPending = false;
 let myHand = [];          // объекты карт моей руки
 let slots = [];           // локальная раскладка: [{atk:[card,card], def:[card,card]}×3]
 let selected = [];        // id выбранных карт (0..2)
@@ -142,7 +144,11 @@ async function refresh(matchId) {
     app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link, { onExit: () => exitMatch(view.matchId, 'Отменить комнату и вернуться в лобби?') }));
     return;
   }
-  myHand = view.me.hand;
+  const newDeal = view.matchId !== slotsState.matchId || view.round !== slotsState.round;
+  const previousOrder = new Map(myHand.map((card,i) => [card.id,i]));
+  myHand = newDeal ? shuffled(view.me.hand) : [...view.me.hand].sort((a,b) =>
+    (previousOrder.get(a.id) ?? 99) - (previousOrder.get(b.id) ?? 99));
+  if (newDeal) dealAnimationPending = true;
   if (view.matchId !== slotsState.matchId || view.round !== slotsState.round) {
     slots = resetSlots(); selected = [];
     slotsState.matchId = view.matchId; slotsState.round = view.round;
@@ -217,7 +223,8 @@ function render(force = false) {
 
   const hand = byId('hand');
   initCardPanel(hand);
-  renderPanelCards(hand, myHand, selected, usedIds(), turnLocked());
+  renderPanelCards(hand, myHand, selected, usedIds(), turnLocked(), dealAnimationPending);
+  dealAnimationPending = false;
   updatePreview();
   wireReportClicks(byId('battleReports'), view, view.seat);
 

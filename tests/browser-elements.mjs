@@ -29,6 +29,13 @@ try {
     await page.addInitScript(() => localStorage.setItem('vochko_match', 'fixture'));
     await page.goto('http://127.0.0.1:5184/');
     await page.locator('#hand .card').first().waitFor();
+    assert.equal(await page.locator('#hand .panel-cards').count(), 1);
+    assert.equal(await page.locator('#hand [data-zone="cards"] .card').count(), 14);
+    const originalOrder = await page.locator('#hand .card').evaluateAll(cards => cards.map(c => c.dataset.card));
+    assert.notDeepEqual(originalOrder, f.match.state.hands[seat].map(c => c.id));
+    assert.equal(await page.locator('.panel-art').evaluate(img => new URL(img.src).pathname.includes('panel-unified.png')), true);
+    assert.equal(await page.locator('#hand').evaluate(hand =>
+      Number(getComputedStyle(hand.querySelector('.panel-art')).zIndex) > Number(getComputedStyle(hand.querySelector('.panel-sphere')).zIndex)), true);
     assert.equal(await page.locator('#fortifyBtn').count(), 0);
     assert.equal(await page.locator('.pair-placement').count(), 6);
     await page.locator('#pairsDetails>summary').click();
@@ -51,9 +58,16 @@ try {
       await page.locator('#hand .card.red:not(.used)').first().click();
       await page.locator('#hand .card:not(.red):not(.used)').first().click();
       assert.match(await page.locator('#pairPreview').innerText(), /атака.*защита/s);
-      await page.locator(`.pair-placement[data-lane="${lane}"][data-kind="${kind}"]`).click();
+      if (lane === 0 && kind === 'atk') {
+        await mkdir('tests/.shots', { recursive: true });
+        await page.locator('#hand').screenshot({ path: `tests/.shots/unified-preview-${seat}.png` });
+      }
+      if (seat === 1 && lane === 0 && kind === 'atk') {
+        await page.locator('#hand .card.selected').first().dragTo(page.locator('.tower.drop-target[data-lane="0"][data-kind="atk"]'));
+      } else await page.locator(`.pair-placement[data-lane="${lane}"][data-kind="${kind}"]`).click();
     }
     assert.equal(await page.locator('#hand .card.used').count(), 12);
+    assert.deepEqual(await page.locator('#hand .card').evaluateAll(cards => cards.map(c => c.dataset.card)), originalOrder);
     assert.equal(await page.locator('#hand .card:not(.used)').count(), 2);
     // A used card cannot be selected again.
     await page.locator('#hand .card.used').first().dispatchEvent('click');
@@ -76,7 +90,7 @@ try {
   }));
   await pages[0].screenshot({ path: 'tests/.shots/elements-combat.png', fullPage: true });
   for (const page of pages) {
-    await page.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield'), null, { timeout: 12000 });
+    await page.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield') && !document.querySelector('#fightBtn')?.disabled, null, { timeout: 12000 });
     await page.locator('.report-btn').first().waitFor();
     assert.equal(await page.locator('.report-btn').count(), 3);
     await page.locator('.report-btn').first().click();
