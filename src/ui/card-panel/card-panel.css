@@ -11,7 +11,10 @@
 #panelEffect,#panelEffect img{width:100%;height:100%}
 #panelEffect img{display:block;object-fit:cover;transform:scale(.95);transform-origin:center}
 .panel-round,.panel-power{display:flex;justify-content:center;align-items:center;gap:.35em;color:#ffdc8e;font:bold 1.55cqw Georgia,serif;text-shadow:0 2px 3px #000,0 0 5px #000;white-space:nowrap;pointer-events:none}
-.panel-round b{font-size:1.2em}.panel-power{font-size:1.5cqw}
+.panel-round b{font-size:1.2em}.panel-power{gap:clamp(10px,1.2cqw,18px);font-size:clamp(14px,1.9cqw,24px);line-height:1}
+.panel-power>span{flex:none;padding:3px 7px;border:1px solid;border-radius:6px;background:#091321ed;box-shadow:0 2px 5px #0009;font-weight:900}
+.panel-power .pair-defense{color:#69caff;border-color:#409ee4;text-shadow:0 1px 2px #000,0 0 7px #2395ef88}
+.panel-power .pair-attack{color:#ff7373;border-color:#dc5151;text-shadow:0 1px 2px #000,0 0 7px #ed393988}
 .panel-cards{container-type:size;display:flex;align-items:center;justify-content:space-between;gap:.55%;overflow:visible;pointer-events:auto}
 .panel-card.card{position:relative;flex:none;width:6.45%;height:auto;max-width:none;min-width:0;aspect-ratio:5/7;display:block;padding:0;border-radius:9%;touch-action:none;transition:transform .13s ease,box-shadow .13s ease}
 .panel-card-corner{position:absolute;top:6%;left:8%;display:flex;gap:.1em;font:bold min(2.4cqw,18cqh)/1 Georgia,serif}
@@ -48,7 +51,7 @@
  .panel-round{left:0;top:100%;width:74px;height:44px;font-size:12px}
  .panel-ready{left:auto;right:0;top:100%;width:116px;height:44px}
  .panel-progress{left:80px;right:122px;top:100%;width:auto;min-height:44px;align-content:center;font-size:10px}
- .panel-power{font-size:10px}
+ .panel-power{top:42%;font-size:13px}.panel-power>span{padding:2px 4px}
 }
 @media(prefers-reduced-motion:reduce){.panel-card.card{transition:none}.panel-card.card.dealing{animation:none}}
 

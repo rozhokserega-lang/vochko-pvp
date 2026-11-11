@@ -49,7 +49,7 @@ try {
         const pair = [e.suits[0], e.suits[1]].map((s,i) => deck().find(c => c.s === s && c.r === ['5','9'][i]));
         renderPanelPreview(hand,pair);
         const p = pairStats(pair);
-        return { id:e.id, valid:hand.querySelector('#panelPower').textContent === `⚔ ${p.attack} · 🛡 ${p.defense}` && hand.querySelector('#panelEffect [data-effect]')?.dataset.effect === e.id };
+        return { id:e.id, valid:hand.querySelector('#panelPower').textContent === `🛡 ${p.defense} ⚔ ${p.attack}` && hand.querySelector('#panelEffect [data-effect]')?.dataset.effect === e.id };
       });
     });
     assert.equal(previews.length, 10); assert.ok(previews.every(p => p.valid));
@@ -57,7 +57,7 @@ try {
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
       await page.locator('#hand .card.red:not(.used)').first().click();
       await page.locator('#hand .card:not(.red):not(.used)').first().click();
-      assert.match(await page.locator('#panelPower').innerText(), /⚔.*🛡/s);
+      assert.match(await page.locator('#panelPower').innerText(), /🛡.*⚔/s);
       if (lane === 0 && kind === 'atk') {
         await mkdir('tests/.shots', { recursive: true });
         await page.locator('#hand').screenshot({ path: `tests/.shots/unified-preview-${seat}.png` });

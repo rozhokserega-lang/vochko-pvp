@@ -7,7 +7,7 @@ let html = readFileSync(join(dist, 'index.html'), 'utf8');
 const assets = readdirSync(join(dist, 'assets'));
 const media = assets.filter(name => !/\.(css|js)$/.test(name)).map(name => {
   const ext = name.split('.').at(-1);
-  const mime = { png: 'image/png', webp: 'image/webp', svg: 'image/svg+xml', jpg: 'image/jpeg', woff2: 'font/woff2' }[ext];
+  const mime = { png: 'image/png', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', jpg: 'image/jpeg', woff2: 'font/woff2' }[ext];
   if (!mime) throw new Error('Unsupported standalone asset: ' + name);
   return [name, `data:${mime};base64,${readFileSync(join(dist, 'assets', name)).toString('base64')}`];
 });

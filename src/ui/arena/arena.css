@@ -167,9 +167,8 @@
 .arena-scene .nexus-floor.locked{pointer-events:none}
 .arena-scene .nexus-floor.open{cursor:pointer}
 .arena-scene .nexus-floor.open.drag-over{background:#6fc7ff33!important;outline:2px solid #ffe3a2!important;border-radius:10px}
-.arena-scene .nexus-floor .card-slot .slot-card{font-size:1.2cqw}
-.arena-scene .nexus-floor .card-slot .slot-card .rank{font-size:1.6cqw}
-.arena-scene .nexus-floor .card-slot .slot-card .suit{font-size:1.25cqw}
+/* Размер ранга и масти берётся от высоты карты, как на башнях (52/38cqh).
+   cqw здесь измерял ширину самой маленькой карты и делал символы почти нулевыми. */
 #lanes:not(.is-resolving) .nexus-floor.open.pair-target{
   outline:2px solid #ffda78;animation:none;background:#ffdc582b;box-shadow:0 0 9px #ffbf56bb
 }

@@ -4,6 +4,7 @@ import { ELEMENTS } from '../../../shared/elements.js';
 // появляется только когда движок определил стихию для пары.
 import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT } from './arenaLayout.js';
+const FIRE_VORTEX_URL = new URL('./assets/elFireVortex.gif', import.meta.url).href;
 
 // Ключ стихии (fire/water/…) — тем же словарём пользуется старый Board.
 export const ELEMENT_CLASS = Object.fromEntries(Object.values(ELEMENTS).map(e => [e.icon, e.id]));
@@ -12,8 +13,9 @@ export const ELEMENT_CLASS = Object.fromEntries(Object.values(ELEMENTS).map(e =>
  *  выдумывать анимацию для неопределённой пары запрещено. */
 export function elementAnimHTML(elementEmoji) {
   const key = ELEMENT_CLASS[elementEmoji];
-  const fallback = { lava: 'fire', fire_vortex: 'fire', ice: 'water', thunderstorm: 'storm', sandstorm: 'storm' };
+  const fallback = { lava: 'fire', ice: 'water', thunderstorm: 'storm', sandstorm: 'storm' };
   const asset = key ? LAYOUT.elementAnim[fallback[key] || key] : null;
-  if (!asset || !ARENA_ASSETS[asset]) return '';
-  return `<img class="element-anim effect-${key}" data-effect="${key}" src="${ARENA_ASSETS[asset]}" alt="" draggable="false" loading="lazy">`;
+  const source = key === 'fire_vortex' ? FIRE_VORTEX_URL : ARENA_ASSETS[asset];
+  if (!source) return '';
+  return `<img class="element-anim effect-${key}" data-effect="${key}" src="${source}" alt="" draggable="false" loading="lazy">`;
 }

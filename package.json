@@ -7,6 +7,7 @@
     "test": "node --test tests/elements.test.js tests/server.test.js tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js tests/arena-ui.test.js",
     "test:browser": "node tests/browser-elements.mjs",
     "test:local": "node tests/browser-local.mjs",
+    "test:nexus": "node tests/browser-nexus.mjs",
     "test:browser:live": "node tests/browser-v19.mjs",
     "build": "vite build",
     "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",

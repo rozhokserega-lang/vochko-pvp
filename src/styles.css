@@ -212,5 +212,5 @@ h1{font-size:19px;letter-spacing:1.5px;margin:0;color:var(--gold);white-space:no
 .pair-placement span:last-child{width:100%;font-size:13px}.pair-placement:focus-visible{outline:3px solid #ffd36f;outline-offset:2px}
 .placement-pair details{font-size:13px;line-height:1.5}.placement-pair summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#f4d78d}
 .placement-pair details small{font-size:13px}.pair-placement:disabled{opacity:.7;cursor:default}
-.effect-lava{filter:hue-rotate(-20deg) saturate(1.5)}.effect-fire_vortex{filter:saturate(1.7)}.effect-ice{filter:brightness(1.4)}.effect-thunderstorm{filter:hue-rotate(35deg)}.effect-sandstorm{filter:sepia(.8)}
+.effect-lava{filter:hue-rotate(-20deg) saturate(1.5)}.effect-ice{filter:brightness(1.4)}.effect-thunderstorm{filter:hue-rotate(35deg)}.effect-sandstorm{filter:sepia(.8)}
 @media(max-width:640px){.placements{grid-template-columns:1fr}.placement-pairs{grid-template-columns:repeat(2,minmax(0,1fr))}.pair-placement{font-size:13px}.placement-line{padding:8px}.pair-preview{overflow-wrap:anywhere}}
