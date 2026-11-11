@@ -1,0 +1,27 @@
+.arena-scene .tower-art .tower-attack.attack-charge{width:max(19px,2.9cqw);height:max(24px,3.8cqw);top:53%;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2cqw;color:#fff4df;visibility:visible!important;filter:none;white-space:nowrap}
+.arena-scene .attack-charge.meter-right{margin-left:.65cqw}.arena-scene .attack-charge.meter-left{margin-right:.65cqw}
+.attack-charge-core{position:relative;display:grid;place-items:center;width:82%;aspect-ratio:1;isolation:isolate;border-radius:50%;background:radial-gradient(circle,#101a26dd,#080c15aa 65%,transparent 70%);transform:scale(var(--charge-scale));animation:attack-charge-arrive .5s ease-out both}
+.attack-charge-core .element-anim{position:relative;width:100%;height:100%;object-fit:contain;z-index:2;filter:drop-shadow(0 0 4px var(--attack-color));pointer-events:none}
+.attack-orbit{position:absolute;inset:-7%;border:1px solid var(--attack-color);border-left-color:transparent;border-right-color:transparent;border-radius:50%;box-shadow:0 0 4px color-mix(in srgb,var(--attack-color),transparent 45%);animation:attack-orbit-spin 4s linear infinite;pointer-events:none}
+.attack-orbit.orbit-b{inset:-18% -3%;transform:rotate(65deg) scaleY(.55);animation:attack-orbit-cross 5s linear infinite;opacity:.7}
+.attack-spark{position:absolute;width:max(2px,.23cqw);height:max(2px,.23cqw);border-radius:50%;background:#fff5d6;box-shadow:0 0 4px var(--attack-color);left:-9%;top:45%;animation:attack-spark-pulse 1.6s ease-in-out infinite;z-index:3}
+.attack-spark.spark-b{left:95%;top:25%;animation-delay:-.8s}
+.attack-charge-value{display:flex;align-items:center;justify-content:center;gap:.18cqw;min-width:85%;padding:.12cqw .35cqw;border:1px solid #b9995ca6;border-radius:2px;background:linear-gradient(#332b24,#111723);box-shadow:inset 0 1px #fff1c02b,0 1px 3px #000b;font-size:clamp(8px,1.05cqw,16px);line-height:1.1;font-variant-numeric:tabular-nums;z-index:4}
+.attack-charge-value svg{width:.8em;height:.8em;fill:none;stroke:#f3c982;stroke-width:2}
+.attack-charge.charge-fired .attack-charge-core{opacity:0;transition:opacity .12s}
+.attack-charge.charge-fired .attack-charge-value{opacity:.5}
+.attack-projectile{position:fixed;aspect-ratio:1;z-index:75;pointer-events:none;transform:translate(-50%,-50%);filter:drop-shadow(0 0 5px var(--attack-color)) drop-shadow(0 0 11px var(--attack-color));animation:attack-charge-flight .45s cubic-bezier(.4,.05,.8,.5) both}
+.attack-projectile .element-anim{width:100%;height:100%;object-fit:contain}
+.attack-impact-flash{position:fixed;aspect-ratio:1;border:2px solid var(--attack-color);border-radius:50%;z-index:74;pointer-events:none;box-shadow:0 0 12px var(--attack-color),inset 0 0 10px var(--attack-color);animation:attack-impact-burst .4s ease-out both}
+@keyframes attack-charge-arrive{from{opacity:0;transform:scale(.2);filter:brightness(2.5)}to{opacity:1;transform:scale(var(--charge-scale));filter:brightness(1)}}
+@keyframes attack-orbit-spin{to{rotate:360deg}}
+@keyframes attack-orbit-cross{to{rotate:-360deg}}
+@keyframes attack-spark-pulse{50%{opacity:.3;scale:.5}}
+@keyframes attack-charge-flight{0%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}80%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--flight-x)),calc(-50% + var(--flight-y))) scale(.4)}}
+@keyframes attack-impact-burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+@media(prefers-reduced-motion:reduce){.attack-charge *{animation:none!important;transition:none!important}.attack-impact-flash{animation-duration:.1s}.attack-projectile{display:none}}
+.attack-charge:before{content:'';position:absolute;left:-70%;top:31%;width:80%;height:2px;background:linear-gradient(90deg,transparent,var(--attack-color),#fff4d1);box-shadow:0 0 6px var(--attack-color);transform-origin:left;animation:attack-energy-thread .5s ease-out both}
+.attack-charge.meter-left:before{left:auto;right:-70%;transform-origin:right}
+.attack-charge.charge-fired .attack-charge-core{animation:none;opacity:0!important}
+@keyframes attack-energy-thread{0%{opacity:0;transform:scaleX(0)}35%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.attack-charge:before{animation:none;display:none}}

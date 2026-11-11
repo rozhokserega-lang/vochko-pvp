@@ -165,7 +165,7 @@ test('предпросмотр: атака не добавляет щит, за�
   slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
   const html = battleHTML(view(), slots);
   assert.match(html, /aria-label="Щит: 9"/);
-  assert.match(html, /class="tower-attack" aria-label="Атака: 8"/);
+  assert.match(html, /class="tower-attack attack-charge" aria-label="Атака: 8"/);
   assert.doesNotMatch(html, /aria-label="Щит: 6"/);
   assert.equal((html.match(/class="tower-shield crystal-shield" data-empty/g) || []).length, 5);
 });

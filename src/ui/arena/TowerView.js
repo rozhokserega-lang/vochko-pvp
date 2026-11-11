@@ -1,3 +1,4 @@
+import { attackChargeHTML } from './AttackCharge.js';
 // Башня арены v20: PNG с тремя состояниями (целая / «пол хп» / фундамент),
 // два интерактивных слота карт поверх нарисованных рамок и круг стихии.
 // Позиции элементов накладываются в ArenaScene.applyArenaLayout() по конфигу.
@@ -47,7 +48,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots, preview }
     </div>
     ${active && alive ? `
       ${towerHealthHTML(hp, max, ownShield, charging, kind === 'def' ? cards.map(c => c.id).sort().join(',') : '')}
-      ${ownAttack ? `<span class="tower-attack" aria-label="Атака: ${ownAttack}">⚔ ${ownAttack}</span>` : ''}
+      ${ownAttack ? attackChargeHTML(cards) : ''}
     ` : ''}
   </div>`;
 }

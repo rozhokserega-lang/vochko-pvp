@@ -1,3 +1,5 @@
+import { retainAttackCharges } from './ui/arena/AttackCharge.js';
+import './ui/arena/attack-charge.css';
 import { retainTowerMeters } from './ui/arena/TowerHealth.js';
 import { shuffled } from '../shared/cards.js';
 import './styles.css';
@@ -209,10 +211,12 @@ function render(force = false) {
         ${cardPanelHTML(panelState)}
       </div>
     </div>`;
+  const restoreChargeAnimations = retainAttackCharges(app.firstElementChild, root);
   const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
   app.replaceChildren(root);
   applyArenaLayout();
   restoreMeterAnimations();
+  restoreChargeAnimations();
   // Consume placement flags once; another tower placement must not replay them.
   for (const slot of slots) for (const card of [...slot.atk, ...slot.def]) card.justPlaced = false;
   initArenaLayoutEditor();
