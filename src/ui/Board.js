@@ -1,5 +1,4 @@
-import { type, elementName } from '../../shared/elements.js';
-import { combo } from '../../shared/combos.js';
+import { type, elementName, pairStats } from '../../shared/elements.js';
 import { TOWER_ART, NEXUS_IMAGES } from './assets.js';
 import { nexusFloorOpen, towerStage } from './combat-logic.js';
 
@@ -9,38 +8,13 @@ const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 
 export const cardHTML = (c) => `<span class="mini ${'♥♦'.includes(c.s) ? 'red' : ''}">${c.r}<span class="suit">${c.s}</span></span>`;
 
-// Шкалы силы над башнями: последняя ширина запоминается для плавной анимации.
-export const METER_LAST = new Map();
-
-export function meterHTML(cards, kind, lane) {
-  const complete = cards.length === 2;
-  const power = complete ? combo(cards) : 0;
-  const element = complete ? type(cards) : '';
-  const key = lane + '-' + kind;
-  const pct = complete ? 100 : 0;
-  const previous = METER_LAST.has(key) ? METER_LAST.get(key) : 0;
-  METER_LAST.set(key, pct);
-  const caption = kind === 'atk' ? '⚔ АТАКА' : '🛡 ЗАЩИТА';
-  return `<div class="power-meter ${kind === 'atk' ? 'power-attack' : 'power-defense'}" aria-label="${caption}: ${power} из ${power} (полная шкала)">
-    <div class="power-meter-head"><span>${caption}</span><strong>${power}</strong><span class="power-element">${element}</span></div>
-    <div class="power-meter-track"><i data-meter-target="${pct}" style="width:${previous}%"></i></div>
-  </div>`;
-}
-
-export function animateMeters() {
-  // Без requestAnimationFrame: в перекрытых окнах RAF замирает и шкала
-  // остаётся пустой; обычный таймер работает всегда.
-  setTimeout(() => {
-    document.querySelectorAll('[data-meter-target]').forEach((el) => {
-      el.style.width = el.dataset.meterTarget + '%';
-    });
-  }, 30);
-}
+export { meterHTML, animateMeters, METER_LAST } from './meters.js';
+import { meterHTML } from './meters.js';
 
 // Стадия разрушения башни для арта: full → worn → critical → ruins (v19).
 // Реализация в combat-logic.js (покрывается тестами).
 
-const ELEMENT_CLASS = { '🔥': 'fire', '💧': 'water', '🪨': 'earth', '🌪️': 'air', '♨️': 'steam', '🌫️': 'storm' };
+import { ELEMENT_CLASS } from './arena/ElementEffect.js';
 
 export function tower({ hp, max, label, lane, kind, active, slots }) {
   const cards = active ? slots[lane][kind] : [];
@@ -99,10 +73,11 @@ export function nexusFortress(board, placements, isEnemy) {
       return `<span class="nexus-card-slot ${card ? 'filled' : ''}">${card ? `<span class="nexus-inserted-card ${'♥♦'.includes(card.s) ? 'red' : ''}">${card.r}<span>${card.s}</span></span>` : ''}</span>`;
     }).join('');
     const complete = cards.length === 2;
-    const power = complete ? combo(cards) : 0;
+    const stats = pairStats(cards);
+    const power = stats ? `⚔ ${stats.attack} · 🛡 ${stats.defense}` : '⚔ 0 · 🛡 0';
     const element = complete ? type(cards) : '';
     const meter = `<div class="nexus-floor-meter ${kind === 'atk' ? 'nexus-attack' : 'nexus-defense'}" aria-label="${kind === 'atk' ? 'Атака' : 'Защита'} Нексуса ${power} ${element}">
-      <div class="nexus-floor-meter-caption">${kind === 'atk' ? '⚔ АТАКА' : '🛡 ЗАЩИТА'} <b>${power}</b> <span>${element}</span></div>
+      <div class="nexus-floor-meter-caption">${kind === 'atk' ? 'ПАРА 1' : 'ПАРА 2'} <b>${power}</b> <span>${element}</span></div>
       <div class="nexus-floor-meter-track"><i style="width:${complete ? 100 : 0}%"></i></div>
     </div>`;
     return `<div class="nexus-floor ${opened ? 'open drop-target' : 'locked'}"

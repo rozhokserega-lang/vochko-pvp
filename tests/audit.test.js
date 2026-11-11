@@ -7,7 +7,7 @@ import { deal } from '../shared/cards.js';
 import { mulberry32 } from '../shared/rng.js';
 
 test('аудит п.2: fortifyAllowed запрещает повторное укрепление', () => {
-  assert.deepEqual(fortifyAllowed(false, 1), { ok: true });
+  assert.deepEqual(fortifyAllowed(false, 1), { ok: false, error: 'fortify-disabled' });
   assert.deepEqual(fortifyAllowed(false, null), { ok: true });
   assert.equal(fortifyAllowed(true, 0).ok, false);   // уже использовано
   assert.equal(fortifyAllowed(true, null).ok, true); // без укрепления можно ходить

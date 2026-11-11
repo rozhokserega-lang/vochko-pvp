@@ -1,4 +1,5 @@
 import { revealAssignments, shieldEntries } from './combat-logic.js';
+import { ELEMENTS } from '../../shared/elements.js';
 
 // Боевая хореография v19 (эталон vochko_pvp_enemy_defense_reveal_v19.html):
 // 1) под обеих сторон раскрываютсяcommitted пары (падение карт на цели),
@@ -17,7 +18,7 @@ export function clearFloats() {
   document.querySelector('#lanes')?.classList.remove('is-resolving');
 }
 
-const VFX_ICONS = { '🔥': '🔥', '💧': '💧', '🪨': '🪨', '🌪️': '🌪️', '♨️': '♨️', '🌫️': '🌫️' };
+const VFX_ICONS = Object.fromEntries(Object.values(ELEMENTS).map(e => [e.icon, e.icon]));
 
 // Цель удара определяется детерминированно по стадии (не «первая живая»).
 export function vfxTarget(ev, seat) {
@@ -261,7 +262,7 @@ export function combatRevealAttackCards(report, seat) {
       const suit = document.createElement('span'); suit.textContent = card.s;
       c.append(rank, suit); pair.appendChild(c);
     }
-    const width = 104;
+    const width = innerWidth <= 740 ? 84 : 104;
     const x = Math.max(width / 2 + 8, Math.min(innerWidth - width / 2 - 8, rect.left + rect.width / 2));
     const minY = (laneRect?.top ?? 0) + 35;
     const maxY = (laneRect?.bottom ?? innerHeight) - 100;

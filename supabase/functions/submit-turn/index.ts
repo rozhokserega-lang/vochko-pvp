@@ -5,7 +5,7 @@ import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 import { dealHand } from '../_shared/deal.ts';
-import { validateTurn, materializeTurn, fortifyAllowed } from '../../../shared/validation.js';
+import { validateTurn, materializeTurn } from '../../../shared/validation.js';
 import { botPlan } from '../../../shared/bot.js';
 import { resolveRound } from '../../../shared/engine.js';
 
@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     const user = await requireUser(req);
     const body = await req.json();
-    const { matchId, round, expectedVersion, placements, fortifyLane } = body ?? {};
+    const { matchId, round, placements, fortifyLane } = body ?? {};
     if (!matchId) throw new HttpError('matchId required');
 
     const result = await sql.begin(async (tx) => {
@@ -25,6 +25,11 @@ Deno.serve(async (req) => {
       if (m.status !== 'planning') throw new HttpError('match is not in planning', 409);
       if (round !== m.round) throw new HttpError(`stale round: current ${m.round}`, 409);
 
+      const st = m.state ?? {};
+      const { matchId: _id, round: _round, expectedVersion: _version, ...turn } = body;
+      const check = validateTurn(st.hands?.[String(seat)] ?? [], turn);
+      if (!check.ok) throw new HttpError(check.error ?? 'invalid turn', 400);
+
       // Идемпотентность важнее версии: повторный submit возвращает прежнее
       // подтверждение, даже если version уже уехал вперёд (README §6.8).
       const existing = await tx`
@@ -32,31 +37,17 @@ Deno.serve(async (req) => {
          where match_id = ${m.id} and round = ${m.round} and player_id = ${user.id}`;
       if (existing.length) return { accepted: true, version: Number(m.version), ready: true };
 
-      const st = m.state ?? {};
-      // Аудит п.2: укрепление — один раз за матч (проверка ПОСЛЕ объявления st).
-      const fort = fortifyAllowed(st.fortifyUsed?.[String(seat)], fortifyLane);
-      if (!fort.ok) throw new HttpError(fort.error, 400);
-      // Аудит п.6: проверку равенства expectedVersion убрали — почти
-      // одновременные ходы больше не конфликтуют; атомарность держат
-      // FOR UPDATE + проверка раунда + идемпотентность.
-      const check = validateTurn(st.hands?.[String(seat)] ?? [], { placements, fortifyLane });
-      if (!check.ok) throw new HttpError(check.error ?? 'invalid turn');
-
       await tx`
         insert into private.turns (match_id, round, player_id, seat, placements, fortify_lane)
         values (${m.id}, ${m.round}, ${user.id}, ${seat},
-                ${sql.json(placements)}, ${fortifyLane ?? null})`;
+                ${sql.json(placements)}, ${null})`;
 
       const resolveAndStore = async (turnA, turnB) => {
         const board = { round: m.round, a: st.board.a, b: st.board.b };
         const resolved = resolveRound(board, turnA, turnB);
         st.board = { a: board.a, b: board.b };
 
-        // Укрепление сгорает после разрешённого раунда.
-        st.fortifyUsed = {
-          1: st.fortifyUsed?.[1] || turnA.fortifyLane != null,
-          2: st.fortifyUsed?.[2] || turnB.fortifyLane != null,
-        };
+        st.fortifyUsed = { 1: false, 2: false }; // неактивное поле совместимости
 
         const finished = resolved.finished;
         const newRound = finished ? m.round : m.round + 1;
@@ -110,8 +101,8 @@ Deno.serve(async (req) => {
       const bySeat = new Map(rows.map((r) => [r.seat, r]));
       const t1 = bySeat.get(1)!, t2 = bySeat.get(2)!;
       return await resolveAndStore(
-        materializeTurn(st.hands['1'], { placements: t1.placements, fortifyLane: t1.fortify_lane }),
-        materializeTurn(st.hands['2'], { placements: t2.placements, fortifyLane: t2.fortify_lane }),
+        materializeTurn(st.hands['1'], { placements: t1.placements, fortifyLane: null }),
+        materializeTurn(st.hands['2'], { placements: t2.placements, fortifyLane: null }),
       );
     });
 

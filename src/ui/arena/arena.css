@@ -201,7 +201,7 @@
 /* Компактный режим для низких окон (телефон в ландшафте): сцена получает
    максимум высоты — убираем второстепенное, сжимаем руку. */
 @media(max-height:560px){
-  .hand-area .battle-reports,.hand-area .legend,.hand-head .sub,.hand-area .pair-preview{display:none!important}
+  .hand-area .legend,.hand-head .sub{display:none!important}
   .hand-area{padding:2px 4px 3px!important}
   .hand{margin-top:2px;gap:3px}
   .card{height:44px;border-radius:6px}
@@ -217,6 +217,11 @@
 }
 
 /* ── Arena Layout Editor (?arenaDebug=1) ── */
+/* Расстановка теперь содержит объяснения: страница прокручивается, поле не сжимается. */
+body{overflow-y:auto}
+.wrap{height:auto;min-height:calc(100dvh - 44px)}
+.battle#lanes{flex:0 0 auto;height:clamp(220px,52vw,620px)}
+
 .arena-debug-panel{position:fixed;top:12px;right:12px;z-index:14000;width:270px;max-height:92vh;overflow:auto;
   background:#0b1524f2;border:1px solid #a78c53;border-radius:10px;padding:10px;color:#dbe7f7;
   font:12px/1.35 'Segoe UI',system-ui,sans-serif;box-shadow:0 10px 30px #000c}

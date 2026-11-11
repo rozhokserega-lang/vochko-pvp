@@ -1,8 +1,7 @@
 // Нексус арены v20: спрайт с тремя независимыми рядами. В каждом ряду —
 // два интерактивных слота карт и круг стихии. Карты кладутся в ряд только
 // когда линия пробита (nexusFloorOpen), правила доступа — из combat-logic.
-import { type } from '../../../shared/elements.js';
-import { combo } from '../../../shared/combos.js';
+import { type, pairStats } from '../../../shared/elements.js';
 import { nexusFloorOpen } from '../combat-logic.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT, nexusId } from './arenaLayout.js';
@@ -17,10 +16,11 @@ export function nexusHTML(board, placements, isEnemy) {
     const cards = opened ? (placements[lane][kind] || []) : [];
     const slotsHTML = cardSlotHTML(0, cards) + cardSlotHTML(1, cards);
     const complete = cards.length === 2;
-    const power = complete ? combo(cards) : 0;
+    const stats = pairStats(cards);
+    const power = stats ? `⚔ ${stats.attack} · 🛡 ${stats.defense}` : '⚔ 0 · 🛡 0';
     const element = complete ? type(cards) : '';
-    const meter = `<div class="nexus-floor-meter ${kind === 'atk' ? 'nexus-attack' : 'nexus-defense'}" aria-label="${kind === 'atk' ? 'Атака' : 'Защита'} Нексуса ${power} ${element}">
-      <div class="nexus-floor-meter-caption">${kind === 'atk' ? '⚔ АТАКА' : '🛡 ЗАЩИТА'} <b>${power}</b> <span>${element}</span></div>
+    const meter = `<div class="nexus-floor-meter ${kind === 'atk' ? 'nexus-attack' : 'nexus-defense'}" aria-label="${kind === 'atk' ? 'Пара 1' : 'Пара 2'} Нексуса ${power} ${element}">
+      <div class="nexus-floor-meter-caption">${kind === 'atk' ? 'ПАРА 1' : 'ПАРА 2'} <b>${power}</b> <span>${element}</span></div>
       <div class="nexus-floor-meter-track"><i style="width:${complete ? 100 : 0}%"></i></div>
     </div>`;
     return `<div class="nexus-floor ${opened ? 'open drop-target' : 'locked'}"

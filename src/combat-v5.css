@@ -1,4 +1,13 @@
 /* ── Combat FX v5 (порт из vochko_pvp_combat_fixed_target_v5) ── */
+.combat-card-reveal{position:fixed;z-index:12000;pointer-events:none;transform:translate(-50%,-20px);opacity:0;transition:transform .35s,opacity .25s}
+.combat-card-reveal.fall{opacity:1;transform:translate(-50%,0)}
+.combat-card-reveal.fade{opacity:0}
+.combat-reveal-label{font:bold 9px system-ui;text-align:center;color:#ffe3a2;text-shadow:0 1px 3px #000}
+.combat-reveal-pair{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
+.combat-reveal-card{display:flex;flex-direction:column;align-items:center;justify-content:center;width:46px;height:58px;background:#fcf6e9;color:#17263e;border:1px solid #d8bd7c;border-radius:5px;font:bold 18px system-ui;box-shadow:0 2px 5px #0008}
+.combat-reveal-card.red{color:#b82343}
+@media(max-width:740px){.combat-reveal-card{width:36px;height:44px;font-size:15px}.combat-reveal-label{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.combat-card-reveal{transition:none}}
 .damage-float.vfx-hit{
  display:flex;align-items:center;justify-content:center;gap:3px;
  padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;

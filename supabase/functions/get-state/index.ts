@@ -48,13 +48,13 @@ Deno.serve(async (req) => {
         userId: user.id,
         hand: st.hands?.[String(seat)] ?? [],
         ready: readyRow.mine > 0,
-        fortifyUsed: st.fortifyUsed?.[String(seat)] ?? false,
+        fortifyUsed: false,
       },
       opponent: {
         connected: st.botMatch ? true : (seat === 1 ? m.player2_id : m.player1_id) != null,
         isBot: !!st.botMatch,
         ready: readyRow.theirs > 0,
-        fortifyUsed: st.fortifyUsed?.[String(seat === 1 ? 2 : 1)] ?? false,
+        fortifyUsed: false,
       },
       board: {
         me: myBoard ? { ...myBoard, shieldPct: shieldPct(myBoard) } : null,

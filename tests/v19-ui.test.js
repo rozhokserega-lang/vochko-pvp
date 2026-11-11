@@ -100,13 +100,13 @@ test('серверное правило: hit = max(0, атака − защит�
   const board = buildState();
   // A атакует огнём против земляной защиты B; B атакует землёй против земляной защиты A.
   E.resolveRound(board, fullTurn(FIRE, EARTH), fullTurn(EARTH, EARTH));
-  // Огонь против Земли: атака round(28×0.9025)=25, защита round(7×1.12)=8 → hit 17.
-  // Внешняя башня 12 HP уничтожена, остаток 5 СГОРАЕТ — внутренняя не тронута.
+  // Обе пары A: атака 34 + 7 = 41; обе пары B: защита 9 + 9 = 18 → hit 23.
+  // Внешняя башня 12 HP уничтожена, остаток СГОРАЕТ — внутренняя не тронута.
   assert.equal(board.b.outer[0], 0);
   assert.equal(board.b.inner[0], 18);
   assert.equal(board.b.nexus, 80);
-  // Огонь поджигает: поджог на следующий раунд для B.
-  assert.equal(board.b.burn[0], 1);
+  // Поджог отключён даже для огня.
+  assert.equal(board.b.burn[0], 0);
 });
 
 // ── 6. Башни меняют артефакт по состоянию HP ──────────────────────────────
@@ -182,10 +182,10 @@ test('в пробитой линии ни одна башня не активн�
 });
 
 // ── 15. Регресс «Ошибка: fortify-used» в середине матча ────────────────────
-test('укрепление не уходит в submit повторно после использования (1 раз за матч)', () => {
-  // До использования — выбранная линия отправляется как есть.
-  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: 0 }), 0);
-  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: 2 }), 2);
+test('укрепление никогда не отправляется клиентом', () => {
+  // Даже неиспользованное укрепление не может быть отправлено.
+  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: 0 }), null);
+  assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: 2 }), null);
   assert.equal(fortifyLaneForSubmit({ fortifyUsed: false, lane: null }), null);
   // После использования — всегда null, иначе сервер отвечает 400 fortify-used
   // и игрок не может отправить ни один следующий раунд.

@@ -1,3 +1,5 @@
+import { ELEMENTS, elementOf } from '../shared/elements.js';
+import { placementHTML } from './ui/Placement.js';
 import './styles.css';
 import './combat-v5.css';
 import './ui/arena/arena.css';
@@ -12,7 +14,7 @@ import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
 import { renderPreview, roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { animateMeters, METER_LAST } from './ui/meters.js';
-import { nextReportRound, hasNewBattle as hasNewBattleReport, fortifyLaneForSubmit } from './ui/combat-logic.js';
+import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -22,8 +24,6 @@ let view = null;          // персональный PlayerView с сервер
 let myHand = [];          // объекты карт моей руки
 let slots = [];           // локальная раскладка: [{atk:[card,card], def:[card,card]}×3]
 let selected = [];        // id выбранных карт (0..2)
-let fortifyLane = null;   // выбранная линия укрепления до submit
-let fortifyMode = false;
 let unwatch = null;
 let lastVersion = 0;
 let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
@@ -99,7 +99,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   if (unwatch) { unwatch(); unwatch = null; }
   clearFloats();
   lastVersion = 0; lastReportRound = 0;
-  selected = []; fortifyLane = null; fortifyMode = false;
+  selected = [];
   slots = resetSlots(); slotsState.round = 0;
   myHand = []; view = null;
   if (matchId) api.leaveRoom(matchId).catch(() => { /* finished/нет участия — не критично */ });
@@ -126,10 +126,6 @@ async function refresh(matchId, afterEvents = false) {
     return;
   }
   myHand = view.me.hand;
-  // Укрепление — строго 1 раз ЗА МАТЧ. Если сервер уже засчитал его, локальный
-  // выбор снимаем: иначе он уходил бы в каждый следующий submit, и сервер
-  // отвечал бы 400 fortify-used до конца матча (игрок «застревал»).
-  if (view.me.fortifyUsed && (fortifyLane !== null || fortifyMode)) { fortifyLane = null; fortifyMode = false; }
   if (view.round !== slotsState.round) { slots = resetSlots(); METER_LAST.clear(); slotsState.round = view.round; }
   // Финал без нового боя: переход в реванш или финальный экран.
   if (finished && !hasNewBattle) {
@@ -178,20 +174,16 @@ function render() {
         <div class="hand-head"><div><strong>МОЯ РУКА</strong>
           <div class="sub">Тяни карту на башню или выбери две карты и нажми на цель.</div></div>
           <span class="toast" id="selectedInfo">Выбрано: ${selected.length} / 2</span></div>
+        <div class="placements" id="placements">${placementHTML(slots, view.me.ready)}</div>
         <div class="hand" id="hand"></div>
         <div class="pair-preview" id="pairPreview"></div>
         <div class="tactic-panel">
-          <button class="btn ${fortifyMode || fortifyLane !== null ? 'gold' : ''}" id="fortifyBtn" ${view.me.fortifyUsed || view.status !== 'planning' ? 'disabled' : ''}>
-            ${view.me.fortifyUsed ? '🛡 Укрепление использовано' : fortifyLane !== null ? `🛡 Укрепить: ${['ВЕРХ', 'ЦЕНТР', 'НИЗ'][fortifyLane]} (можно снять)` : '🛡 Укрепить линию (1/1)'}</button>
-          <div class="fortify-lanes" ${fortifyMode ? '' : 'hidden'}>
-            <button data-fort="0">ВЕРХ</button><button data-fort="1">ЦЕНТР</button><button data-fort="2">НИЗ</button><button data-fort="cancel">Отмена</button>
-          </div>
           <button class="btn" id="clearBtn" ${view.me.ready ? 'disabled' : ''}>↩ Очистить</button>
           <button class="btn gold" id="fightBtn" ${view.status !== 'planning' ? 'disabled' : ''}>${view.me.ready ? '⏳ Ждём соперника' : '⚔ Готов'}</button>
         </div>
         <div class="status" id="status">${view.me.ready && !view.opponent.ready ? 'Ход отправлен. Ждём соперника — карты скрыты от него.' : ''}</div>
         <div class="battle-reports" id="battleReports">${roundReportHTML(view, view.seat)}</div>
-        <div class="legend">♥♥ 🔥 · ♦♦ 💧 · ♠♠ 🪨 · ♣♣ 🌪️ · ♥♦ ♨️ Пар · ♠♣ 🌫️ Буря · Огонь&Пар жгут: 4/2</div>
+        <div class="legend">${Object.values(ELEMENTS).map(e => `${e.suits} ${e.icon} ${e.name}`).join(' · ')}</div>
       </section>
     </div>`;
   app.replaceChildren(root);
@@ -205,32 +197,23 @@ function render() {
 
   byId('hand').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-card]');
-    if (!btn || view.me.ready) return;
+    if (!btn || view.me.ready || usedIds().has(btn.dataset.card)) return;
     const id = btn.dataset.card;
     if (selected.includes(id)) selected = selected.filter((x) => x !== id);
     else if (selected.length < 2) selected.push(id);
     render();
   });
 
-  root.querySelectorAll('.tower.drop-target, .nexus-floor.drop-target').forEach((t) => t.addEventListener('click', () => {
+  root.querySelectorAll('.tower.drop-target, .nexus-floor.drop-target, .pair-target').forEach((t) => t.addEventListener('click', () => {
     if (view.me.ready) return;
     const lane = +t.dataset.lane, kind = t.dataset.kind;
     if (!selected.length) { slots[lane][kind] = []; render(); return; } // клик по башне без выбора — снять пару
-    const allowed = kind === 'atk' ? '♥♦' : '♠♣';
-    if (selected.some((id) => !allowed.includes(cardById(id).s))) return setStatus('Не та масть для этой башни.');
     const pair = slots[lane][kind];
-    const before = pair.length;
     if (pair.length + selected.length > 2) { slots[lane][kind] = []; }
-    selected.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) { slots[lane][kind].push(c); c.justPlaced = true; } });
+    selected.forEach((id) => { const c = cardById(id); if (c && !usedIds().has(id) && slots[lane][kind].length < 2) { slots[lane][kind].push(c); c.justPlaced = true; } });
     selected = [];
     render();
   }));
-
-  byId('fortifyBtn').onclick = () => { if (view.me.fortifyUsed) return; fortifyMode = !fortifyMode; render(); };
-  root.querySelectorAll('[data-fort]').forEach((b) => b.onclick = () => {
-    fortifyLane = b.dataset.fort === 'cancel' ? null : +b.dataset.fort;
-    fortifyMode = false; render();
-  });
 
   byId('clearBtn').onclick = () => { selected = []; slots = resetSlots(); render(); };
   byId('fightBtn').onclick = () => submit();
@@ -282,8 +265,7 @@ function elementOfPair(ids) {
   if (ids.length !== 2) return '';
   const a = cardById(ids[0]), b = cardById(ids[1]);
   if (!a || !b) return '';
-  if (a.s === b.s) return { '♥': 'fire', '♦': 'water', '♠': 'earth', '♣': 'air' }[a.s];
-  return (a.s === '♥' || a.s === '♦') ? 'steam' : 'storm';
+  return elementOf([a, b])?.id ?? '';
 }
 
 async function submit(attempt = 0) {
@@ -293,26 +275,14 @@ async function submit(attempt = 0) {
     defense: s.def.map((c) => c.id),
   }));
   if (placements.some((p) => p.attack.length !== 2 || p.defense.length !== 2))
-    return setStatus('Собери 3 атакующие и 3 защитные пары.');
+    return setStatus('Собери по две пары на каждой из трёх линий.');
   byId('fightBtn').disabled = true;
   try {
-    // Укрепление отправляем только если сервер ещё не засчитал его за матч.
-    const r = await api.submitTurn({ matchId: view.matchId, round: view.round, expectedVersion: view.version, placements, fortifyLane: fortifyLaneForSubmit({ fortifyUsed: view.me.fortifyUsed, lane: fortifyLane }) });
-    // Укрепление ушло этим ходом — повторно не отправляем (оно 1 раз за матч).
-    if (fortifyLane !== null) { fortifyLane = null; fortifyMode = false; }
+    const r = await api.submitTurn({ matchId: view.matchId, round: view.round, expectedVersion: view.version, placements, fortifyLane: null });
     lastVersion = 0;
     await refresh(view.matchId, !!r.resolved);
   } catch (e) {
     const msg = String(e.message ?? '');
-    // Самовосстановление: если сервер говорит «укрепление уже использовано»,
-    // снимаем локальный выбор и просим отправить раунд ещё раз. Иначе игрок
-    // застревал бы до конца матча на каждом submit.
-    if (msg === 'fortify-used') {
-      fortifyLane = null; fortifyMode = false;
-      await refresh(view.matchId);
-      setStatus('Укрепление уже использовано в этом матче — оно снято. Нажми «Готов» ещё раз.');
-      return;
-    }
     const retryable = msg.includes('stale') || msg.includes('таймаут') || msg.includes('timeout') || e.name === 'AbortError';
     if (retryable && attempt < 2) {
       if (e.name === 'AbortError') await refresh(view.matchId); // ход мог доехать — сверимся (идемпотентно)
@@ -356,16 +326,15 @@ window.addEventListener('pointerup', (e) => {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.drop-target');
     if (target) {
       const lane = +target.dataset.lane, kind = target.dataset.kind;
-      const allowed = kind === 'atk' ? '♥♦' : '♠♣';
       if (!view.me.ready) {
         // Пара выбрана заранее — переносим обе карты разом; иначе тащим одиночную.
         const ids = selected.length === 2 ? [...selected] : [dragId];
-        const cardsOk = ids.map(cardById).every((c) => c && allowed.includes(c.s));
+        const cardsOk = ids.every(id => cardById(id) && !usedIds().has(id));
         if (cardsOk) {
           const pair = slots[lane][kind];
           if (!(ids.length === 1 && pair.some((x) => x.id === dragId))) {
             if (pair.length + ids.length > 2) slots[lane][kind] = [];
-            ids.forEach((id) => { const c = cardById(id); if (c && slots[lane][kind].length < 2) { slots[lane][kind].push(c); c.justPlaced = true; } });
+            ids.forEach((id) => { const c = cardById(id); if (c && !usedIds().has(id) && slots[lane][kind].length < 2) { slots[lane][kind].push(c); c.justPlaced = true; } });
             selected = [];
             render();
           }

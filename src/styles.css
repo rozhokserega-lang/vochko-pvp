@@ -122,9 +122,6 @@ h1{font-size:19px;letter-spacing:1.5px;margin:0;color:var(--gold);white-space:no
 .btn{padding:6px 12px;border-radius:8px;border:1px solid #67789a;background:#25354f;color:#fff;font-size:12px}
 .btn:disabled{opacity:.4;cursor:default}
 .btn.gold{background:#e5b962;color:#152033;font-weight:800;border:0}
-.fortify-lanes{display:flex;gap:5px;flex-wrap:wrap}
-.fortify-lanes button{background:#2c4b56;border:1px solid #7bc5b2;color:#fff;border-radius:8px;padding:6px 10px;font-size:11px}
-.fortify-lanes[hidden]{display:none}
 
 .pair-preview{margin:4px 0 0;padding:5px 9px;background:#21324a;border:1px solid #536a89;border-radius:9px;font-size:11px;line-height:1.35}
 .pair-preview strong{color:#f5d184}
@@ -205,3 +202,15 @@ h1{font-size:19px;letter-spacing:1.5px;margin:0;color:var(--gold);white-space:no
 }
 @media(max-width:380px){.tower{width:18vw}}
 @media(prefers-reduced-motion:reduce){.damage-float{animation:none!important;transition:none!important}.tower{transition:none!important}}
+
+/* Универсальные пары: доступная расстановка независимо от масштаба арены. */
+.placements{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.placement-help{grid-column:1/-1;margin:0;font-size:13px;line-height:1.5;color:#d6e5e5}
+.placement-line{min-width:0;padding:10px;border:1px solid #65818a;border-radius:10px;background:#122c35}
+.placement-line>strong{font-size:14px}.placement-pairs{display:grid;gap:8px;margin-top:8px}
+.pair-target{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;min-height:48px;padding:8px;background:#203e49;border:1px solid #7a949a;border-radius:8px;color:#fff;text-align:left;font:inherit;cursor:pointer}
+.pair-target span:last-child{width:100%;font-size:13px}.pair-target:focus-visible{outline:3px solid #ffd36f;outline-offset:2px}
+.placement-pair details{font-size:13px;line-height:1.5}.placement-pair summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#f4d78d}
+.placement-pair details small{font-size:13px}.pair-target:disabled{opacity:.7;cursor:default}
+.effect-lava{filter:hue-rotate(-20deg) saturate(1.5)}.effect-fire_vortex{filter:saturate(1.7)}.effect-ice{filter:brightness(1.4)}.effect-thunderstorm{filter:hue-rotate(35deg)}.effect-sandstorm{filter:sepia(.8)}
+@media(max-width:640px){.placements{grid-template-columns:1fr}.placement-pairs{grid-template-columns:repeat(2,minmax(0,1fr))}.pair-target{font-size:13px}.placement-line{padding:8px}.pair-preview{overflow-wrap:anywhere}}

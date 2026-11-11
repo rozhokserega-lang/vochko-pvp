@@ -4,11 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js tests/arena-ui.test.js",
-    "test:browser": "node tests/browser-v19.mjs",
+    "test": "node --test tests/elements.test.js tests/server.test.js tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js tests/arena-ui.test.js",
+    "test:browser": "node tests/browser-elements.mjs",
+    "test:local": "node tests/browser-local.mjs",
+    "test:browser:live": "node tests/browser-v19.mjs",
     "build": "vite build",
     "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",
-    "dev": "vite"
+    "dev": "vite",
+    "dev:local": "node scripts/dev-local.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

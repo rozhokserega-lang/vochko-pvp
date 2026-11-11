@@ -1,57 +1,38 @@
-// Валидация хода — чистые функции для сервера (Edge Function). Карты передаются
-// только идентификаторами; любые числа от клиента (урон/HP) игнорируются по контракту.
-const RED = (s) => s === '♥' || s === '♦';
-const BLACK = (s) => s === '♠' || s === '♣';
+// Проволочный формат сохраняет attack/defense как первую/вторую пары.
+export function fortifyAllowed(_used, lane) {
+  return lane == null ? { ok: true } : { ok: false, error: 'fortify-disabled' };
+}
 
-// turn = { placements: [{lane, attack:[id,id], defense:[id,id]}×3], fortifyLane: null|0|1|2 }
-// hand = массив карт вида { id, s, r, v } (персональная раздача игрока).
 export function validateTurn(hand, turn) {
   if (!turn || !Array.isArray(turn.placements) || turn.placements.length !== 3)
     return { ok: false, error: 'Нужно ровно 3 линии' };
-  const lanes = turn.placements.map((p) => p && p.lane).sort();
-  if (JSON.stringify(lanes) !== JSON.stringify([0, 1, 2]))
+  if (Object.keys(turn).some(k => !['placements', 'fortifyLane'].includes(k)))
+    return { ok: false, error: 'Недопустимое действие или характеристики' };
+  if (turn.fortifyLane != null) return fortifyAllowed(false, turn.fortifyLane);
+  const lanes = turn.placements.map(p => p?.lane).sort();
+  if (JSON.stringify(lanes) !== '[0,1,2]')
     return { ok: false, error: 'Линии должны быть 0, 1, 2 без повторов' };
-  const byId = new Map(hand.map((c) => [c.id, c]));
+  const byId = new Map(hand.map(c => [c.id, c]));
   const seen = new Set();
   for (const p of turn.placements) {
+    if (Object.keys(p).some(k => !['lane', 'attack', 'defense'].includes(k)))
+      return { ok: false, error: 'Передавай только идентификаторы карт' };
     if (!Array.isArray(p.attack) || !Array.isArray(p.defense) || p.attack.length !== 2 || p.defense.length !== 2)
-      return { ok: false, error: 'В каждой линии ровно 2 атаки и 2 защиты' };
+      return { ok: false, error: 'На линии нужны ровно две пары по две карты' };
     for (const id of [...p.attack, ...p.defense]) {
+      if (typeof id !== 'string' || !byId.has(id)) return { ok: false, error: 'Карты нет в руке' };
       if (seen.has(id)) return { ok: false, error: 'Карта использована дважды: ' + id };
       seen.add(id);
-      const card = byId.get(id);
-      if (!card) return { ok: false, error: 'Карты нет в руке: ' + id };
     }
-    for (const id of p.attack) if (!RED(byId.get(id).s)) return { ok: false, error: 'Атака только красными ♥♦' };
-    for (const id of p.defense) if (!BLACK(byId.get(id).s)) return { ok: false, error: 'Защита только чёрными ♠♣' };
-    const atk = p.attack.map((id) => byId.get(id));
-    const def = p.defense.map((id) => byId.get(id));
-    if (!(RED(atk[0].s) && RED(atk[1].s))) return { ok: false, error: 'Пара атаки одного цвета' };
-    if (!(BLACK(def[0].s) && BLACK(def[1].s))) return { ok: false, error: 'Пара защиты одного цвета' };
   }
-  const fort = turn.fortifyLane;
-  if (fort !== null && fort !== undefined && ![0, 1, 2].includes(fort))
-    return { ok: false, error: 'fortifyLane: 0..2 или null' };
   return { ok: true };
 }
 
-// Нормализация хода после validateTurn: id-строки → объекты карт для движка.
 export function materializeTurn(hand, turn) {
-  const byId = new Map(hand.map((c) => [c.id, c]));
-  return {
-    placements: turn.placements.map((p) => ({
-      lane: p.lane,
-      attack: p.attack.map((id) => byId.get(id)),
-      defense: p.defense.map((id) => byId.get(id)),
-    })),
-    fortifyLane: turn.fortifyLane ?? null,
-  };
-}
-
-// Укрепление — один раз за матч (аудит п.2). Сервер проверяет флаг до резолва.
-export function fortifyAllowed(fortifyUsed, fortifyLane) {
-  if (fortifyLane == null) return { ok: true };
-  if (![0, 1, 2].includes(fortifyLane)) return { ok: false, error: 'fortify-lane' };
-  if (fortifyUsed) return { ok: false, error: 'fortify-used' };
-  return { ok: true };
+  const check = validateTurn(hand, turn);
+  if (!check.ok) throw new Error(check.error);
+  const byId = new Map(hand.map(c => [c.id, c]));
+  return { placements: [...turn.placements].sort((a, b) => a.lane - b.lane).map(p => ({
+    lane: p.lane, attack: p.attack.map(id => byId.get(id)), defense: p.defense.map(id => byId.get(id)),
+  })), fortifyLane: null };
 }

@@ -1,44 +1,50 @@
-// Стихии и контрстихии — портировано 1:1 из legacy_v15.html (type()/attackInfo()).
-// Каждое промежуточное округление (Math.round) сохранено в точности как в исходнике.
-import { combo } from '../shared/combos.js';
+import { comboDetails } from './combos.js';
 
-const SUIT_ELEMENT = { '♥': '🔥', '♦': '💧', '♠': '🪨', '♣': '🌪️' };
-const ELEMENT_NAME = { '🔥': 'ОГОНЬ', '💧': 'ВОДА', '🪨': 'ЗЕМЛЯ', '🌪️': 'ВОЗДУХ', '♨️': 'ПАР', '🌫️': 'БУРЯ' };
+// Единственный источник баланса для сервера и предпросмотра клиента.
+export const ELEMENTS = Object.freeze(Object.fromEntries([
+  ['fire', 'Огонь', '♥♥', '🔥', 20, -10],
+  ['water', 'Вода', '♦♦', '💧', 10, 10],
+  ['earth', 'Земля', '♠♠', '🪨', -5, 25],
+  ['air', 'Воздух', '♣♣', '🌪️', 5, 15],
+  ['steam', 'Пар', '♥♦', '♨️', 10, 10],
+  ['lava', 'Лава', '♥♠', '🌋', 20, -5],
+  ['fire_vortex', 'Огненный вихрь', '♥♣', '🔥🌪️', 15, 0],
+  ['ice', 'Лёд', '♦♠', '❄️', 0, 20],
+  ['thunderstorm', 'Гроза', '♦♣', '⛈️', 15, 5],
+  ['sandstorm', 'Песчаная буря', '♠♣', '🌫️', 5, 15],
+].map(([id, name, suits, icon, attackBonus, defenseBonus]) =>
+  [id, Object.freeze({ id, name, suits, icon, attackBonus, defenseBonus })])));
 
-export function type(cards) {
-  if (!cards || cards.length !== 2) return '—';
-  const a = cards[0].s, b = cards[1].s;
-  if (a === b) return SUIT_ELEMENT[a];
-  return a === '♥' || b === '♥' ? '♨️' : '🌫️';
+export function elementOf(cards) {
+  if (!cards || cards.length !== 2) return null;
+  const suits = cards.map(c => c.s).sort().join('');
+  return Object.values(ELEMENTS).find(e => [...e.suits].sort().join('') === suits) ?? null;
+}
+export const type = cards => elementOf(cards)?.icon ?? '—';
+export const elementName = cards => elementOf(cards)?.name ?? '';
+
+export function pairStats(cards) {
+  const details = comboDetails(cards), element = elementOf(cards);
+  if (!details || !element) return null;
+  return { ...details, basePower: details.power, element: element.id,
+    attack: Math.round(details.power * (1 + element.attackBonus / 100)),
+    defense: Math.round(details.power * (1 + element.defenseBonus / 100)) };
 }
 
-export function elementName(cards) {
-  if (!cards || cards.length !== 2) return '';
-  return ELEMENT_NAME[type(cards)] || '';
+// Имена полей сохранены в протоколе: attack = первая, defense = вторая пара.
+export function lineStats(placement) {
+  const pairs = [placement.attack, placement.defense].map(pairStats);
+  if (pairs.some(p => !p)) throw new Error('В линии нужны две полные пары');
+  return { pairs, attack: pairs.reduce((s, p) => s + p.attack, 0),
+    defense: pairs.reduce((s, p) => s + p.defense, 0),
+    basePower: pairs.reduce((s, p) => s + p.basePower, 0) };
 }
 
-// a — атакующая пара, defpair — защитная пара. Возвращает полный расчёт линии.
+// Совместимая форма отчёта для существующих потребителей. Эффектов нет.
 export function attackInfo(pair, defpair) {
-  let a = combo(pair), d = combo(defpair);
-  const baseA = a, baseD = d;
-  const at = type(pair), dt = type(defpair);
-  let match = '';
-  // Контрстихии: +9.75% выгодная атака, −9.75% невыгодная.
-  if (at === '🔥' && dt === '🌪️') { a = Math.round(a * 1.0975); match = '🔥 Огонь > Воздух'; }
-  else if (at === '🔥' && dt === '🪨') { a = Math.round(a * 0.9025); match = '🪨 Земля > Огонь'; }
-  else if (at === '💧' && dt === '🪨') { a = Math.round(a * 1.0975); match = '💧 Вода > Земля'; }
-  else if (at === '💧' && dt === '🌪️') { a = Math.round(a * 0.9025); match = '🌪️ Воздух > Вода'; }
-  // Базовые способности стихий защиты.
-  if (dt === '🪨') d = Math.round(d * 1.12);
-  if (dt === '🌪️') d = Math.round(d * 1.05);
-  if (dt === '🌫️') d = Math.round(d * 1.052);
-  if (at === '💧') d = Math.round(d * 0.85);
-  if (at === '♨️') d = Math.round(d * 0.925);
-  if (dt === '🌪️' && (at === '💧' || at === '♨️')) d = Math.round(d * 1.08);
-  const hit = Math.max(0, a - d);
-  let burn = 0;
-  if ((at === '🔥' || at === '♨️') && hit > 0) burn = at === '🔥' ? 4 : 2;
-  if (at === '🔥' && dt === '🪨') burn = Math.min(burn, 1);
-  if (at === '♨️' && dt === '🌪️') burn = Math.min(burn, 1);
-  return { hit, burn, at, dt, a, d, baseA, baseD, match };
+  const a = pairStats(pair), d = pairStats(defpair);
+  return { a: a?.attack ?? 0, d: d?.defense ?? 0,
+    hit: Math.max(0, (a?.attack ?? 0) - (d?.defense ?? 0)),
+    baseA: a?.basePower ?? 0, baseD: d?.basePower ?? 0,
+    at: type(pair), dt: type(defpair), burn: 0, match: '' };
 }

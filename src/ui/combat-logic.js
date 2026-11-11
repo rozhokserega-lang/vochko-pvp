@@ -14,13 +14,8 @@ export function hasNewBattle(rep, repRound, lastReportRound) {
   return !!rep && Array.isArray(rep.events) && repRound > 0 && repRound > lastReportRound;
 }
 
-// Укрепление разрешено один раз ЗА МАТЧ. Если сервер уже засчитал его,
-// выбранная локально линия НЕ должна уходить в submit: иначе 400 fortify-used
-// блокирует игрока до конца матча. Чистая функция — покрыта тестом.
-export function fortifyLaneForSubmit({ fortifyUsed, lane }) {
-  if (fortifyUsed) return null;
-  return Number.isInteger(lane) && lane >= 0 && lane <= 2 ? lane : null;
-}
+// Совместимость со старым клиентским импортом: действие отключено.
+export function fortifyLaneForSubmit() { return null; }
 
 // Этаж Нексуса принимает карты только когда обе башни линии разрушены
 // и сам Нексус жив — карты не дублируются на башне и Нексусе.
@@ -63,15 +58,16 @@ export function revealAssignments(report, seat) {
       { combat: row.b, defenderSide: 'a' },
     ]) {
       const isMine = (entry.defenderSide === 'a' && seat === 1) || (entry.defenderSide === 'b' && seat === 2);
-      const cards = isMine ? entry.combat?.attack : entry.combat?.defense;
-      if (!Array.isArray(cards) || cards.length !== 2) continue;
+      const cards = (isMine ? entry.combat?.ownPairs : entry.combat?.opponentPairs)?.flat()
+        ?? (isMine ? entry.combat?.attack : entry.combat?.defense);
+      if (!Array.isArray(cards) || ![2, 4].includes(cards.length)) continue;
       out.push({
         lane,
         defenderSide: entry.defenderSide,
         stage: entry.combat?.stage ?? null,
         isMine,
         cards,
-        label: isMine ? '⚔ АТАКА ВРАГА' : '🛡 ЗАЩИТА ВРАГА',
+        label: 'ОБЕ ПАРЫ ВРАГА',
       });
     }
   }
