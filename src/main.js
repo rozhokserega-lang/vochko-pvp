@@ -311,7 +311,7 @@ async function submit() {
   const turn = { matchId, round, expectedVersion, placements, fortifyLane: null };
   const pending = submission = { matchId, round, accepted: false };
   render();
-  setStatus('Отправляем ход…');
+  setStatus(view.opponent?.isBot ? '' : 'Отправляем ход…');
   try {
     for (let attempt = 0; ; attempt++) {
       try {
@@ -326,7 +326,7 @@ async function submit() {
       }
     }
     if (submission !== pending) return;
-    setStatus('Ход отправлен. Ждём обновления матча.');
+    setStatus(view.opponent?.isBot ? '' : 'Ход отправлен. Ждём обновления матча.');
     await refresh(matchId);
   } catch (e) {
     if (currentSubmission() !== pending || isCombatPlaying()) return;

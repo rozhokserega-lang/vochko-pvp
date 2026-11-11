@@ -18,14 +18,18 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
   const me = view.board.me, opp = view.board.opponent;
   const mark = (ready, icon, label) => `<span class="lane-pair-mark${ready ? ' placed' : ''}" role="img"
     aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
+  const preview = l => {
+    const pairs = [mySlots[l].atk, mySlots[l].def].map(pairStats);
+    return { shield: pairs.reduce((n,p) => n + (p?.defense ?? 0), 0), attack: pairs.reduce((n,p) => n + (p?.attack ?? 0), 0) };
+  };
   const totals = l => {
     const pairs = [mySlots[l].atk, mySlots[l].def].map(pairStats);
     return `⚔ ${pairs.reduce((n,p) => n + (p?.attack ?? 0), 0)} · 🛡 ${pairs.reduce((n,p) => n + (p?.defense ?? 0), 0)}`;
   };
   const towers = (l) => `
     <div class="side">
-      ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots })}
-      ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ БЛИЖНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots })}
+      ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots, preview: preview(l) })}
+      ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ БЛИЖНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots, preview: preview(l) })}
     </div>
     <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${totals(l)}</small>
       ${showProgress ? `<span class="lane-pair-marks">
@@ -34,8 +38,8 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
       </span>` : ''}
     </div>
     <div class="side enemy">
-      ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: БЛИЖНЯЯ', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots })}
-      ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ДАЛЬНЯЯ', lane: l, kind: 'atk', active: opp.inner[l] > 0 && opp.outer[l] <= 0, slots: mySlots })}
+      ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: БЛИЖНЯЯ', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots, preview: preview(l) })}
+      ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ДАЛЬНЯЯ', lane: l, kind: 'atk', active: opp.inner[l] > 0 && opp.outer[l] <= 0, slots: mySlots, preview: preview(l) })}
     </div>`;
   return `<div class="arena-scene" id="arenaScene">
     <img class="arena-bg" src="${ARENA_ASSETS.bg}" draggable="false" alt="" aria-hidden="true">

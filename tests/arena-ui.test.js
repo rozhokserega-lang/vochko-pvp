@@ -159,15 +159,15 @@ test('при разрушении ближней башни HP появляет�
   assert.doesNotMatch(html, /class="value">0 \/ 12/);
 });
 
-test('щит показывает силу защиты, атака показана отдельным числом', () => {
+test('предпросмотр: вся защита у своей башни, вся атака у цели без чужого щита', () => {
   const slots = emptySlots();
   slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
   slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
   const html = battleHTML(view(), slots);
-  assert.match(html, /aria-label="Щит: 9"/);
-  assert.match(html, /class="tower-attack" aria-label="Атака: 8"/);
-  assert.match(html, /aria-label="Щит: 6"/);
-  assert.equal((html.match(/class="tower-shield crystal-shield" data-empty/g) || []).length, 4);
+  assert.match(html, /aria-label="Щит: 15"/);
+  assert.match(html, /class="tower-attack" aria-label="Атака: 15"/);
+  assert.doesNotMatch(html, /aria-label="Щит: 6"/);
+  assert.equal((html.match(/class="tower-shield crystal-shield" data-empty/g) || []).length, 5);
 });
 
 test('индикаторы открытых этажей Нексуса сохранены без кристаллов башен', () => {
