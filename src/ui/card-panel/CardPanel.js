@@ -9,8 +9,8 @@ export const cardPanelLayout = {
   round: { x: 2.5, y: 60, w: 11.8, h: 15 },
   cards: { x: 17.2, y: 56, w: 65.6, h: 25.8 },
   elementCircle: { x: 44.2, y: 11.2, w: 11.6, h: 33.6 },
-  powerLabel: { x: 36, y: 47.5, w: 28, h: 6.5 },
-  readyButton: { x: 86, y: 61, w: 11.5, h: 12.5 },
+  powerLabel: { x: 28, y: 85, w: 44, h: 10 },
+  readyButton: { x: 85.5, y: 62.7, w: 12, h: 12.4 },
 };
 
 export const PANEL_LANES = ['Верх', 'Центр', 'Низ'];
@@ -97,9 +97,10 @@ export function renderPanelPreview(hand, cards) {
     effect.dataset.element = element;
     effect.innerHTML = elementAnimHTML(element);
   }
-  power.innerHTML = info ? `<span class="pair-defense">🛡 ${info.defense}</span> <span class="pair-attack">⚔ ${info.attack}</span>` : '';
-  power.setAttribute('aria-label', info ? `Защита ${info.defense}, атака ${info.attack}` : '');
+  power.innerHTML = info ? `<span class="pair-defense">🛡 ${info.defense}</span> <span class="pair-element">${ELEMENTS[info.element].name}</span> <span class="pair-attack">⚔ ${info.attack}</span>` : '';
+  power.setAttribute('aria-label', info ? `Защита ${info.defense}, ${ELEMENTS[info.element].name}, атака ${info.attack}` : '');
   power.dataset.kind = info ? 'pair' : '';
+  power.dataset.element = info?.element ?? '';
   power.title = info ? `${elementOf(cards)?.name} · База ${info.basePower} · ×${info.m}` : '';
 }
 

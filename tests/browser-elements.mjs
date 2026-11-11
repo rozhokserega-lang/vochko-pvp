@@ -49,7 +49,9 @@ try {
         const pair = [e.suits[0], e.suits[1]].map((s,i) => deck().find(c => c.s === s && c.r === ['5','9'][i]));
         renderPanelPreview(hand,pair);
         const p = pairStats(pair);
-        return { id:e.id, valid:hand.querySelector('#panelPower').textContent === `🛡 ${p.defense} ⚔ ${p.attack}` && hand.querySelector('#panelEffect [data-effect]')?.dataset.effect === e.id };
+        const d=hand.querySelector('.pair-defense').getBoundingClientRect(),n=hand.querySelector('.pair-element').getBoundingClientRect(),a=hand.querySelector('.pair-attack').getBoundingClientRect();
+        const pocket=hand.querySelector('#panelPower').getBoundingClientRect(),tray=hand.querySelector('.panel-cards').getBoundingClientRect();
+        return { id:e.id, valid:hand.querySelector('#panelPower').textContent === `🛡 ${p.defense} ${e.name} ⚔ ${p.attack}` && hand.querySelector('#panelEffect [data-effect]')?.dataset.effect === e.id && d.right <= n.left && n.right <= a.left && pocket.top >= tray.bottom - 1 };
       });
     });
     assert.equal(previews.length, 10); assert.ok(previews.every(p => p.valid));

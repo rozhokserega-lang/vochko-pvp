@@ -47,12 +47,12 @@ try {
     assert.ok(cards.every(c => c.rank >= c.height*.45 && c.suit >= c.height*.3 && c.rankHeight>0),JSON.stringify(cards));
     const effects = p.locator('.nexus-floor [data-effect="fire_vortex"]');
     assert.equal(await effects.count(),6);
-    assert.ok((await effects.evaluateAll(imgs => imgs.map(img => img.src))).every(src => src.includes('elFireVortex.gif')));
+    assert.ok((await effects.evaluateAll(imgs => imgs.map(img => img.src))).every(src => src.includes('elFireVortex-transparent.webp')));
     await p.waitForFunction(() => [...document.querySelectorAll('.nexus-floor .element-anim')].every(img => img.complete && img.naturalWidth===414));
     await mkdir('tests/.shots',{recursive:true});
     await p.locator('.nexus.ally').screenshot({path:`tests/.shots/nexus-cards-${width}.png`});
     assert.deepEqual(errors,[]);
-    console.log(`PASS ${width}px: 12 visible Nexus cards across all floors/sides, supplied fire vortex GIF in all six circles and panel`);
+    console.log(`PASS ${width}px: 12 visible Nexus cards across all floors/sides, transparent fire vortex animation in all six circles and panel`);
     await ctx.close();
   }
 } finally { await browser?.close(); await server.close(); }
