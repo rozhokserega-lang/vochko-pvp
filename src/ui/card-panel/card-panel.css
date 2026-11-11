@@ -7,9 +7,20 @@
 /* Исходный PNG имеет прозрачную сферу: эффект светится сквозь стекло. */
 .panel-art{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none;user-select:none}
 .panel-zone{position:absolute;left:var(--zone-x);top:var(--zone-y);width:var(--zone-w);height:var(--zone-h);z-index:3}
-.panel-sphere{z-index:1;overflow:hidden;border-radius:50%;pointer-events:none}
+.panel-sphere{z-index:1;overflow:hidden;border-radius:50%;clip-path:ellipse(47% 47% at 50% 50%);pointer-events:none}
 #panelEffect,#panelEffect img{width:100%;height:100%}
-#panelEffect img{display:block;object-fit:cover;transform:scale(.95);transform-origin:center}
+#panelEffect img{display:block;object-fit:contain;transform:scale(.95) translate(var(--sphere-x,0%),var(--sphere-y,0%));transform-origin:center}
+/* Центр видимой области по всем девяти кадрам; поправки не меняются при вращении. */
+#panelEffect .effect-fire{--sphere-y:1.51%}
+#panelEffect .effect-water{--sphere-x:1.04%;--sphere-y:.65%}
+#panelEffect .effect-earth{--sphere-x:2.08%}
+#panelEffect .effect-air{--sphere-x:3.54%;--sphere-y:.86%}
+#panelEffect .effect-steam{--sphere-x:.42%;--sphere-y:.65%}
+#panelEffect .effect-lava{--sphere-x:-.23%;--sphere-y:1.57%}
+#panelEffect .effect-fire_vortex{--sphere-y:1.45%}
+#panelEffect .effect-ice{--sphere-x:.70%;--sphere-y:.12%}
+#panelEffect .effect-thunderstorm{--sphere-x:.47%;--sphere-y:-.24%}
+#panelEffect .effect-sandstorm{--sphere-x:.23%;--sphere-y:.12%}
 .panel-round,.panel-power{display:flex;justify-content:center;align-items:center;gap:.35em;color:#ffdc8e;font:bold 1.55cqw Georgia,serif;text-shadow:0 2px 3px #000,0 0 5px #000;white-space:nowrap;pointer-events:none}
 .panel-round b{font-size:1.2em}
 /* Отдельный утопленный карман HUD вместо текста на золотой полосе арта. */
