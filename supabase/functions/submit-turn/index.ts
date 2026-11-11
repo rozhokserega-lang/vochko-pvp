@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
       );
     });
 
-    if (result.accepted && result.ready) {
+    // Notify the opponent after the first confirmation as well as after resolve.
+    if (result.accepted) {
       const [m] = await sql`select version from private.matches where id = ${matchId}`;
       await broadcastState(matchId, Number(m.version), 'round');
     }
