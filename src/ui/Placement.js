@@ -15,10 +15,17 @@ export function placementHTML(slots, ready) {
       <strong>${['Верх', 'Центр', 'Низ'][lane]} · ⚔ ${stats.reduce((sum, p) => sum + (p?.attack ?? 0), 0)} · 🛡 ${stats.reduce((sum, p) => sum + (p?.defense ?? 0), 0)}</strong>
       <div class="placement-pairs">${pairs.map((cards, i) => {
         const p = stats[i], e = p && ELEMENTS[p.element];
-        return `<div class="placement-pair"><button class="pair-target" data-lane="${lane}" data-kind="${i ? 'def' : 'atk'}" ${ready ? 'disabled' : ''}>
+        return `<div class="placement-pair"><button class="pair-placement" data-lane="${lane}" data-kind="${i ? 'def' : 'atk'}" ${ready ? 'disabled' : ''}>
           <b>Пара ${i + 1}</b> <span>${cards.map(c => c.r + c.s).join(' + ') || '＋ две карты'}</span>
           <span>${e ? `${e.icon} ${e.name} · ⚔ ${p.attack} · 🛡 ${p.defense}` : 'Любые масти'}</span>
         </button><details><summary>Расчёт</summary><small>${pairExplanation(cards)}</small></details></div>`;
       }).join('')}</div></section>`;
+  }).join('');
+}
+
+export function lineTotalsHTML(slots) {
+  return slots.map((s,lane) => {
+    const pairs = [s.atk, s.def].map(pairStats);
+    return `<span><b>${['Верх','Центр','Низ'][lane]}</b> ⚔ ${pairs.reduce((n,p)=>n+(p?.attack??0),0)} · 🛡 ${pairs.reduce((n,p)=>n+(p?.defense??0),0)}</span>`;
   }).join('');
 }

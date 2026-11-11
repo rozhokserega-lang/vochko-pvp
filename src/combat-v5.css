@@ -1,13 +1,4 @@
 /* ── Combat FX v5 (порт из vochko_pvp_combat_fixed_target_v5) ── */
-.combat-card-reveal{position:fixed;z-index:12000;pointer-events:none;transform:translate(-50%,-20px);opacity:0;transition:transform .35s,opacity .25s}
-.combat-card-reveal.fall{opacity:1;transform:translate(-50%,0)}
-.combat-card-reveal.fade{opacity:0}
-.combat-reveal-label{font:bold 9px system-ui;text-align:center;color:#ffe3a2;text-shadow:0 1px 3px #000}
-.combat-reveal-pair{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
-.combat-reveal-card{display:flex;flex-direction:column;align-items:center;justify-content:center;width:46px;height:58px;background:#fcf6e9;color:#17263e;border:1px solid #d8bd7c;border-radius:5px;font:bold 18px system-ui;box-shadow:0 2px 5px #0008}
-.combat-reveal-card.red{color:#b82343}
-@media(max-width:740px){.combat-reveal-card{width:36px;height:44px;font-size:15px}.combat-reveal-label{font-size:8px}}
-@media(prefers-reduced-motion:reduce){.combat-card-reveal{transition:none}}
 .damage-float.vfx-hit{
  display:flex;align-items:center;justify-content:center;gap:3px;
  padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;
@@ -78,6 +69,14 @@
 .combat-damage-number span{font-size:1.1em}
 .shield-damage-number{color:#82e7f6}
 .hp-damage-number{color:#ffca75;font-size:clamp(19px,2.7vw,28px)}
+.combat-damage-number.combat-result{
+ flex-direction:column;gap:1px;line-height:1.1;text-align:center;
+ font-size:clamp(9px,1.25vw,16px);padding:.24em .45em;
+ background:#101824ed;border-radius:5px;animation:combatResult .23s ease-out both;
+}
+.combat-result span{color:#fff0b5;font-size:.85em}
+@keyframes combatResult{from{opacity:0;transform:translate(-50%,.35em)}to{opacity:1;transform:translate(-50%,0)}}
+@media(prefers-reduced-motion:reduce){.combat-damage-number.combat-result{animation:none}}
 @keyframes combatFloat{
  0%{opacity:0;transform:translate(-50%,12px) scale(.8)}
  15%{opacity:1;transform:translate(-50%,-4px) scale(1.14)}

@@ -32,3 +32,13 @@ export function animateMeters() {
     });
   }, 30);
 }
+
+// Обе универсальные пары имеют одинаковые индикаторы атаки и защиты.
+export function combatPowerHTML(_kind, power) {
+  const shield = power?.defense ?? power?.d ?? 0;
+  const attack = power?.attack ?? power?.a ?? 0;
+  return `<div class="tower-shield tower-meter" ${shield ? '' : 'data-empty'} aria-label="Щит: ${shield}">
+    <span class="tower-meter-label"><span class="shield-caption">Щит </span><b>${shield}</b></span>
+    <div class="tower-meter-track"><i style="height:${shield ? 100 : 0}%"></i></div>
+  </div>${power ? `<span class="tower-attack" aria-label="Атака: ${attack}">⚔ ${attack}</span>` : ''}`;
+}

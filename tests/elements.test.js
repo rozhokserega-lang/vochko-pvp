@@ -179,7 +179,7 @@ test('бот использует 12 уникальных карт, интерф
     assert.deepEqual(reveal[0].cards, [...enemy.attack, ...enemy.defense]);
   }
   const html = placementHTML(placements.map(p => ({ atk: p.attack, def: p.defense })), false);
-  assert.equal((html.match(/class="pair-target"/g) ?? []).length, 6);
+  assert.equal((html.match(/class="pair-placement"/g) ?? []).length, 6);
   assert.match(html, /Расчёт/); assert.match(html, /⚔/); assert.match(html, /🛡/);
   const view = { latestRoundReport: result };
   assert.match(roundReportHTML(view, 1), new RegExp(`Нанесено: ${result.report[0].a.dealt} HP · 🛡 Получено: ${result.report[0].b.dealt} HP`));

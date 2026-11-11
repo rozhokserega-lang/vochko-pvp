@@ -6,7 +6,7 @@ import { createServer } from 'vite';
 import { chromium } from 'playwright';
 import { serverFixture } from './server-fixture.mjs';
 
-const server = await createServer({ server: { host: '127.0.0.1', port: 5184, strictPort: true } });
+const server = await createServer({ base: '/', server: { host: '127.0.0.1', port: 5184, strictPort: true } });
 await server.listen();
 const browser = await chromium.launch(process.env.BROWSER_CHANNEL ? { channel: process.env.BROWSER_CHANNEL } : {});
 const f = serverFixture(), errors = [], submissions = [];
@@ -30,14 +30,28 @@ try {
     await page.goto('http://127.0.0.1:5184/');
     await page.locator('#hand .card').first().waitFor();
     assert.equal(await page.locator('#fortifyBtn').count(), 0);
-    assert.equal(await page.locator('.pair-target').count(), 6);
+    assert.equal(await page.locator('.pair-placement').count(), 6);
+    await page.locator('#pairsDetails>summary').click();
     assert.ok(await page.locator('#arenaScene').evaluate(el => el.getBoundingClientRect().height > 180));
+    const previews = await page.evaluate(async () => {
+      const { renderPanelPreview } = await import('/src/ui/card-panel/CardPanel.js');
+      const { ELEMENTS, pairStats } = await import('/shared/elements.js');
+      const { deck } = await import('/shared/cards.js');
+      const hand = document.querySelector('#hand');
+      return Object.values(ELEMENTS).map(e => {
+        const pair = [e.suits[0], e.suits[1]].map((s,i) => deck().find(c => c.s === s && c.r === ['5','9'][i]));
+        renderPanelPreview(hand,pair);
+        const p = pairStats(pair);
+        return { id:e.id, valid:hand.querySelector('#panelPower').textContent === `⚔ ${p.attack} · 🛡 ${p.defense}` && hand.querySelector('#panelEffect [data-effect]')?.dataset.effect === e.id };
+      });
+    });
+    assert.equal(previews.length, 10); assert.ok(previews.every(p => p.valid));
     // Every slot gets one red and one black card: both directions must work.
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
       await page.locator('#hand .card.red:not(.used)').first().click();
       await page.locator('#hand .card:not(.red):not(.used)').first().click();
       assert.match(await page.locator('#pairPreview').innerText(), /атака.*защита/s);
-      await page.locator(`.pair-target[data-lane="${lane}"][data-kind="${kind}"]`).click();
+      await page.locator(`.pair-placement[data-lane="${lane}"][data-kind="${kind}"]`).click();
     }
     assert.equal(await page.locator('#hand .card.used').count(), 12);
     assert.equal(await page.locator('#hand .card:not(.used)').count(), 2);
@@ -60,8 +74,10 @@ try {
     await page.waitForFunction(() => document.querySelectorAll('.combat-card-reveal').length === 6);
     assert.equal(await page.locator('.combat-reveal-card').count(), 24);
   }));
+  await pages[0].screenshot({ path: 'tests/.shots/elements-combat.png', fullPage: true });
   for (const page of pages) {
     await page.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield'), null, { timeout: 12000 });
+    await page.locator('.report-btn').first().waitFor();
     assert.equal(await page.locator('.report-btn').count(), 3);
     await page.locator('.report-btn').first().click();
     assert.match(await page.locator('#explainContent').innerText(), /Пара 2/);

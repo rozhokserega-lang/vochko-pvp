@@ -11,6 +11,7 @@ import {
   exportLayoutJSON,
 } from '../src/ui/arena/arenaLayout.js';
 import { battleHTML } from '../src/ui/arena/ArenaScene.js';
+import { nexusHTML } from '../src/ui/arena/NexusView.js';
 import { cardSlotHTML } from '../src/ui/arena/CardSlot.js';
 import { elementAnimHTML, ELEMENT_CLASS } from '../src/ui/arena/ElementEffect.js';
 import { towerHighlightClass } from '../src/ui/arena/TowerHighlight.js';
@@ -60,18 +61,21 @@ test('arenaStage: пороги 50% — целая / повреждённая / �
   assert.equal(arenaStage(0, 18), 'ruins');
 });
 
-test('towerBox: башня стоит основанием на платформе, масштаб не скачет между состояниями', () => {
-  const full = towerBox('ally', 'def', 0, 'outer', 'full');
-  const damaged = towerBox('ally', 'def', 0, 'outer', 'damaged');
-  const ruins = towerBox('ally', 'def', 0, 'outer', 'ruins');
-  assert.equal(full.bottom, damaged.bottom);          // смена состояния не двигает базу
-  assert.equal(full.h, damaged.h);
-  assert.ok(Math.abs(full.cx - damaged.cx) < 0.01);
-  assert.ok(Math.abs(full.cx - damaged.cx) < 0.01);
-  // фундамент лежит НА площадке: низ по её переднему краю (cy + ry)
-  assert.equal(ruins.bottom, LAYOUT.platforms.rowCy[0] + LAYOUT.platforms.ry);
-  assert.ok(ruins.bottom < full.bottom);              // выше линии основания башен
-  assert.ok(ruins.w > full.w);                        // груда камней шире башни
+test('towerBox: основание остаётся в одной точке во всех состояниях', () => {
+  for (const [team, kind, damagedAxis, ruinsAxis] of [
+    ['ally', 'def', 216 / 503, 428 / 898],
+    ['enemy', 'atk', 216 / 461, 448 / 940],
+  ]) {
+    const full = towerBox(team, kind, 0, 'outer', 'full');
+    const damaged = towerBox(team, kind, 0, 'outer', 'damaged');
+    const ruins = towerBox(team, kind, 0, 'outer', 'ruins');
+    assert.equal(full.bottom, damaged.bottom);
+    assert.equal(full.bottom, ruins.bottom);
+    assert.equal(full.h, damaged.h);
+    for (const [box, axis] of [[damaged, damagedAxis], [ruins, ruinsAxis]]) {
+      assert.ok(Math.abs(box.cx - box.w / 2 + box.w * axis - full.cx) < 0.01, team);
+    }
+  }
 });
 
 test('battleHTML: 3 линии, 12 башен, 2 нексуса, активные — drop-target', () => {
@@ -117,6 +121,65 @@ test('battleHTML: пробитая линия открывает этаж нек
   v.board.opponent.inner = [0, 18, 18];
   const html = battleHTML(v, emptySlots());
   assert.match(html, /nexus-floor open drop-target"\s+data-lane="0" data-kind="atk"/);
+});
+
+test('подсказка Нексуса показывает процент входящего урона по числу пробитых линий', () => {
+  const board = view().board.opponent;
+  board.outer.fill(0);
+  for (const [count, percent] of [[0, 0], [1, 40], [2, 70], [3, 100]]) {
+    board.inner.fill(0, 0, count);
+    const html = nexusHTML(board, emptySlots(), true);
+    assert.match(html, new RegExp(`Получает ${percent}% урона`));
+    assert.match(html, new RegExp(`Пробито линий: ${count} из 3`));
+  }
+});
+
+test('в начале HP показывается только у шести ближних башен', () => {
+  const html = battleHTML(view(), emptySlots());
+  assert.equal((html.match(/class="tower-hp tower-meter"/g) || []).length, 6);
+  assert.equal((html.match(/class="value"/g) || []).length, 6);
+  assert.equal((html.match(/data-vertical="1"/g) || []).length, 6);
+  assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 6);
+  assert.match(html, /height:100%"><\/i><\/div>/);
+  // Числа нужны combatHpSnapshot(), иначе полоска HP не анимируется от удара.
+  assert.match(html, /class="value">12 \/ 12</);
+  assert.doesNotMatch(html, /class="value">18 \/ 18</);
+});
+
+test('при разрушении ближней башни HP появляется у дальней башни той же линии', () => {
+  const v = view();
+  v.board.me.outer = [0, 12, 12];
+  v.board.opponent.outer = [12, 0, 12];
+  v.board.me.inner[0] = 9;
+  v.board.opponent.inner[1] = 9;
+  const html = battleHTML(v, emptySlots());
+  assert.equal((html.match(/class="tower-hp tower-meter"/g) || []).length, 6);
+  assert.equal((html.match(/class="value">9 \/ 18</g) || []).length, 2);
+  assert.equal((html.match(/class="value">12 \/ 12</g) || []).length, 4);
+  assert.doesNotMatch(html, /class="value">0 \/ 12/);
+});
+
+test('щит показывает силу защиты, атака показана отдельным числом', () => {
+  const slots = emptySlots();
+  slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
+  slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
+  const html = battleHTML(view(), slots);
+  assert.match(html, /aria-label="Щит: 9"/);
+  assert.match(html, /class="tower-attack" aria-label="Атака: 8"/);
+  assert.match(html, /aria-label="Щит: 6"/);
+  assert.equal((html.match(/class="tower-shield tower-meter" data-empty/g) || []).length, 4);
+});
+
+test('открытые этажи Нексуса используют те же индикаторы атаки и щита, что башни', () => {
+  const board = view().board.me;
+  board.outer[0] = board.inner[0] = 0;
+  const slots = emptySlots();
+  slots[0].def = [{ id: 's2', s: '♠', r: '2', v: 2 }, { id: 's3', s: '♠', r: '3', v: 3 }];
+  slots[0].atk = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
+  assert.match(nexusHTML(board, slots, false), /aria-label="Щит: 9"/);
+  const enemy = nexusHTML(board, slots, true);
+  assert.match(enemy, /class="tower-attack" aria-label="Атака: 8"/);
+  assert.match(enemy, /aria-label="Щит: 6"/);
 });
 
 test('карты в слотах: пара кладётся в свои слоты, красные — атака (класс red)', () => {

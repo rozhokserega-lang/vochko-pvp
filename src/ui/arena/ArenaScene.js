@@ -1,8 +1,9 @@
+import { pairStats } from '../../../shared/elements.js';
 // Сцена арены v20: единое дизайн-пространство (aspect-fit), фон из ресурса,
 // 12 башен и 2 Нексуса поверх него. Разметка совместима с боевой хореографией
 // (selectors #lanes .lane, .side .tower, .nexus-fortress, .nexus-floor) и
 // с обработчиками main.js (.drop-target + data-lane/data-kind).
-import { ARENA_DESIGN, LAYOUT, towerBox, nexusBox, towerId, nexusId } from './arenaLayout.js';
+import { ARENA_DESIGN, LAYOUT, towerArt, towerBox, nexusBox, towerId, nexusId } from './arenaLayout.js';
 import { towerHTML } from './TowerView.js';
 import { nexusHTML } from './NexusView.js';
 import { ARENA_ASSETS } from './arena-assets.js';
@@ -13,14 +14,25 @@ const pctOf = (v, base) => +(((v / base) * 100)).toFixed(3) + '%';
 // Разметка боевой сцены — тот же контракт, что у старого Board(view, slots, myHand).
 // Карты кладутся сначала на ближнюю к центру башню (outer, 12 HP) — она же
 // первая принимает урон по правилам; после её разрушения — на дальнюю (18 HP).
-export function battleHTML(view, mySlots) {
+export function battleHTML(view, mySlots, { showProgress = false } = {}) {
   const me = view.board.me, opp = view.board.opponent;
+  const mark = (ready, icon, label) => `<span class="lane-pair-mark${ready ? ' placed' : ''}" role="img"
+    aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
+  const totals = l => {
+    const pairs = [mySlots[l].atk, mySlots[l].def].map(pairStats);
+    return `⚔ ${pairs.reduce((n,p) => n + (p?.attack ?? 0), 0)} · 🛡 ${pairs.reduce((n,p) => n + (p?.defense ?? 0), 0)}`;
+  };
   const towers = (l) => `
     <div class="side">
       ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots })}
       ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ БЛИЖНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots })}
     </div>
-    <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${l + 1}</small></div>
+    <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${totals(l)}</small>
+      ${showProgress ? `<span class="lane-pair-marks">
+        ${mark(mySlots[l].atk.length === 2, '1', 'Пара 1')}
+        ${mark(mySlots[l].def.length === 2, '2', 'Пара 2')}
+      </span>` : ''}
+    </div>
     <div class="side enemy">
       ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: БЛИЖНЯЯ', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots })}
       ${towerHTML({ hp: opp.inner[l], max: 18, label: 'ВРАГ: ДАЛЬНЯЯ', lane: l, kind: 'atk', active: opp.inner[l] > 0 && opp.outer[l] <= 0, slots: mySlots })}
@@ -64,7 +76,7 @@ export function applyArenaLayout(root = document) {
     const stage = t.classList.contains('stage-ruins') ? 'ruins' : t.classList.contains('stage-damaged') ? 'damaged' : 'full';
     const box = towerBox(team, kind, +lane, size, stage);
     boxStyle(t, box);
-    const art = stage === 'damaged' ? LAYOUT.tower.artDamaged : stage === 'ruins' ? LAYOUT.tower.artRuins : LAYOUT.tower.artFull;
+    const art = towerArt(team, stage);
     // Слоты карт поверх нарисованных рамок.
     t.querySelectorAll('.card-slot').forEach((slot, i) => {
       const s = art.slots[i];
@@ -87,20 +99,17 @@ export function applyArenaLayout(root = document) {
     // Овал подсветки платформы.
     const glow = t.querySelector('.platform-glow');
     if (glow && art.glow) {
+      glow.style.left = box.anchorX * 100 + '%';
       glow.style.top = art.glow.cy + '%';
       glow.style.width = art.glow.w + '%';
       glow.style.height = art.glow.h + '%';
     }
-    // HP-полоска: сбоку от башни (внешние — к краям сцены, ближние — к центру).
-    const hp = t.querySelector('.tower-hp');
-    if (hp) {
-      hp.style.left = '';
-      hp.style.right = '';
-      hp.style.bottom = '';
-      const toLeft = (team === 'ally') === (size === 'outer');
-      hp.classList.toggle('hp-left', toLeft);
-      hp.classList.toggle('hp-right', !toLeft);
-    }
+    const hpOnLeft = (team === 'ally') === (size === 'inner');
+    t.querySelectorAll('.tower-meter, .tower-attack').forEach((meter) => {
+      const left = meter.classList.contains('tower-hp') ? hpOnLeft : !hpOnLeft;
+      meter.classList.toggle('meter-left', left);
+      meter.classList.toggle('meter-right', !left);
+    });
   });
   // ── Нексусы ──
   scene.querySelectorAll('.nexus-fortress').forEach((n) => {
@@ -112,14 +121,16 @@ export function applyArenaLayout(root = document) {
       // Полоса ряда = bbox двух слотов и круга (+2%): зона клика/дропа ряда.
       const x0 = Math.min(row.slots[0]?.x ?? 100, row.slots[1]?.x ?? 100, row.circle ? row.circle.cx - row.circle.d / 2 : 100) - 2;
       const x1 = Math.max(row.slots[0]?.x + (row.slots[0]?.w ?? 0) ?? 0, row.slots[1]?.x + (row.slots[1]?.w ?? 0) ?? 0, row.circle ? row.circle.cx + row.circle.d / 2 : 0) + 2;
-      const y0 = Math.min(...row.slots.map((s) => s.y), row.circle ? row.circle.cy - 1 : 100) - 1.5;
-      const y1 = Math.max(...row.slots.map((s) => s.y + s.h), row.circle ? row.circle.cy + 1 : 0) + 1.5;
+      const radiusY = row.circle ? row.circle.d * LAYOUT.nexus.aspect / 2 : 0;
+      const y0 = Math.min(...row.slots.map((s) => s.y), row.circle ? row.circle.cy - radiusY : 100) - 1.5;
+      const y1 = Math.max(...row.slots.map((s) => s.y + s.h), row.circle ? row.circle.cy + radiusY : 0) + 1.5;
       floor.style.left = x0 + '%';
       floor.style.top = y0 + '%';
       floor.style.width = (x1 - x0) + '%';
       floor.style.height = (y1 - y0) + '%';
       const rel = (v, base) => +(((v - base) / (x1 - x0)) * 100).toFixed(3);
       const relY = (v, base) => +(((v - base) / (y1 - y0)) * 100).toFixed(3);
+      floor.style.setProperty('--nexus-meter-x', rel(side === 'ally' ? 86 : 14, x0) + '%');
       floor.querySelectorAll('.card-slot').forEach((slot, i) => {
         const s = row.slots[i];
         if (!s) { slot.style.display = 'none'; return; }
@@ -134,7 +145,7 @@ export function applyArenaLayout(root = document) {
         const d = row.circle.d;
         circle.style.display = '';
         circle.style.left = rel(row.circle.cx - d / 2, x0) + '%';
-        circle.style.top = relY(row.circle.cy - d * LAYOUT.nexus.aspect / 2, y0) + '%';
+        circle.style.top = relY(row.circle.cy - radiusY, y0) + '%';
         circle.style.width = +((d / (x1 - x0)) * 100).toFixed(3) + '%';
         circle.style.aspectRatio = '1';
       } else if (circle) circle.style.display = 'none';
