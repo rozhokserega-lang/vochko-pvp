@@ -1,0 +1,38 @@
+/* Ruby health core + one cyan shield envelope. Scoped to towers only. */
+.arena-scene .tower-art .tower-crystal{--shield-ratio:1;width:max(7px,1.05cqw);height:5.6cqw;min-height:26px;color:#ffe0e0;overflow:visible;isolation:isolate}
+.arena-scene .tower-art .tower-crystal.meter-left{margin-right:1.6cqw}
+.arena-scene .tower-art .tower-crystal.meter-right{margin-left:1.6cqw}
+.tower-crystal .crystal-core{position:absolute;inset:0}
+.arena-scene .tower-art .tower-crystal .crystal-well{position:absolute;inset:1px;width:auto;height:auto;display:block;border-radius:0;background:linear-gradient(90deg,#090b14,#2a1220,#090b14);overflow:hidden}
+.tower-crystal .crystal-well:after{content:'';position:absolute;inset:0;z-index:2;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 18%,#ffd8bc28 19%,#0006 20%)}
+.arena-scene .tower-art .tower-crystal .crystal-fill,.tower-crystal .crystal-lag{position:absolute;bottom:0;left:0;right:0;width:100%;border-radius:0;transition:height .72s cubic-bezier(.18,.82,.22,1)}
+.arena-scene .tower-art .tower-crystal .crystal-fill{background:linear-gradient(90deg,#530d20,#f63e5d 24%,#bd183a 56%,#6d0b24 90%,#2d0716);box-shadow:inset 0 0 8px #ff768c80,0 0 9px #ee234c77;overflow:hidden}
+.tower-crystal .crystal-lag{background:linear-gradient(#ffe0a0,#a04c37);transition:height 1.35s cubic-bezier(.2,.7,.2,1) .42s}
+.tower-crystal .crystal-fill:before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 18%,#ffd6db85 28%,transparent 38%,transparent 75%,#ff9fa642 81%,transparent 90%);animation:tower-crystal-glimmer 4s linear infinite}
+.tower-crystal .crystal-fill:after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:#ffb9be;box-shadow:0 0 6px 2px #fc315c}
+.tower-crystal .crystal-facets{position:absolute;inset:0;opacity:.3;background:linear-gradient(125deg,transparent 25%,#ffe5eb85 26%,transparent 28%),linear-gradient(54deg,transparent 65%,#ffe5eb65 67%,transparent 69%)}
+.tower-crystal .crystal-frame{position:absolute;inset:-1px;border:2px solid transparent;border-image:linear-gradient(90deg,#422c1c,#e4c58c 25%,#65401d 50%,#d9b878 77%,#402917) 1;box-shadow:inset 0 0 0 1px #100c11,0 0 0 1px #4a3929,0 0 5px #000a;z-index:4}
+.tower-crystal .crystal-cap{position:absolute;left:50%;transform:translateX(-50%);width:calc(100% + 8px);height:max(5px,.65cqw);background:linear-gradient(135deg,#3c2a1d,#e5c28b 38%,#5c3c1e 60%,#d0a968);clip-path:polygon(50% 0,100% 35%,100% 70%,50% 100%,0 70%,0 35%);z-index:6}
+.tower-crystal .crystal-cap.top{top:-.45cqw}.tower-crystal .crystal-cap.bottom{bottom:-.45cqw}
+.tower-crystal .crystal-cap:after{content:'';position:absolute;inset:25% 38%;background:#e84b6c;transform:rotate(45deg);box-shadow:0 0 4px #ef4d6a}
+.tower-crystal .crystal-shell{position:absolute;inset:-.8cqw -.65cqw;opacity:0;transform:scale(.92);transition:opacity .3s,transform .3s;z-index:5;pointer-events:none}
+.tower-crystal.shielded .crystal-shell{opacity:1;transform:scale(1)}
+.tower-crystal .crystal-shell svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 0 3px #54dfff)}
+.tower-crystal .crystal-glass{fill:#47cfff18;stroke:#3fcaff66;stroke-width:1.5}
+.tower-crystal .crystal-outline{fill:none;stroke:#8cefff;stroke-width:3;stroke-dasharray:4 3;opacity:calc(.3 + var(--shield-ratio) * .7);animation:tower-crystal-orbit 14s linear infinite}
+.tower-crystal .crystal-runes{fill:#9af4ff;font-size:15px;text-anchor:middle}
+.tower-crystal .crystal-cracks{fill:none;stroke:#b5f6ff;stroke-width:2;opacity:0}.tower-crystal.shield-cracked .crystal-cracks{opacity:1}
+.arena-scene .tower-art .tower-crystal .crystal-readout{top:auto;bottom:calc(100% + .85cqw);margin:0;color:#ffe3df;font-size:clamp(7px,.8cqw,12px)}
+.arena-scene .tower-art .tower-crystal .crystal-shield{position:absolute;top:calc(100% + .8cqw);left:50%;right:auto;bottom:auto;transform:translateX(-50%);font-size:clamp(7px,.8cqw,12px);color:#9aefff;white-space:nowrap;filter:none}
+.tower-crystal .crystal-shield:before{content:'✧ ';color:#7de8ff}.tower-crystal .crystal-shield[data-empty]{visibility:hidden!important}
+.tower-crystal .crystal-impact{position:absolute;inset:-1.2cqw;opacity:0;border-radius:40%;pointer-events:none;background:radial-gradient(ellipse,#7befff99,transparent 68%);z-index:8}
+.tower-crystal.shield-hit .crystal-impact{animation:tower-crystal-impact .45s ease-out}.tower-crystal.hp-hit .crystal-impact{background:radial-gradient(ellipse,#ff3a5699,transparent 68%);animation:tower-crystal-impact .45s ease-out}
+.tower-crystal.shield-break .crystal-shell{animation:tower-crystal-shatter .55s ease-out forwards}
+.tower-crystal.critical .crystal-fill{animation:tower-crystal-critical 1.25s ease-in-out infinite}.tower-crystal.destroyed .crystal-cap:after{filter:grayscale(1) brightness(.45)}
+@keyframes tower-crystal-glimmer{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
+@keyframes tower-crystal-orbit{to{stroke-dashoffset:-100}}
+@keyframes tower-crystal-impact{0%{opacity:0;transform:scale(.85)}35%{opacity:1}100%{opacity:0;transform:scale(1.25)}}
+@keyframes tower-crystal-shatter{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.4) rotate(5deg)}}
+@keyframes tower-crystal-critical{50%{filter:brightness(1.55) drop-shadow(0 0 5px #fa3158)}}
+@media(prefers-reduced-motion:reduce){.tower-crystal *,.tower-crystal *:before,.tower-crystal *:after{animation:none!important;transition:none!important}}
+.tower-crystal .crystal-shield [hidden]{display:none!important}
