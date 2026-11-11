@@ -1,16 +1,16 @@
 // Tower-only crystal meter. Nexus markup and meters stay independent.
 const clamp = (n, max) => Math.min(max, Math.max(0, Number(n) || 0));
 
-export function towerHealthHTML(hp, max, shield = 0) {
+export function towerHealthHTML(hp, max, shield = 0, charging = false, shieldKey = '') {
   hp = clamp(hp, max); shield = Math.max(0, Number(shield) || 0);
-  return `<div class="tower-hp tower-meter tower-crystal ${shield ? 'shielded' : ''} ${hp > 0 && hp / max <= .25 ? 'critical' : ''}" data-hp="${hp}" data-max="${max}" data-shield="${shield}">
+  return `<div class="tower-hp tower-meter tower-crystal ${shield ? 'shielded' : ''} ${charging ? 'shield-charging' : ''} ${hp > 0 && hp / max <= .25 ? 'critical' : ''}" data-hp="${hp}" data-max="${max}" data-shield="${shield}" data-shield-key="${shieldKey}">
     <div class="crystal-core">
       <div class="crystal-well tower-meter-track">
         <span class="crystal-lag" style="height:${hp / max * 100}%"></span>
         <i class="crystal-fill" data-vertical="1" style="height:${hp / max * 100}%"><span class="crystal-facets"></span></i>
       </div>
       <div class="crystal-frame"></div><span class="crystal-cap top"></span><span class="crystal-cap bottom"></span>
-      <div class="crystal-shell" aria-hidden="true"><svg viewBox="0 0 100 300" preserveAspectRatio="none"><path class="crystal-glass" d="M50 3 Q94 12 96 50 L96 250 Q90 286 50 297 Q10 286 4 250 L4 50 Q6 12 50 3Z"/><path class="crystal-outline" pathLength="100" d="M50 3 Q94 12 96 50 L96 250 Q90 286 50 297 Q10 286 4 250 L4 50 Q6 12 50 3Z"/><path class="crystal-cracks" d="M90 65L71 90L83 113L64 138 M8 218L28 200L20 178L42 153"/><g class="crystal-runes"><text x="50" y="26">ᛟ</text><text x="50" y="286">ᛉ</text></g></svg></div>
+      <div class="crystal-shell" aria-hidden="true"><span class="crystal-shield-energy"></span><svg viewBox="0 0 100 300" preserveAspectRatio="none"><path class="crystal-glass" d="M50 3 Q94 12 96 50 L96 250 Q90 286 50 297 Q10 286 4 250 L4 50 Q6 12 50 3Z"/><path class="crystal-outline" pathLength="100" d="M50 3 Q94 12 96 50 L96 250 Q90 286 50 297 Q10 286 4 250 L4 50 Q6 12 50 3Z"/><path class="crystal-cracks" d="M90 65L71 90L83 113L64 138 M8 218L28 200L20 178L42 153"/><g class="crystal-runes"><text x="50" y="26">ᛟ</text><text x="50" y="286">ᛉ</text></g></svg></div>
       <div class="crystal-impact" aria-hidden="true"></div>
     </div>
     <span class="tower-meter-label crystal-readout"><b class="value">${hp} / ${max}</b></span>
@@ -50,4 +50,30 @@ export function setTowerHealth(target, hp, max) {
   meter.classList.remove('hp-hit');
   void meter.offsetWidth;
   meter.classList.add('hp-hit');
+}
+
+
+// Keep unchanged meters and their running animations when the surrounding UI
+// is rebuilt. A different round, HP, shield value or defending pair gets a new meter.
+export function retainTowerMeters(previous, next) {
+  if (!previous || previous.dataset.meterContext !== next.dataset.meterContext) return () => {};
+  const animations = [];
+  for (const tower of next.querySelectorAll('.tower-art[data-arena-id]')) {
+    const oldTower = [...previous.querySelectorAll('.tower-art[data-arena-id]')]
+      .find(t => t.dataset.arenaId === tower.dataset.arenaId);
+    const oldMeter = oldTower?.querySelector('.tower-crystal');
+    const newMeter = tower.querySelector('.tower-crystal');
+    if (!oldMeter || !newMeter || ['hp','max','shield','shieldKey'].some(k => oldMeter.dataset[k] !== newMeter.dataset[k])) continue;
+    const running = oldMeter.getAnimations({subtree:true}).map(a => ({
+      name:a.animationName, target:a.effect?.target, time:a.currentTime,
+    }));
+    newMeter.replaceWith(oldMeter);
+    animations.push({meter:oldMeter,running});
+  }
+  return () => {
+    for (const {meter,running} of animations) for (const animation of meter.getAnimations({subtree:true})) {
+      const saved = running.find(a => a.name === animation.animationName && a.target === animation.effect?.target);
+      if (saved && saved.time !== null) animation.currentTime = saved.time;
+    }
+  };
 }

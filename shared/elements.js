@@ -31,13 +31,13 @@ export function pairStats(cards) {
     defense: Math.round(details.power * (1 + element.defenseBonus / 100)) };
 }
 
-// Имена полей сохранены в протоколе: attack = первая, defense = вторая пара.
+// Роли пары задаются местом размещения: атака не даёт щит, защита не атакует.
 export function lineStats(placement) {
-  const pairs = [placement.attack, placement.defense].map(pairStats);
-  if (pairs.some(p => !p)) throw new Error('В линии нужны две полные пары');
-  return { pairs, attack: pairs.reduce((s, p) => s + p.attack, 0),
-    defense: pairs.reduce((s, p) => s + p.defense, 0),
-    basePower: pairs.reduce((s, p) => s + p.basePower, 0) };
+  const attackPair = pairStats(placement.attack), defensePair = pairStats(placement.defense);
+  if (!attackPair || !defensePair) throw new Error('В линии нужны атакующая и защитная пары');
+  return { pairs: [attackPair, defensePair], attack: attackPair.attack,
+    defense: defensePair.defense, baseAttack: attackPair.basePower,
+    baseDefense: defensePair.basePower };
 }
 
 // Совместимая форма отчёта для существующих потребителей. Эффектов нет.

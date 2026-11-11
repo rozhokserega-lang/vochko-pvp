@@ -6,7 +6,7 @@ import { legacyCombo } from './legacy-reference.js';
 import { ELEMENTS, elementOf, pairStats, lineStats, attackInfo } from '../shared/elements.js';
 import { validateTurn, materializeTurn, fortifyAllowed } from '../shared/validation.js';
 import { newState, resolveRound, MAX_ROUNDS } from '../shared/engine.js';
-import { botPlan } from '../shared/bot.js';
+import { botPlan, rolePairs } from '../shared/bot.js';
 import { mulberry32 } from '../shared/rng.js';
 import { revealAssignments } from '../src/ui/combat-logic.js';
 import { elementAnimHTML } from '../src/ui/arena/ElementEffect.js';
@@ -52,10 +52,10 @@ test('все 1326 пар: старые карточные множители, о
     assert.equal(p.defense, Math.round(p.basePower * (1 + e.defenseBonus / 100)));
     assert.deepEqual(pairStats([...pair].reverse()), p);
   }
-  // 15 × 1.10 = 16.5 → 17; округляется каждая пара до сложения.
+  // 15 × 1.10 = 16.5 → 17; роль защиты не удваивает атаку.
   const water = [card('♦', '5'), card('♦', '6')];
   assert.equal(pairStats(water).attack, 17);
-  assert.equal(lineStats({ attack: water, defense: water }).attack, 34);
+  assert.equal(lineStats({ attack: water, defense: water }).attack, 17);
 });
 
 test('любые масти, 6 пар/12 карт, две оставшиеся исключены, порядок линий нормализуется', () => {
@@ -73,8 +73,8 @@ test('любые масти, 6 пар/12 карт, две оставшиеся �
   for (const c of mixed.slice(12)) assert.equal(used.includes(c.id), false);
   for (const row of r.report) {
     const p = materialized.placements[row.lane];
-    assert.equal(row.a.info.a, pairStats(p.attack).attack + pairStats(p.defense).attack);
-    assert.equal(row.a.info.d, pairStats(p.attack).defense + pairStats(p.defense).defense);
+    assert.equal(row.a.info.a, pairStats(p.attack).attack);
+    assert.equal(row.a.info.d, pairStats(p.defense).defense);
   }
 });
 
@@ -128,7 +128,7 @@ test('нет контрстихий, снижения защиты, лечени
     for (const side of [board.a, board.b]) {
       assert.equal(side.nexus, 80); assert.deepEqual(side.inner, [18, 18, 18]);
       const p = pairStats(pair);
-      assert.deepEqual(side.outer, Array(3).fill(Math.max(0, 12 - Math.max(0, 2 * p.attack - 2 * p.defense))));
+      assert.deepEqual(side.outer, Array(3).fill(Math.max(0, 12 - Math.max(0, p.attack - p.defense))));
     }
   }
 });
@@ -167,20 +167,64 @@ test('башни без переноса урона, одновременная 
   assert.equal(resolveRound(tie, weak, weak).winner, 'draw');
 });
 
-test('бот использует 12 уникальных карт, интерфейс раскрывает обе пары врага и верный урон', () => {
+test('бот использует 12 уникальных карт, интерфейс раскрывает нужную пару врага и верный урон', () => {
   const hand = deal(mulberry32(777)), placements = botPlan(hand, newState(), newState());
   const raw = { placements: placements.map(p => ({ lane: p.lane, attack: p.attack.map(c => c.id), defense: p.defense.map(c => c.id) })) };
   assert.equal(validateTurn(hand, raw).ok, true);
   const board = state(), result = resolveRound(board, { placements }, lethal);
   for (const seat of [1, 2]) {
     const reveal = revealAssignments(result.report, seat);
-    assert.equal(reveal.length, 6); assert.ok(reveal.every(r => r.cards.length === 4));
+    assert.equal(reveal.length, 6); assert.ok(reveal.every(r => r.cards.length === 2));
     const enemy = seat === 1 ? lethal.placements[0] : placements[0];
-    assert.deepEqual(reveal[0].cards, [...enemy.attack, ...enemy.defense]);
+    assert.deepEqual(reveal[0].cards, seat === 1 ? enemy.defense : enemy.attack);
   }
   const html = placementHTML(placements.map(p => ({ atk: p.attack, def: p.defense })), false);
   assert.equal((html.match(/class="pair-placement"/g) ?? []).length, 6);
   assert.match(html, /Расчёт/); assert.match(html, /⚔/); assert.match(html, /🛡/);
   const view = { latestRoundReport: result };
   assert.match(roundReportHTML(view, 1), new RegExp(`Нанесено: ${result.report[0].a.dealt} HP · 🛡 Получено: ${result.report[0].b.dealt} HP`));
+});
+
+test('регрессия: атакующая пара Q♦ J♦ не создаёт щит и перестановка ролей меняет бой', () => {
+  const attack = [card('♦','Q'), card('♦','J')], defense = [card('♥','2'),card('♥','3')];
+  const a = lineStats({attack,defense}), swapped = lineStats({attack:defense,defense:attack});
+  assert.equal(a.attack,31);assert.equal(a.defense,6);
+  assert.equal(swapped.attack,8);assert.equal(swapped.defense,31);
+  const x=state(),y=state(),enemy=repeated(low,low);
+  resolveRound(x,repeated(attack,defense),enemy);
+  resolveRound(y,repeated(defense,attack),enemy);
+  assert.notDeepEqual(x.b.outer,y.b.outer);
+  const onlyDefenseChanged=lineStats({attack,defense:fire});
+  assert.equal(onlyDefenseChanged.attack,a.attack);
+  const onlyAttackChanged=lineStats({attack:fire,defense});
+  assert.equal(onlyAttackChanged.defense,a.defense);
+});
+
+test('регрессия Нексуса: прорыв другой линии в этом раунде не меняет множитель урона', () => {
+  const cards=deck(),red=cards.filter(c=>'♥♦'.includes(c.s)).sort((a,b)=>b.v-a.v).slice(0,12);
+  const black=cards.filter(c=>'♠♣'.includes(c.s)).sort((a,b)=>a.v-b.v).slice(0,12);
+  const a=materializeTurn(red,plan(red)),b=materializeTurn(black,plan(black));
+  const initial=state();initial.b.outer=[0,0,12];initial.b.inner=[1,0,18];
+  const x=structuredClone(initial);const result=resolveRound(x,a,b);
+  assert.equal(x.b.inner[0],0);
+  const hit=result.report[1].a.info.hit;
+  assert.equal(result.report[1].a.dealt,Math.round(hit*.4));
+  const swap=i=>i===0?1:i===1?0:i;
+  const remap=t=>({placements:t.placements.map(p=>({...p,lane:swap(p.lane)}))});
+  const y=structuredClone(initial);y.b.inner=[0,1,18];
+  resolveRound(y,remap(a),remap(b));
+  assert.equal(x.b.nexus,y.b.nexus);
+});
+
+test('бот выбирает роли по действующей характеристике: сравнение с полным перебором', () => {
+  const hand=[card('♥','Q'),card('♥','K'),card('♠','Q'),card('♠','K'),card('♦','A'),card('♣','A')];
+  let expected=-Infinity;
+  for(let i=0;i<hand.length;i++)for(let j=i+1;j<hand.length;j++)
+    for(let k=0;k<hand.length;k++)for(let l=k+1;l<hand.length;l++){
+      if(new Set([i,j,k,l]).size!==4)continue;
+      expected=Math.max(expected,pairStats([hand[i],hand[j]]).attack+pairStats([hand[k],hand[l]]).defense);
+    }
+  const chosen=rolePairs(hand,1,1);
+  assert.equal(chosen.score,expected);
+  assert.equal(new Set([...chosen.attacks.flat(),...chosen.defenses.flat()].map(c=>c.id)).size,4);
 });

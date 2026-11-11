@@ -50,8 +50,8 @@ export function cardPanelHTML({ round, blocked, ready, progress }) {
         <img src="${readyPressed}" alt="" draggable="false">
       </button>
       ${progress ? `<div class="panel-progress" role="group" aria-label="Готовность хода" ${blocked ? 'aria-hidden="true"' : ''}>
-        <span>Пара 1 ${progress.attack}/${progress.total}</span>
-        <span>Пара 2 ${progress.defense}/${progress.total}</span>
+        <span>Атака ${progress.attack}/${progress.total}</span>
+        <span>Защита ${progress.defense}/${progress.total}</span>
       </div>` : ''}
       <div class="panel-message" id="status" role="status" aria-live="polite">${ready ? 'Ход отправлен. Ждём соперника.' : ''}</div>
     </div>`;

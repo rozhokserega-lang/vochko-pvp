@@ -1,3 +1,4 @@
+import { launchAttackCharge } from './arena/AttackCharge.js';
 import { setTowerShield, setTowerHealth } from './arena/TowerHealth.js';
 import { ELEMENTS } from '../../shared/elements.js';
 import { damageSplit, revealAssignments, shieldEntries } from './combat-logic.js';
@@ -86,7 +87,8 @@ export function cancelCombat() {
   combatTimers.forEach(clearTimeout);
   combatTimers = [];
   combatPlaying = false;
-  document.querySelectorAll('.combat-shield,.combat-stage,.combat-card-reveal,.combat-damage-number').forEach((x) => x.remove());
+  document.querySelectorAll('.attack-charge.charge-fired').forEach(el => el.classList.remove('charge-fired'));
+  document.querySelectorAll('.combat-shield,.combat-stage,.combat-card-reveal,.combat-damage-number,.attack-projectile,.attack-impact-flash').forEach((x) => x.remove());
   document.querySelectorAll('.combat-hp-restore').forEach((x) => {
     x.classList.remove('combat-hp-restore');
     if (x.dataset.combatRestoreText !== undefined) { x.textContent = x.dataset.combatRestoreText; delete x.dataset.combatRestoreText; }
@@ -294,6 +296,14 @@ export function playRoundAnimation(view) {
   if (phase) phase.textContent = '🃏 Раскрытие атак';
   combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 3900);
   combatLater(() => revealedCards.forEach((el) => el.remove()), 4250);
+  // The prepared elemental charge lands just before the shield absorption phase.
+  combatLater(() => {
+    if (!valid()) return;
+    for (const e of shieldEntries(rep.report)) {
+      const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
+      if (target?.classList.contains('tower-art')) launchAttackCharge(target, e.attackElement, e.attack);
+    }
+  }, 1450);
   // 1.9с: удар по щитам. Защита тает в боковой шкале цели.
   combatLater(() => {
     if (!valid()) return;

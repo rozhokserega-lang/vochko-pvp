@@ -80,3 +80,21 @@ test('real submit handler: existing PvE mode resolves with a valid universal bot
   const used = f.reports[0].public_result.report.flatMap(row => row.b.ownPairs.flat().map(c => c.id));
   assert.equal(new Set(used).size, 12);
 });
+
+test('серверный расчёт: Q♦ J♦ только атакуют, 2♥ 3♥ только защищают', async () => {
+  const f = serverFixture();
+  const card = (s,r) => ({id:s+r,s,r,v:['J','Q','K'].includes(r)?10:+r});
+  const h = [card('♦','Q'),card('♦','J'),card('♥','2'),card('♥','3'),
+    card('♠','4'),card('♠','5'),card('♣','4'),card('♣','5'),
+    card('♦','6'),card('♦','7'),card('♥','6'),card('♥','7'),card('♣','8'),card('♠','8')];
+  f.match.state.hands={1:h,2:h};
+  const t={matchId:'fixture',round:f.match.round,expectedVersion:1,fortifyLane:null,
+    placements:[0,1,2].map(lane=>({lane,attack:h.slice(lane*4,lane*4+2).map(c=>c.id),defense:h.slice(lane*4+2,lane*4+4).map(c=>c.id)}))};
+  assert.equal((await f.call('submit-turn',1,t)).status,200);
+  assert.equal((await f.call('submit-turn',2,t)).status,200);
+  const row=f.reports[0].public_result.report[0];
+  assert.equal(row.a.info.a,31);assert.equal(row.a.info.d,6);
+  assert.equal(row.b.info.a,31);assert.equal(row.b.info.d,6);
+  assert.equal(row.a.dealt,12);assert.equal(row.b.dealt,12);
+  assert.equal(f.match.state.board.a.inner[0],18);
+});

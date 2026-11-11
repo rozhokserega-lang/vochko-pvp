@@ -1,3 +1,4 @@
+import { attackChargeHTML } from './AttackCharge.js';
 // Башня арены v20: PNG с тремя состояниями (целая / «пол хп» / фундамент),
 // два интерактивных слота карт поверх нарисованных рамок и круг стихии.
 // Позиции элементов накладываются в ArenaScene.applyArenaLayout() по конфигу.
@@ -18,13 +19,16 @@ const ART_KEY = {
   'enemy-ruins': 'towerEnemyRuins',
 };
 
-export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
+export function towerHTML({ hp, max, label, lane, kind, active, slots, preview }) {
   const cards = active ? slots[lane][kind] : [];
   const team = kind === 'def' ? 'ally' : 'enemy';
   const size = max === 12 ? 'outer' : 'inner';
   const stage = arenaStage(hp, max);
   const alive = hp > 0;
   const power = cards.length === 2 ? pairStats(cards) : null;
+  const ownShield = kind === 'def' ? (preview?.shield ?? power?.defense ?? 0) : 0;
+  const ownAttack = kind === 'atk' ? (preview?.attack ?? power?.attack ?? 0) : 0;
+  const charging = kind === 'def' && cards.some(c => c.justPlaced);
   const element = power ? type(cards) : '';
   const elClass = element ? ` element-${ELEMENT_CLASS[element]}` : '';
   const art = ARENA_ASSETS[ART_KEY[`${team}-${stage}`]];
@@ -43,8 +47,8 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots }) {
       <div class="element-circle" data-element="${element}">${elementAnimHTML(element)}</div>` : ''}
     </div>
     ${active && alive ? `
-      ${towerHealthHTML(hp, max, power?.defense ?? 0)}
-      ${power ? `<span class="tower-attack" aria-label="Атака: ${power.attack}">⚔ ${power.attack}</span>` : ''}
+      ${towerHealthHTML(hp, max, ownShield, charging, kind === 'def' ? cards.map(c => c.id).sort().join(',') : '')}
+      ${ownAttack ? attackChargeHTML(cards) : ''}
     ` : ''}
   </div>`;
 }

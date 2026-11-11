@@ -1,3 +1,6 @@
+import { retainAttackCharges } from './ui/arena/AttackCharge.js';
+import './ui/arena/attack-charge.css';
+import { retainTowerMeters } from './ui/arena/TowerHealth.js';
 import { shuffled } from '../shared/cards.js';
 import './styles.css';
 import './ui/arena/tower-crystal.css';
@@ -196,6 +199,7 @@ function render(force = false) {
     ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
   root.className = 'match-screen';
+  root.dataset.meterContext = `${view.matchId}:${view.round}`;
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
       <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
@@ -207,8 +211,14 @@ function render(force = false) {
         ${cardPanelHTML(panelState)}
       </div>
     </div>`;
+  const restoreChargeAnimations = retainAttackCharges(app.firstElementChild, root);
+  const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
   app.replaceChildren(root);
   applyArenaLayout();
+  restoreMeterAnimations();
+  restoreChargeAnimations();
+  // Consume placement flags once; another tower placement must not replay them.
+  for (const slot of slots) for (const card of [...slot.atk, ...slot.def]) card.justPlaced = false;
   initArenaLayoutEditor();
 
   const hand = byId('hand');
@@ -234,7 +244,7 @@ function render(force = false) {
     const { lane, kind } = target.dataset;
     target.tabIndex = panelState.blocked ? -1 : 0;
     target.setAttribute('role', 'button');
-    target.setAttribute('aria-label', `${kind === 'atk' ? 'Пара 1' : 'Пара 2'}, ${PANEL_LANES[lane]}`);
+    target.setAttribute('aria-label', `${kind === 'atk' ? 'Атака' : 'Защита'}, ${PANEL_LANES[lane]}`);
     target.onclick = () => placeCards(target, selected);
     target.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); target.click(); }
@@ -250,7 +260,7 @@ function missingPairHint() {
   const lane = slots.findIndex((s) => s.atk.length !== 2 || s.def.length !== 2);
   if (lane < 0) return '';
   const { atk, def } = slots[lane];
-  const missing = [atk.length !== 2 && 'пара 1', def.length !== 2 && 'пара 2'].filter(Boolean);
+  const missing = [atk.length !== 2 && 'атака', def.length !== 2 && 'защита'].filter(Boolean);
   return `Линия «${PANEL_LANES[lane]}» — осталось заполнить: ${missing.join(' и ')}.`;
 }
 
@@ -311,7 +321,7 @@ async function submit() {
   const turn = { matchId, round, expectedVersion, placements, fortifyLane: null };
   const pending = submission = { matchId, round, accepted: false };
   render();
-  setStatus('Отправляем ход…');
+  setStatus(view.opponent?.isBot ? '' : 'Отправляем ход…');
   try {
     for (let attempt = 0; ; attempt++) {
       try {
@@ -326,7 +336,7 @@ async function submit() {
       }
     }
     if (submission !== pending) return;
-    setStatus('Ход отправлен. Ждём обновления матча.');
+    setStatus(view.opponent?.isBot ? '' : 'Ход отправлен. Ждём обновления матча.');
     await refresh(matchId);
   } catch (e) {
     if (currentSubmission() !== pending || isCombatPlaying()) return;

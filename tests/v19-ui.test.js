@@ -100,7 +100,7 @@ test('серверное правило: hit = max(0, атака − защит�
   const board = buildState();
   // A атакует огнём против земляной защиты B; B атакует землёй против земляной защиты A.
   E.resolveRound(board, fullTurn(FIRE, EARTH), fullTurn(EARTH, EARTH));
-  // Обе пары A: атака 34 + 7 = 41; обе пары B: защита 9 + 9 = 18 → hit 23.
+  // Атакующая пара A: 34; защитная B: 9 → hit 25.
   // Внешняя башня 12 HP уничтожена, остаток СГОРАЕТ — внутренняя не тронута.
   assert.equal(board.b.outer[0], 0);
   assert.equal(board.b.inner[0], 18);

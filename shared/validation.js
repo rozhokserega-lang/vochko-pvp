@@ -1,4 +1,4 @@
-// Проволочный формат сохраняет attack/defense как первую/вторую пары.
+// attack — атакующая пара, defense — защитная; в обеих разрешены любые масти.
 export function fortifyAllowed(_used, lane) {
   return lane == null ? { ok: true } : { ok: false, error: 'fortify-disabled' };
 }
