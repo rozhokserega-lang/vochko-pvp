@@ -1,3 +1,4 @@
+import { retainTowerMeters } from './ui/arena/TowerHealth.js';
 import { shuffled } from '../shared/cards.js';
 import './styles.css';
 import './ui/arena/tower-crystal.css';
@@ -196,6 +197,7 @@ function render(force = false) {
     ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
   root.className = 'match-screen';
+  root.dataset.meterContext = `${view.matchId}:${view.round}`;
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
       <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
@@ -207,8 +209,12 @@ function render(force = false) {
         ${cardPanelHTML(panelState)}
       </div>
     </div>`;
+  const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
   app.replaceChildren(root);
   applyArenaLayout();
+  restoreMeterAnimations();
+  // Consume placement flags once; another tower placement must not replay them.
+  for (const slot of slots) for (const card of [...slot.atk, ...slot.def]) card.justPlaced = false;
   initArenaLayoutEditor();
 
   const hand = byId('hand');

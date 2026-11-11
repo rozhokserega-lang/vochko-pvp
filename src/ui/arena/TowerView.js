@@ -46,7 +46,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots, preview }
       <div class="element-circle" data-element="${element}">${elementAnimHTML(element)}</div>` : ''}
     </div>
     ${active && alive ? `
-      ${towerHealthHTML(hp, max, ownShield, charging)}
+      ${towerHealthHTML(hp, max, ownShield, charging, kind === 'def' ? cards.map(c => c.id).sort().join(',') : '')}
       ${ownAttack ? `<span class="tower-attack" aria-label="Атака: ${ownAttack}">⚔ ${ownAttack}</span>` : ''}
     ` : ''}
   </div>`;

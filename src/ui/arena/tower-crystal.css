@@ -37,7 +37,11 @@
 @media(prefers-reduced-motion:reduce){.tower-crystal *,.tower-crystal *:before,.tower-crystal *:after{animation:none!important;transition:none!important}}
 .tower-crystal .crystal-shield [hidden]{display:none!important}
 /* The shield charges around HP; attack previews never create enemy shields. */
-.tower-crystal .crystal-shield-energy{position:absolute;inset:0;clip-path:polygon(50% 0,96% 12%,100% 85%,50% 100%,0 85%,4% 12%);background:linear-gradient(90deg,#6ae5ff99,transparent 35%,transparent 65%,#6ae5ff99);transform:scaleY(var(--shield-ratio));transform-origin:bottom;transition:transform 1s ease-out;opacity:.6}
+.tower-crystal .crystal-shield-energy{position:absolute;inset:0;clip-path:polygon(50% 0,96% 12%,100% 85%,50% 100%,0 85%,4% 12%);background:linear-gradient(90deg,#d0fffff2,#40dbffbb 19%,transparent 25%,transparent 75%,#40dbffbb 81%,#d0fffff2);transform:scaleY(var(--shield-ratio));transform-origin:bottom;transition:transform 1s ease-out;opacity:1}
 .tower-crystal .crystal-shell svg{position:relative}
 .tower-crystal.shield-charging .crystal-shield-energy{animation:tower-shield-charge .5s ease-out both}
 @keyframes tower-shield-charge{from{transform:scaleY(0);filter:brightness(2)}to{transform:scaleY(1);filter:brightness(1)}}
+
+.tower-crystal.shielded:not(.shield-cracked) .crystal-shell svg{filter:drop-shadow(0 0 4px #75eaff) drop-shadow(0 0 7px #2ecbff99)}
+.tower-crystal.shielded:not(.shield-cracked) .crystal-outline{stroke:#c3faff;stroke-width:3.5}
+.tower-crystal.shielded:not(.shield-cracked) .crystal-glass{fill:#52ddff26;stroke:#82efffcc}
