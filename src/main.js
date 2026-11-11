@@ -1,6 +1,4 @@
 import { shuffled } from '../shared/cards.js';
-import { pairExplanation, placementHTML, lineTotalsHTML } from './ui/Placement.js';
-import { roundReportHTML, wireReportClicks } from './ui/PairPreview.js';
 import './styles.css';
 import './combat-v5.css';
 import './ui/arena/arena.css';
@@ -13,7 +11,7 @@ import { battleHTML as Board, nexusPhaseBar } from './ui/arena/ArenaScene.js';
 import { applyArenaLayout } from './ui/arena/ArenaScene.js';
 import { initArenaLayoutEditor, isArenaDebugEnabled } from './ui/arena/ArenaLayoutEditor.js';
 import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
-import { cardPanelHTML, cardPanelToolsHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPanelPreview } from './ui/card-panel/CardPanel.js';
+import { cardPanelHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPanelPreview } from './ui/card-panel/CardPanel.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { EndScreen } from './ui/EndScreen.js';
@@ -191,12 +189,12 @@ function doRematch(btn) {
 function render(force = false) {
   if (!force && isCombatPlaying()) return; // UI заморожен на время боевой хореографии
   const blocked = turnLocked();
-  const pairsExpanded = byId('pairsDetails')?.open ?? false;
   const panelState = { round: view.round, blocked, hint: blocked ? '' : missingPairHint(),
     progress: { attack: slots.filter((s) => s.atk.length === 2).length,
       defense: slots.filter((s) => s.def.length === 2).length, total: slots.length },
     ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
+  root.className = 'match-screen';
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
       <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
@@ -207,15 +205,6 @@ function render(force = false) {
         <div class="battle" id="lanes">${Board(view, slots, { showProgress: !blocked })}</div>
         ${cardPanelHTML(panelState)}
       </div>
-      <section class="hand-area card-panel-area">
-        ${cardPanelToolsHTML(panelState)}
-        <div id="pairPreview" class="selection-explanation" role="status"></div>
-        <div class="line-totals">${lineTotalsHTML(slots)}</div>
-        <details class="pair-details" id="pairsDetails" ${pairsExpanded ? 'open' : ''}><summary>Пары и расчёт · любые масти в обоих слотах</summary>
-          <div class="placements" id="placements">${placementHTML(slots, blocked)}</div>
-        </details>
-        <div class="battle-reports" id="battleReports">${roundReportHTML(view, view.seat)}</div>
-      </section>
     </div>`;
   app.replaceChildren(root);
   applyArenaLayout();
@@ -226,7 +215,6 @@ function render(force = false) {
   renderPanelCards(hand, myHand, selected, usedIds(), turnLocked(), dealAnimationPending);
   dealAnimationPending = false;
   updatePreview();
-  wireReportClicks(byId('battleReports'), view, view.seat);
 
   hand.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-card]');
@@ -241,7 +229,7 @@ function render(force = false) {
     updatePreview();
   });
 
-  root.querySelectorAll('.tower.drop-target, .nexus-floor.drop-target, .pair-placement').forEach((target) => {
+  root.querySelectorAll('.tower.drop-target, .nexus-floor.drop-target').forEach((target) => {
     const { lane, kind } = target.dataset;
     target.tabIndex = panelState.blocked ? -1 : 0;
     target.setAttribute('role', 'button');
@@ -252,7 +240,6 @@ function render(force = false) {
     };
   });
 
-  byId('clearBtn').onclick = () => { if (turnLocked()) return; selected = []; slots = resetSlots(); render(); };
   byId('fightBtn').onclick = submit;
   byId('exitBtn').onclick = () => exitMatch();
   wireDrag();
@@ -266,7 +253,7 @@ function missingPairHint() {
   return `Линия «${PANEL_LANES[lane]}» — осталось заполнить: ${missing.join(' и ')}.`;
 }
 
-function setStatus(text) { const el = byId('status'); if (el) el.textContent = text || el.dataset.hint; }
+function setStatus(text) { const el = byId('status'); if (el) el.textContent = text || ''; }
 
 // Экран финала — вызывается и из refresh, и из хореографии боя.
 // Идемпотентный: повторные Realtime-события не наслаивают оверлеи.
@@ -291,9 +278,6 @@ bindCombatUI({ render, showEndScreen, renderFinal: () => render(true) });
 function updatePreview() {
   const cards = selected.map(cardById);
   renderPanelPreview(byId('hand'), cards);
-  const preview = byId('pairPreview');
-  if (preview) preview.textContent = cards.length === 2 ? pairExplanation(cards)
-    : cards.length === 1 ? 'Выбери вторую карту любой масти.' : '';
   byId('lanes').querySelectorAll('.drop-target[data-kind]').forEach((target) => {
     target.classList.toggle('pair-target', !turnLocked() && cards.length === 2);
   });

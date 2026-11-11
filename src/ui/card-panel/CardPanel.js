@@ -53,6 +53,7 @@ export function cardPanelHTML({ round, blocked, ready, progress }) {
         <span>Пара 1 ${progress.attack}/${progress.total}</span>
         <span>Пара 2 ${progress.defense}/${progress.total}</span>
       </div>` : ''}
+      <div class="panel-message" id="status" role="status" aria-live="polite">${ready ? 'Ход отправлен. Ждём соперника.' : ''}</div>
     </div>`;
 }
 

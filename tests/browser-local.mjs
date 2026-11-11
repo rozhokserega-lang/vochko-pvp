@@ -17,13 +17,10 @@ try {
   }
   async function place(p) {
     await p.locator('#hand .card').first().waitFor();
-    await p.locator('#pairsDetails>summary').click();
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
       await p.locator('#hand .card.red:not(.used)').first().click();
       await p.locator('#hand .card:not(.red):not(.used)').first().click();
-      const target = p.locator(lane === 0
-        ? `.tower.drop-target[data-lane="${lane}"][data-kind="${kind}"]`
-        : `.pair-placement[data-lane="${lane}"][data-kind="${kind}"]`);
+      const target = p.locator(`.tower.drop-target[data-lane="${lane}"][data-kind="${kind}"]`);
       await target.click();
     }
     assert.equal(await p.locator('#hand .card.used').count(), 12);
@@ -34,8 +31,8 @@ try {
   await place(bot);
   await bot.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('2'));
   await bot.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield'));
-  await bot.locator('.report-btn').first().waitFor();
-  assert.equal(await bot.locator('.report-btn').count(), 3);
+  await bot.waitForFunction(() => !document.querySelector('#fightBtn')?.disabled);
+  assert.equal(await bot.locator('#hand .card').count(), 14);
   const a = await page(), b = await page();
   await a.locator('[data-act="create"]').click();
   await a.locator('.code').waitFor();
@@ -44,7 +41,7 @@ try {
   await b.locator('[data-act="join"]').click();
   await place(a); await place(b);
   await Promise.all([a, b].map(p => p.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield'))));
-  for (const p of [a, b]) { await p.locator('.report-btn').first().waitFor(); assert.equal(await p.locator('.report-btn').count(), 3); }
+  for (const p of [a, b]) { await p.waitForFunction(() => !document.querySelector('#fightBtn')?.disabled); assert.equal(await p.locator('#hand .card').count(), 14); }
   await a.reload(); await a.locator('#hand .card').first().waitFor();
   assert.match(await a.locator('#roundBadge').innerText(), /2/);
   assert.deepEqual(errors, []); assert.deepEqual(remote, []);

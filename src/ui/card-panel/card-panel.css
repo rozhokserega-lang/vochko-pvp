@@ -2,18 +2,17 @@
 .arena-and-hand{display:flex;flex:none;flex-direction:column;align-items:center;min-height:0;gap:5px;width:100%;container-type:inline-size;margin-inline:auto}
 .arena-and-hand > #lanes{width:100%;height:auto;aspect-ratio:1600/900;flex:none;container-type:inline-size}
 .arena-and-hand .arena-scene{width:100%;height:auto;aspect-ratio:1600/900}
-@media(min-width:881px){.arena-and-hand{max-width:min(100%,calc((100dvh - 150px) / .89584))}}
 
-.card-panel{position:relative;isolation:isolate;flex:none;width:100%;aspect-ratio:2172/724;container-type:inline-size}
+.card-panel{position:relative;isolation:isolate;z-index:10;flex:none;width:100%;aspect-ratio:2172/724;container-type:inline-size;margin-top:calc(-14cqw - 5px);pointer-events:none}
 /* Исходный PNG имеет прозрачную сферу: эффект светится сквозь стекло. */
 .panel-art{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none;user-select:none}
 .panel-zone{position:absolute;left:var(--zone-x);top:var(--zone-y);width:var(--zone-w);height:var(--zone-h);z-index:3}
 .panel-sphere{z-index:1;overflow:hidden;border-radius:50%;pointer-events:none}
 #panelEffect,#panelEffect img{width:100%;height:100%}
-#panelEffect img{display:block;object-fit:cover}
+#panelEffect img{display:block;object-fit:cover;transform:scale(.95);transform-origin:center}
 .panel-round,.panel-power{display:flex;justify-content:center;align-items:center;gap:.35em;color:#ffdc8e;font:bold 1.55cqw Georgia,serif;text-shadow:0 2px 3px #000,0 0 5px #000;white-space:nowrap;pointer-events:none}
 .panel-round b{font-size:1.2em}.panel-power{font-size:1.5cqw}
-.panel-cards{container-type:size;display:flex;align-items:center;justify-content:space-between;gap:.55%;overflow:visible}
+.panel-cards{container-type:size;display:flex;align-items:center;justify-content:space-between;gap:.55%;overflow:visible;pointer-events:auto}
 .panel-card.card{position:relative;flex:none;width:6.45%;height:auto;max-width:none;min-width:0;aspect-ratio:5/7;display:block;padding:0;border-radius:9%;touch-action:none;transition:transform .13s ease,box-shadow .13s ease}
 .panel-card-corner{position:absolute;top:6%;left:8%;display:flex;gap:.1em;font:bold min(2.4cqw,18cqh)/1 Georgia,serif}
 .panel-card-element{position:absolute;inset:20% 0 0;display:grid;place-items:center;font-size:min(5cqw,38cqh)}
@@ -23,7 +22,7 @@
 .panel-card.card.dealing{animation:panelDeal .28s both;animation-delay:var(--deal-delay,0ms)}
 @keyframes panelDeal{from{opacity:0;transform:translateY(-50%) rotate(-7deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
 .panel-card-ghost .panel-card-corner{font-size:13px}.panel-card-ghost .panel-card-element{font-size:22px}
-.panel-ready{border:0;background:transparent;padding:0;border-radius:9%}
+.panel-ready{border:0;background:transparent;padding:0;border-radius:9%;pointer-events:auto}
 .panel-ready:disabled{cursor:default;filter:brightness(.55) saturate(.65)}
 .panel-ready:focus-visible,.panel-card:focus-visible{outline:2px solid #8de4ff;outline-offset:2px}
 .panel-ready img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
@@ -52,3 +51,20 @@
  .panel-power{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.panel-card.card{transition:none}.panel-card.card.dealing{animation:none}}
+
+/* Весь игровой экран занимает viewport; детали остаются на картах и башнях. */
+#app:has(>.match-screen){height:100dvh;overflow:hidden}
+.match-screen{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.match-screen>header{flex:0 0 44px}
+.match-screen>.wrap{flex:1;width:100%;max-width:none;height:auto;min-height:0;margin:0;padding:4px 6px;overflow:hidden}
+.match-screen .score{flex:none}
+.match-screen .arena-and-hand{--game-width:min(100cqw,calc(100cqh / .755834));container-type:size;flex:1;min-height:0;max-width:none;justify-content:center}
+.match-screen .arena-and-hand>#lanes,.match-screen .arena-and-hand>.card-panel{width:var(--game-width)}
+.match-screen .card-panel{margin-top:calc(var(--game-width) * -.14 - 5px)}
+.panel-message{position:absolute;z-index:20;left:20%;bottom:100%;width:60%;padding:6px 10px;border:1px solid #ac8a4e;border-radius:8px;background:#101927ed;color:#ffe1a2;text-align:center;font-size:12px;line-height:1.4;pointer-events:none}
+.panel-message:empty{display:none}
+@media(max-width:640px){
+ .match-screen .arena-and-hand{--game-width:min(100cqw,calc((100cqh - 48px) / .755834))}
+ .match-screen>header{flex-basis:36px}
+ .panel-message{left:8%;width:84%;font-size:11px}
+}

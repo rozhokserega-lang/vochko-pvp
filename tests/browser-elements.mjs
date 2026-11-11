@@ -37,8 +37,8 @@ try {
     assert.equal(await page.locator('#hand').evaluate(hand =>
       Number(getComputedStyle(hand.querySelector('.panel-art')).zIndex) > Number(getComputedStyle(hand.querySelector('.panel-sphere')).zIndex)), true);
     assert.equal(await page.locator('#fortifyBtn').count(), 0);
-    assert.equal(await page.locator('.pair-placement').count(), 6);
-    await page.locator('#pairsDetails>summary').click();
+    assert.equal(await page.locator('#pairsDetails,#battleReports,#clearBtn,#pairPreview').count(), 0);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true);
     assert.ok(await page.locator('#arenaScene').evaluate(el => el.getBoundingClientRect().height > 180));
     const previews = await page.evaluate(async () => {
       const { renderPanelPreview } = await import('/src/ui/card-panel/CardPanel.js');
@@ -57,14 +57,14 @@ try {
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
       await page.locator('#hand .card.red:not(.used)').first().click();
       await page.locator('#hand .card:not(.red):not(.used)').first().click();
-      assert.match(await page.locator('#pairPreview').innerText(), /атака.*защита/s);
+      assert.match(await page.locator('#panelPower').innerText(), /⚔.*🛡/s);
       if (lane === 0 && kind === 'atk') {
         await mkdir('tests/.shots', { recursive: true });
         await page.locator('#hand').screenshot({ path: `tests/.shots/unified-preview-${seat}.png` });
       }
       if (seat === 1 && lane === 0 && kind === 'atk') {
         await page.locator('#hand .card.selected').first().dragTo(page.locator('.tower.drop-target[data-lane="0"][data-kind="atk"]'));
-      } else await page.locator(`.pair-placement[data-lane="${lane}"][data-kind="${kind}"]`).click();
+      } else await page.locator(`.tower.drop-target[data-lane="${lane}"][data-kind="${kind}"]`).click();
     }
     assert.equal(await page.locator('#hand .card.used').count(), 12);
     assert.deepEqual(await page.locator('#hand .card').evaluateAll(cards => cards.map(c => c.dataset.card)), originalOrder);
@@ -72,8 +72,6 @@ try {
     // A used card cannot be selected again.
     await page.locator('#hand .card.used').first().dispatchEvent('click');
     assert.equal(await page.locator('#hand .card.selected').count(), 0);
-    await page.locator('.placement-pair summary').first().click();
-    assert.match(await page.locator('.placement-pair details[open]').innerText(), /база/);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await mkdir('tests/.shots', { recursive: true });
     await page.screenshot({ path: `tests/.shots/elements-${seat === 1 ? 'desktop' : 'mobile'}.png`, fullPage: true });
@@ -91,19 +89,16 @@ try {
   await pages[0].screenshot({ path: 'tests/.shots/elements-combat.png', fullPage: true });
   for (const page of pages) {
     await page.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield') && !document.querySelector('#fightBtn')?.disabled, null, { timeout: 12000 });
-    await page.locator('.report-btn').first().waitFor();
-    assert.equal(await page.locator('.report-btn').count(), 3);
-    await page.locator('.report-btn').first().click();
-    assert.match(await page.locator('#explainContent').innerText(), /Пара 2/);
-    assert.match(await page.locator('#explainContent').innerText(), /Суммарная атака линии/);
+    assert.equal(await page.locator('.report-btn').count(), 0);
+    assert.equal(await page.locator('#hand .card').count(), 14);
+    assert.match(await page.locator('#roundBadge').innerText(), /2/);
   }
   assert.equal(submissions.length, 2);
   assert.ok(submissions.every(s => s.body.fortifyLane === null));
   assert.equal(f.reports.length, 1);
-  await pages[1].locator('[data-close]').click();
   await pages[1].setViewportSize({ width: 844, height: 390 });
-  assert.equal(await pages[1].locator('#pairPreview').isVisible(), true);
-  assert.equal(await pages[1].locator('#battleReports').isVisible(), true);
+  assert.equal(await pages[1].locator('#hand').isVisible(), true);
+  assert.equal(await pages[1].evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true);
   assert.equal(await pages[1].evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await pages[1].screenshot({ path: 'tests/.shots/elements-landscape.png', fullPage: true });
   assert.deepEqual(errors, []);
