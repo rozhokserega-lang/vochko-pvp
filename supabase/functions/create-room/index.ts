@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
     const user = await requireUser(req);
-    const { vsBot } = await req.json().catch(() => ({}));
+    const { vsBot, abilities, smartBot } = await req.json().catch(() => ({}));
     // Старые waiting-комнаты игрока закрываем: они бессмысленны после ухода.
     await sql`
       update private.matches set status = 'finished', updated_at = now()
@@ -22,8 +22,18 @@ Deno.serve(async (req) => {
     const code = roomCode();
     // PvE: комната сразу в planning, бот играет seat 2 на сервере.
     const state = vsBot
-      ? { botMatch: true, board: emptyBoard(), hands: { 1: dealHand(), 2: dealHand() }, fortifyUsed: { 1: false, 2: false } }
-      : {};
+      ? {
+          botMatch: true,
+          board: emptyBoard(),
+          hands: { 1: dealHand(), 2: dealHand() },
+          fortifyUsed: { 1: false, 2: false },
+          rules: { abilities: abilities !== false, smartBot: smartBot !== false },
+          rngSeed: cryptoSeed(),
+        }
+      : {
+          rules: { abilities: abilities !== false, smartBot: false },
+          rngSeed: cryptoSeed(),
+        };
     const [match] = await sql`
       insert into private.matches (room_code, player1_id, status, state)
       values (${code}, ${user.id}, ${vsBot ? 'planning' : 'waiting'}, ${sql.json(state)})

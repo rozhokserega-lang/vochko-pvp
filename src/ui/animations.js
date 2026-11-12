@@ -2,6 +2,8 @@ import { launchAttackCharge } from './arena/AttackCharge.js';
 import { setTowerShield, setTowerHealth } from './arena/TowerHealth.js';
 import { setNexusShield, setNexusHealth } from './arena/NexusHealth.js';
 import { ELEMENTS } from '../../shared/elements.js';
+import { showAbilityFeed, clearAbilityFeed } from './arena/AbilityFeed.js';
+import './arena/ability-feed.css';
 import { damageSplit, revealAssignments, shieldEntries } from './combat-logic.js';
 
 // Боевая хореография v19 (эталон vochko_pvp_enemy_defense_reveal_v19.html):
@@ -15,6 +17,7 @@ export function clearFloats() {
   timers.forEach(clearTimeout);
   timers.length = 0;
   document.querySelectorAll('.damage-float').forEach((el) => el.remove());
+  clearAbilityFeed();
   // Переход на другой экран/матч обязан отменять и боевую хореографию:
   // все таймеры сбрасываются, вставные узлы и маркеры HP убираются.
   cancelCombat();
@@ -84,10 +87,12 @@ export function bindCombatUI(ui) { Object.assign(combatUI, ui); }
 
 // Полная отмена текущей хореографии (выход из матча, реванш, F5-восстановление).
 export function cancelCombat() {
+  // Отмена хореографии тоже снимает ленту способностей.
   combatRun++;
   combatTimers.forEach(clearTimeout);
   combatTimers = [];
   combatPlaying = false;
+  clearAbilityFeed();
   document.querySelectorAll('.attack-charge.charge-fired').forEach(el => el.classList.remove('charge-fired'));
   document.querySelectorAll('.combat-shield,.combat-stage,.combat-card-reveal,.combat-damage-number,.attack-projectile,.attack-impact-flash').forEach((x) => x.remove());
   document.querySelectorAll('.combat-hp-restore').forEach((x) => {
@@ -178,8 +183,10 @@ function combatHpSnapshot(events, seat) {
     const match = val.textContent.match(/(\d+)\s*\/\s*(\d+)/);
     if (!match) return;
     const start = +match[1], max = +match[2];
-    const damage = hits.reduce((sum, ev) => sum + Math.max(0, +ev.amount || 0), 0);
-    const final = Math.max(0, start - damage);
+    // Урон минус лечение (события способностей с ev.heal).
+    const delta = hits.reduce((sum, ev) =>
+      sum + (ev.heal ? -Math.max(0, +ev.amount || 0) : Math.max(0, +ev.amount || 0)), 0);
+    const final = Math.max(0, Math.min(max, start - delta));
     if (final >= start) return;
     // Вертикальные полоски (арена v20) растут по height, v19 — по width.
     const axis = bar.dataset.vertical === '1' ? 'height' : 'width';
@@ -279,6 +286,10 @@ export function playRoundAnimation(view) {
   combatPlaying = true;
   const run = combatRun;
   const seat = view.seat;
+  // Способности: тик поджогов/очищение — в начале, остальные — после ударов.
+  showAbilityFeed([
+    ...(rep.abilityEvents ?? []).filter(e => e.ability === 'burn_tick' || e.effect === 'cleanse' || e.effect === 'heal'),
+  ], seat);
   const mySide = seat === 1 ? 'a' : 'b';
   const valid = () => run === combatRun;
   // Подсветка выбора гаснет на время разрешения раунда (состояние resolving).
@@ -339,6 +350,8 @@ export function playRoundAnimation(view) {
   // Reveal the final models only after both sides have finished attacking.
   combatLater(() => {
     if (!valid()) return;
+    // Срабатывания способностей после удара (ответки, отражения, разряд).
+    showAbilityFeed((rep.abilityEvents ?? []).filter(e => e.ability !== 'burn_tick' && e.effect !== 'cleanse' && e.effect !== 'heal'), seat);
     if (combatUI.renderFinal) combatUI.renderFinal();
   }, 5900);
   // Unlock planning (or show the finish screen) after the entire sequence.

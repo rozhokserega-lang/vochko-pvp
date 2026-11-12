@@ -13,6 +13,13 @@ export function dealHand() {
   return deal(cryptoRng);
 }
 
+// Seed раунда: сохраняется в state.matches → воспроизводимый resolve (аудит).
+export function cryptoSeed(): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] >>> 0;
+}
+
 // Код комнаты: криптостойкий, без похожих символов (README §4).
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export function roomCode(length = 6): string {
@@ -22,6 +29,6 @@ export function roomCode(length = 6): string {
 }
 
 export const emptyBoard = () => ({
-  a: { nexus: 80, outer: [12, 12, 12], inner: [18, 18, 18], burn: [0, 0, 0] },
-  b: { nexus: 80, outer: [12, 12, 12], inner: [18, 18, 18], burn: [0, 0, 0] },
+  a: { nexus: 80, outer: [12, 12, 12], inner: [18, 18, 18], burn: [0, 0, 0], statuses: [{}, {}, {}] },
+  b: { nexus: 80, outer: [12, 12, 12], inner: [18, 18, 18], burn: [0, 0, 0], statuses: [{}, {}, {}] },
 });

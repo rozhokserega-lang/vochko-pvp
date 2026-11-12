@@ -6,8 +6,10 @@ import { sql } from '../_shared/db.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 import { dealHand } from '../_shared/deal.ts';
 import { validateTurn, materializeTurn } from '../../../shared/validation.js';
-import { botPlan } from '../../../shared/bot.js';
+import { botPlan, choosePlan } from '../../../shared/bot.js';
 import { resolveRound } from '../../../shared/engine.js';
+import { mulberry32 } from '../../../shared/rng.js';
+import { cryptoSeed } from '../_shared/deal.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -44,7 +46,13 @@ Deno.serve(async (req) => {
 
       const resolveAndStore = async (turnA, turnB) => {
         const board = { round: m.round, a: st.board.a, b: st.board.b };
-        const resolved = resolveRound(board, turnA, turnB);
+        // Единый движок: способности по правилам матча; seeded RNG →
+        // воспроизводимый расчёт раунда (seed хранится в state).
+        const rules = st.rules ?? {};
+        const abilities = rules.abilities === true;
+        const rng = mulberry32(Number(st.rngSeed) >>> 0);
+        st.rngSeed = cryptoSeed(); // новый seed на следующий раунд
+        const resolved = resolveRound(board, turnA, turnB, { abilities, rng });
         st.board = { a: board.a, b: board.b };
 
         st.fortifyUsed = { 1: false, 2: false }; // неактивное поле совместимости
@@ -55,7 +63,7 @@ Deno.serve(async (req) => {
 
         await tx`
           insert into private.round_events (match_id, round, public_result)
-          values (${m.id}, ${m.round}, ${sql.json({ events: resolved.events, report: resolved.report })})`;
+          values (${m.id}, ${m.round}, ${sql.json({ events: resolved.events, report: resolved.report, abilityEvents: resolved.abilityEvents ?? null })})`;
 
         await tx`
           update private.matches
@@ -80,9 +88,17 @@ Deno.serve(async (req) => {
 
       if (st.botMatch) {
         // PvE: бот играет seat 2 в той же транзакции — расчёт мгновенный.
+        // smartBot (правила матча) — Monte Carlo бот; иначе прежний botPlan.
+        const matchState = { round: m.round, a: st.board.a, b: st.board.b };
+        const botTurn = (st.rules?.smartBot === true)
+          ? choosePlan({
+              state: matchState, hand: st.hands['2'], side: 'b', rng: mulberry32(Number(st.rngSeed) >>> 0),
+              budgetMs: 800,
+            }).plan
+          : { placements: botPlan(st.hands['2'], st.board.a, st.board.b), fortifyLane: null };
         return await resolveAndStore(
           materializeTurn(st.hands['1'], { placements, fortifyLane }),
-          { placements: botPlan(st.hands['2'], st.board.a, st.board.b), fortifyLane: null },
+          botTurn,
         );
       }
 

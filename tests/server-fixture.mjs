@@ -4,7 +4,7 @@ import { stripTypeScriptTypes } from 'node:module';
 import { deal } from '../shared/cards.js';
 import { mulberry32 } from '../shared/rng.js';
 import * as validation from '../shared/validation.js';
-import { botPlan } from '../shared/bot.js';
+import { botPlan, choosePlan } from '../shared/bot.js';
 import { resolveRound, newState, shieldPct } from '../shared/engine.js';
 
 export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
@@ -45,7 +45,8 @@ export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
         return { id };
       }, json: v => Response.json(v), err: (error, status) => Response.json({ error }, { status }),
       cors: {}, HttpError, sql, broadcastState: async () => {}, dealHand,
-      ...validation, botPlan, resolveRound, shieldPct };
+      ...validation, botPlan, choosePlan, resolveRound, shieldPct, mulberry32,
+      cryptoSeed: () => 42 };
     new Function(...Object.keys(dependencies), stripTypeScriptTypes(source))(...Object.values(dependencies));
   }
   const call = async (name, seat, body) => {

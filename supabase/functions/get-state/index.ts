@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       },
       board: {
         me: myBoard ? { ...myBoard, shieldPct: shieldPct(myBoard) } : null,
-        opponent: oppBoard ? { nexus: oppBoard.nexus, outer: oppBoard.outer, inner: oppBoard.inner, shieldPct: shieldPct(oppBoard) } : null,
+        opponent: oppBoard ? { nexus: oppBoard.nexus, outer: oppBoard.outer, inner: oppBoard.inner, statuses: oppBoard.statuses ?? [{}, {}, {}], shieldPct: shieldPct(oppBoard) } : null,
       },
       latestRoundReport: report?.public_result ?? null,
       winner: m.status === 'finished' ? (m.winner_seat == null ? 'draw' : m.winner_seat === seat ? 'me' : 'opponent') : null,

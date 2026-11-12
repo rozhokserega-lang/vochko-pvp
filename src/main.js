@@ -19,6 +19,8 @@ import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
 import { cardPanelHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPanelPreview } from './ui/card-panel/CardPanel.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
+import { renderStatusBadges } from './ui/arena/StatusBadges.js';
+import './ui/arena/status-badges.css';
 import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -216,6 +218,7 @@ function render(force = false) {
   const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
   app.replaceChildren(root);
   applyArenaLayout();
+  renderStatusBadges(root, view.board.me, view.board.opponent);
   restoreMeterAnimations();
   restoreChargeAnimations();
   // Consume placement flags once; another tower placement must not replay them.
