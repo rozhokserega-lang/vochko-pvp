@@ -121,12 +121,31 @@ export function addStatus(statuses, lane, key, value) {
 export const cloneStatuses = (statuses) =>
   (statuses ?? emptyStatuses()).map((s) => ({ ...s }));
 
+// ── Варианты баланса (A/B-эксперименты; исходный баланс — дефолт) ───────────
+// Каждый ключ переключает конкретную механику; отсутствие ключа = исходное поведение.
+export const VARIANT_DEFAULTS = Object.freeze({
+  fireRetaliation: 'blocked', // blocked | onHit (B) | blocked3 (C)
+  lavaCounter: 'onHit',       // onHit | three (B) | strongHit (C: удар ≥3 вскипятил лаву)
+  steamDampen: 'pct10',       // pct10 | pct15 (B) | healPartial (C: лечение при ударе ≤2)
+  waterCleanse: 'base',       // base | heal1 (B) | single (C: один негативный статус)
+  lavaPierce: 'pct10',        // pct10 | pct5 (B) | burnArmor (C: поджог только при броне)
+  waterStrip: 'three',        // three | two (B)
+  sandstormShield: 'four',    // four | three (B)
+});
+
+export function resolveVariants(opts) {
+  const v = {};
+  for (const [k, d] of Object.entries(VARIANT_DEFAULTS)) v[k] = opts?.[k] ?? d;
+  return v;
+}
+
 // ── Фаза 0 раунда: очищение (Вода), тик поджога, съём применённых статусов ──
 // Порядок: очищение → тик поджога → статусы применены и стёрты (переносится
 // только то, что выставят способности в этом раунде).
 // io: { damage, damageStage, recordDamage, healStructure, snapshot }
 export function applyStatuses(state, opts) {
-  const { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters = false } = opts;
+  const { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters = false, variants = {} } = opts;
+  const V = resolveVariants(variants);
   const ctx = {
     state, rng, nexusPct, disabled: disabled ?? new Set(), events, abilityEvents, io,
     applied: { a: emptyStatuses(), b: emptyStatuses() },
@@ -151,10 +170,11 @@ export function applyStatuses(state, opts) {
       if (defElement === 'water' && on('water_cleanse') && !cleanseBlocked) {
         const negatives = NEGATIVE_STATUSES.filter((k) => s[k]);
         if (negatives.length) {
-          for (const k of negatives) delete s[k];
-          abilityEvents.push({ ability: 'water_cleanse', side, lane: l, effect: 'cleanse', removed: negatives });
+          const toRemove = V.waterCleanse === 'single' ? negatives.slice(0, 1) : negatives;
+          for (const k of toRemove) delete s[k];
+          abilityEvents.push({ ability: 'water_cleanse', side, lane: l, effect: 'cleanse', removed: toRemove });
         } else {
-          healTarget(ctx, side, l, 2, 'water_cleanse');
+          healTarget(ctx, side, l, V.waterCleanse === 'heal1' ? 1 : 2, 'water_cleanse');
         }
       } else if (defElement === 'water' && on('water_cleanse') && cleanseBlocked) {
         abilityEvents.push({ ability: 'counter_triggered', side, lane: l, effect: 'counter',
@@ -182,10 +202,11 @@ export function applyStatuses(state, opts) {
 // Бури → модификаторы атакующего (Вода/Земля/Лава) → Заслон вихря → удар →
 // ослабление удара Паром.
 export function effectiveLine(p) {
-  const { ctx, attackerSide, lane, atkStat, defStat, atkElement, defElement, counters = false } = p;
+  const { ctx, attackerSide, lane, atkStat, defStat, atkElement, defElement, counters = false, variants = {} } = p;
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
   const on = (id) => !ctx.disabled.has(id);
   const blocks = counterBlocks(atkElement, defElement, counters);
+  const V = resolveVariants(variants);
   const atkS = ctx.applied[attackerSide][lane] || {};
   const defS = ctx.applied[defenderSide][lane] || {};
 
@@ -195,15 +216,19 @@ export function effectiveLine(p) {
   let defense = Math.round(defStat * (1 - (defS.weakenDefense || 0) / 100));
   const armor = defS.armor || 0;
   defense += armor;
-  if (defElement === 'sandstorm' && on('sandstorm_shield') && !blocks.def) defense += 4;
+  if (defElement === 'sandstorm' && on('sandstorm_shield') && !blocks.def) {
+    defense += V.sandstormShield === 'three' ? 3 : 4;
+  }
 
   let armorStripped = 0;
   if (atkElement === 'water' && on('water_strip_armor') && !blocks.atk && armor > 0) {
-    armorStripped = Math.min(3, armor);
+    armorStripped = Math.min(V.waterStrip === 'two' ? 2 : 3, armor);
     defense = Math.max(0, defense - armorStripped);
   }
   if (atkElement === 'earth' && on('earth_pierce_def') && !blocks.atk) defense = Math.round(defense * 0.85);
-  if (atkElement === 'lava' && on('lava_pierce_burn') && !blocks.atk) defense = Math.round(defense * 0.90);
+  if (atkElement === 'lava' && on('lava_pierce_burn') && !blocks.atk) {
+    defense = Math.round(defense * (V.lavaPierce === 'pct5' ? 0.95 : 0.90));
+  }
 
   if (defElement === 'fire_vortex' && on('fire_vortex_zaslon') && !blocks.def &&
       [lane - 1, lane + 1].some((j) => j >= 0 && j < 3 && ctx.burned[defenderSide][j])) {
@@ -211,18 +236,21 @@ export function effectiveLine(p) {
   }
 
   let hit = Math.max(0, attack - defense);
-  if (defElement === 'steam' && on('steam_dampen') && !blocks.def) hit = Math.round(hit * 0.90);
+  if (defElement === 'steam' && on('steam_dampen') && !blocks.def) {
+    hit = Math.round(hit * (V.steamDampen === 'pct15' ? 0.85 : 0.90));
+  }
   return { attack, defense, hit, armorStripped, ...blocks };
 }
 
 // ── Последствия попадания и защитные триггеры ───────────────────────────────
 // Требуемый порядок: урон уже нанесён → on-hit атакующего → триггеры защиты.
 export function hitConsequences(p) {
-  const { ctx, state, attackerSide, lane, atkElement, defElement, hit, rng, counters = false } = p;
+  const { ctx, state, attackerSide, lane, atkElement, defElement, hit, rng, counters = false, variants = {} } = p;
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
   const on = (id) => !ctx.disabled.has(id);
   const next = ctx.next;
   const blocks = counterBlocks(atkElement, defElement, counters);
+  const V = resolveVariants(variants);
 
   // Нейтрализация — только специальная способность; числовой урон уже нанесён.
   if (blocks.atk) {
@@ -239,8 +267,10 @@ export function hitConsequences(p) {
   if (hit > 0 && !blocks.atk) { // способности, требующие попадания
     if (atkElement === 'fire' && on('fire_burn'))
       addStatus(next[defenderSide], lane, 'burn', 2);
-    if (atkElement === 'lava' && on('lava_pierce_burn'))
-      addStatus(next[defenderSide], lane, 'burn', 1);
+    if (atkElement === 'lava' && on('lava_pierce_burn')) {
+      const burnCondition = V.lavaPierce === 'burnArmor' ? ((ctx.applied[defenderSide][lane] || {}).armor || 0) > 0 : true;
+      if (burnCondition) addStatus(next[defenderSide], lane, 'burn', 1);
+    }
     if (atkElement === 'air' && on('air_weaken_def'))
       addStatus(next[defenderSide], lane, 'weakenDefense', 10);
     if (atkElement === 'steam' && on('steam_weaken_def'))
@@ -266,14 +296,26 @@ export function hitConsequences(p) {
       addStatus(next[attackerSide], lane, 'weakenAttack', 15);
     if (defElement === 'thunderstorm' && on('thunderstorm_charge') && hit > 0)
       addStatus(next[defenderSide], lane, 'attackBoost', 2);
-    if (hit === 0 && defElement === 'steam' && on('steam_dampen'))
-      healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
-    if (hit === 0 && defElement === 'fire' && on('fire_retaliation'))
-      extraDamage(ctx, defenderSide, attackerSide, lane, 2, 'fire_retaliation');
+    if (defElement === 'steam' && on('steam_dampen')) {
+      if (hit === 0) healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
+      else if (V.steamDampen === 'healPartial' && hit <= 2) healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
+    }
+    if (defElement === 'fire' && on('fire_retaliation')) {
+      const blockedMode = V.fireRetaliation !== 'onHit';
+      if ((blockedMode && hit === 0) || (!blockedMode && hit > 0)) {
+        const retaliation = V.fireRetaliation === 'blocked3' ? 3 : 2;
+        extraDamage(ctx, defenderSide, attackerSide, lane, retaliation, 'fire_retaliation');
+      }
+    }
     if (hit === 0 && defElement === 'air' && on('air_reflect'))
       extraDamage(ctx, defenderSide, attackerSide, lane, 2, 'air_reflect');
-    if (hit > 0 && defElement === 'lava' && on('lava_counter'))
-      extraDamage(ctx, defenderSide, attackerSide, lane, 2, 'lava_counter');
+    if (hit > 0 && defElement === 'lava' && on('lava_counter')) {
+      const trigger = V.lavaCounter === 'strongHit' ? hit >= 3 : true;
+      if (trigger) {
+        const counter = V.lavaCounter === 'three' ? 3 : 2;
+        extraDamage(ctx, defenderSide, attackerSide, lane, counter, 'lava_counter');
+      }
+    }
   }
 }
 

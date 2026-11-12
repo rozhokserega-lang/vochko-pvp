@@ -105,6 +105,7 @@ const io = {
 export function resolveRound(state, turnA, turnB, opts = {}) {
   const abilities = !!opts.abilities;
   const counters = !!opts.counters;
+  const variants = opts.variants ?? {};
   const rng = opts.rng ?? Math.random;
   const disabled = new Set(opts.disabled ?? []);
   const find = (turn, lane) => turn.placements.find(p => p.lane === lane);
@@ -116,7 +117,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   let ctx = null;
   if (abilities) {
     ensureStatuses(state.a); ensureStatuses(state.b);
-    ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters });
+    ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters, variants });
   }
 
   const lanes = [0, 1, 2].map(l => {
@@ -132,7 +133,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
       if (abilities) {
         atkElement = elementOf(ownCards.attack)?.id;
         defElement = elementOf(oppCards.defense)?.id;
-        mods = effectiveLine({ ctx, attackerSide, lane: l, atkStat: own.attack, defStat: opp.defense, atkElement, defElement, counters });
+        mods = effectiveLine({ ctx, attackerSide, lane: l, atkStat: own.attack, defStat: opp.defense, atkElement, defElement, counters, variants });
         ownAtk = mods.attack; oppDef = mods.defense;
       }
       const info = { a: ownAtk, d: oppDef,
@@ -147,7 +148,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
       events.push({ side, l, stage, amount: dealt, element: info.at,
         elements: [own.pairs[0].element] });
       if (abilities) {
-        hitConsequences({ ctx, state, attackerSide, lane: l, atkElement, defElement, hit: info.hit, rng, counters });
+        hitConsequences({ ctx, state, attackerSide, lane: l, atkElement, defElement, hit: info.hit, rng, counters, variants });
       }
       return { info, attack: ownCards.attack, defense: oppCards.defense,
         ownPairs: [ownCards.attack, ownCards.defense],

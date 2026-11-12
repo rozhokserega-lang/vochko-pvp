@@ -1,0 +1,19 @@
+✔ АУДИТ-фикс: зеркальные партии получают РАЗНЫЕ потоки случайности (0.8588ms)
+✔ способности соответствуют спецификации: Лёд −10%/−15% — покрыто в abilities.test.js (0.1111ms)
+✔ вариант fireRetaliation=blocked3: ответка 3 вместо 2 (2.3998ms)
+✔ вариант fireRetaliation=onHit: ответка и при попадании (0.8275ms)
+✔ вариант lavaCounter=three/strongHit (0.8118ms)
+✔ вариант steamDampen=pct15 и healPartial (0.6216ms)
+✔ вариант waterCleanse=heal1/single (1.2761ms)
+✔ варианты lavaPierce=pct5 / burnArmor (0.6396ms)
+✔ вариант waterStrip=two (против Земли, чтобы не сработала контр-Вода) (0.4736ms)
+✔ вариант sandstormShield=three (атака Огнём: не контрит Бурю) (0.5877ms)
+✔ дефолт variants = исходный баланс (без изменений) (0.3368ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 86.8995
