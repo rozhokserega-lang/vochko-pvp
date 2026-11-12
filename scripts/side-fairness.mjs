@@ -17,6 +17,7 @@ const arg = (name, def) => {
 const PAIRS = Number(arg('pairs', 100));
 const MATCHUP = arg('matchup', 'old-old');
 const SHARD = Number(arg('shard', 0)), SHARDS = Number(arg('shards', 1));
+const SEED = Number(arg('seed', 1));
 const VARIANT = (arg('variant', '') || '').split(',').filter(Boolean)
   .map(v => v.split('=')).reduce((acc, [k, v]) => (acc[k] = v, acc), {});
 const OUT = arg('out', `reports/balance/sidefair_${MATCHUP}${Object.keys(VARIANT).length ? '_v' : ''}_s${SHARD}`);
@@ -64,7 +65,7 @@ const draws = rows.length - decided;
 // Только решённые партии: доля побед первого ходока.
 const fmDecided = rows.filter(r => r.winner !== 'draw');
 const fmW = fmDecided.filter(r => r.firstMoverWin).length;
-const p = fmW / fmDecided, z = 1.96, n = fmDecided.length;
+const p = fmW / fmDecided.length, z = 1.96, n = fmDecided.length;
 const den = 1 + z * z / n, c = (p + z * z / (2 * n)) / den;
 const half = z * Math.sqrt((p * (1 - p)) / n + z * z / (4 * n * n)) / den;
 const summary = {
