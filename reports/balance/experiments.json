@@ -1,0 +1,86 @@
+[
+  {
+    "id": "fire_retaliation_onhit",
+    "label": "Огонь-защита B: ответка 2 при попадании",
+    "variants": {
+      "fireRetaliation": "onHit"
+    }
+  },
+  {
+    "id": "fire_retaliation_blocked3",
+    "label": "Огонь-защита C: ответка 3 при блоке",
+    "variants": {
+      "fireRetaliation": "blocked3"
+    }
+  },
+  {
+    "id": "lava_counter_three",
+    "label": "Лава-защита B: ответка 3",
+    "variants": {
+      "lavaCounter": "three"
+    }
+  },
+  {
+    "id": "lava_counter_stronghit",
+    "label": "Лава-защита C: при ударе >=3",
+    "variants": {
+      "lavaCounter": "strongHit"
+    }
+  },
+  {
+    "id": "steam_dampen_pct15",
+    "label": "Пар-защита B: -15%",
+    "variants": {
+      "steamDampen": "pct15"
+    }
+  },
+  {
+    "id": "steam_dampen_healpartial",
+    "label": "Пар-защита C: лечение при слабом ударе",
+    "variants": {
+      "steamDampen": "healPartial"
+    }
+  },
+  {
+    "id": "water_cleanse_heal1",
+    "label": "Вода-защита B: лечение 1",
+    "variants": {
+      "waterCleanse": "heal1"
+    }
+  },
+  {
+    "id": "water_cleanse_single",
+    "label": "Вода-защита C: один статус",
+    "variants": {
+      "waterCleanse": "single"
+    }
+  },
+  {
+    "id": "lava_pierce_pct5",
+    "label": "Лава-атака B: пробой 5%",
+    "variants": {
+      "lavaPierce": "pct5"
+    }
+  },
+  {
+    "id": "lava_pierce_burnarmor",
+    "label": "Лава-атака C: поджог при броне",
+    "variants": {
+      "lavaPierce": "burnArmor"
+    }
+  },
+  {
+    "id": "water_strip_two",
+    "label": "Вода-атака B: -2 брони",
+    "variants": {
+      "waterStrip": "two"
+    }
+  },
+  {
+    "id": "sandstorm_shield_three",
+    "label": "Буря-защита B: щит +3",
+    "variants": {
+      "sandstormShield": "three"
+    }
+  }
+]

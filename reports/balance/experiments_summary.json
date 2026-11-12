@@ -1,0 +1,420 @@
+{
+  "params": {
+    "games": 300,
+    "note": "исправленные непересекающиеся сиды (gameSeed)",
+    "paired": "по индексу партии"
+  },
+  "base": {
+    "wins": {
+      "a": 138,
+      "b": 124,
+      "draw": 38
+    },
+    "decided": 262,
+    "smartWinRate": 0.527,
+    "smartWinRateAll": 0.46,
+    "avgRounds": 8.74,
+    "medianRounds": 9,
+    "doubleKill": 38,
+    "avgNexusA": 16.72,
+    "avgNexusB": 14.87
+  },
+  "rows": [
+    {
+      "id": "fire_retaliation_onhit",
+      "label": "Огонь-защита B: ответка 2 при попадании",
+      "variants": {
+        "fireRetaliation": "onHit"
+      },
+      "wins": {
+        "a": 137,
+        "b": 119,
+        "draw": 44
+      },
+      "decided": 256,
+      "smartWinRate": 0.535,
+      "smartWinRateAll": 0.457,
+      "avgRounds": 8.71,
+      "medianRounds": 9,
+      "doubleKill": 44,
+      "avgNexusA": 16.38,
+      "avgNexusB": 16.21,
+      "deltaWR": 0.8,
+      "paired": {
+        "variantWins": 37,
+        "baseWins": 38,
+        "sameOutcome": 196,
+        "noSmartChange": 29,
+        "pairWinRate": 0.493,
+        "ci95": [
+          38.3,
+          60.4
+        ]
+      },
+      "avgRoundsDelta": -0.03
+    },
+    {
+      "id": "fire_retaliation_blocked3",
+      "label": "Огонь-защита C: ответка 3 при блоке",
+      "variants": {
+        "fireRetaliation": "blocked3"
+      },
+      "wins": {
+        "a": 137,
+        "b": 122,
+        "draw": 41
+      },
+      "decided": 259,
+      "smartWinRate": 0.529,
+      "smartWinRateAll": 0.457,
+      "avgRounds": 8.75,
+      "medianRounds": 9,
+      "doubleKill": 41,
+      "avgNexusA": 16.23,
+      "avgNexusB": 14.78,
+      "deltaWR": 0.2,
+      "paired": {
+        "variantWins": 2,
+        "baseWins": 3,
+        "sameOutcome": 295,
+        "noSmartChange": 0,
+        "pairWinRate": 0.4,
+        "ci95": [
+          11.8,
+          76.9
+        ]
+      },
+      "avgRoundsDelta": 0.01
+    },
+    {
+      "id": "lava_counter_three",
+      "label": "Лава-защита B: ответка 3",
+      "variants": {
+        "lavaCounter": "three"
+      },
+      "wins": {
+        "a": 140,
+        "b": 122,
+        "draw": 38
+      },
+      "decided": 262,
+      "smartWinRate": 0.534,
+      "smartWinRateAll": 0.467,
+      "avgRounds": 8.69,
+      "medianRounds": 9,
+      "doubleKill": 38,
+      "avgNexusA": 17.07,
+      "avgNexusB": 15.58,
+      "deltaWR": 0.7,
+      "paired": {
+        "variantWins": 12,
+        "baseWins": 10,
+        "sameOutcome": 266,
+        "noSmartChange": 12,
+        "pairWinRate": 0.545,
+        "ci95": [
+          34.7,
+          73.1
+        ]
+      },
+      "avgRoundsDelta": -0.05
+    },
+    {
+      "id": "lava_counter_stronghit",
+      "label": "Лава-защита C: при ударе >=3",
+      "variants": {
+        "lavaCounter": "strongHit"
+      },
+      "wins": {
+        "a": 137,
+        "b": 124,
+        "draw": 39
+      },
+      "decided": 261,
+      "smartWinRate": 0.525,
+      "smartWinRateAll": 0.457,
+      "avgRounds": 8.79,
+      "medianRounds": 9,
+      "doubleKill": 39,
+      "avgNexusA": 16.42,
+      "avgNexusB": 14.75,
+      "deltaWR": -0.2,
+      "paired": {
+        "variantWins": 1,
+        "baseWins": 2,
+        "sameOutcome": 296,
+        "noSmartChange": 1,
+        "pairWinRate": 0.333,
+        "ci95": [
+          6.1,
+          79.2
+        ]
+      },
+      "avgRoundsDelta": 0.05
+    },
+    {
+      "id": "steam_dampen_pct15",
+      "label": "Пар-защита B: -15%",
+      "variants": {
+        "steamDampen": "pct15"
+      },
+      "wins": {
+        "a": 144,
+        "b": 109,
+        "draw": 47
+      },
+      "decided": 253,
+      "smartWinRate": 0.569,
+      "smartWinRateAll": 0.48,
+      "avgRounds": 8.84,
+      "medianRounds": 9,
+      "doubleKill": 47,
+      "avgNexusA": 16.55,
+      "avgNexusB": 12.76,
+      "deltaWR": 4.2,
+      "paired": {
+        "variantWins": 42,
+        "baseWins": 36,
+        "sameOutcome": 199,
+        "noSmartChange": 23,
+        "pairWinRate": 0.538,
+        "ci95": [
+          42.9,
+          64.5
+        ]
+      },
+      "avgRoundsDelta": 0.1
+    },
+    {
+      "id": "steam_dampen_healpartial",
+      "label": "Пар-защита C: лечение при слабом ударе",
+      "variants": {
+        "steamDampen": "healPartial"
+      },
+      "wins": {
+        "a": 134,
+        "b": 123,
+        "draw": 43
+      },
+      "decided": 257,
+      "smartWinRate": 0.521,
+      "smartWinRateAll": 0.447,
+      "avgRounds": 8.76,
+      "medianRounds": 9,
+      "doubleKill": 43,
+      "avgNexusA": 16.43,
+      "avgNexusB": 15.48,
+      "deltaWR": -0.6,
+      "paired": {
+        "variantWins": 5,
+        "baseWins": 9,
+        "sameOutcome": 275,
+        "noSmartChange": 11,
+        "pairWinRate": 0.357,
+        "ci95": [
+          16.3,
+          61.2
+        ]
+      },
+      "avgRoundsDelta": 0.02
+    },
+    {
+      "id": "water_cleanse_heal1",
+      "label": "Вода-защита B: лечение 1",
+      "variants": {
+        "waterCleanse": "heal1"
+      },
+      "wins": {
+        "a": 138,
+        "b": 115,
+        "draw": 47
+      },
+      "decided": 253,
+      "smartWinRate": 0.545,
+      "smartWinRateAll": 0.46,
+      "avgRounds": 8.87,
+      "medianRounds": 9,
+      "doubleKill": 47,
+      "avgNexusA": 15.89,
+      "avgNexusB": 14.53,
+      "deltaWR": 1.8,
+      "paired": {
+        "variantWins": 24,
+        "baseWins": 24,
+        "sameOutcome": 229,
+        "noSmartChange": 23,
+        "pairWinRate": 0.5,
+        "ci95": [
+          36.4,
+          63.6
+        ]
+      },
+      "avgRoundsDelta": 0.13
+    },
+    {
+      "id": "water_cleanse_single",
+      "label": "Вода-защита C: один статус",
+      "variants": {
+        "waterCleanse": "single"
+      },
+      "wins": {
+        "a": 136,
+        "b": 126,
+        "draw": 38
+      },
+      "decided": 262,
+      "smartWinRate": 0.519,
+      "smartWinRateAll": 0.453,
+      "avgRounds": 8.85,
+      "medianRounds": 9,
+      "doubleKill": 38,
+      "avgNexusA": 16.4,
+      "avgNexusB": 15.92,
+      "deltaWR": -0.8,
+      "paired": {
+        "variantWins": 33,
+        "baseWins": 35,
+        "sameOutcome": 209,
+        "noSmartChange": 23,
+        "pairWinRate": 0.485,
+        "ci95": [
+          37.1,
+          60.2
+        ]
+      },
+      "avgRoundsDelta": 0.11
+    },
+    {
+      "id": "lava_pierce_pct5",
+      "label": "Лава-атака B: пробой 5%",
+      "variants": {
+        "lavaPierce": "pct5"
+      },
+      "wins": {
+        "a": 130,
+        "b": 129,
+        "draw": 41
+      },
+      "decided": 259,
+      "smartWinRate": 0.502,
+      "smartWinRateAll": 0.433,
+      "avgRounds": 8.92,
+      "medianRounds": 9,
+      "doubleKill": 41,
+      "avgNexusA": 16.2,
+      "avgNexusB": 16.92,
+      "deltaWR": -2.5,
+      "paired": {
+        "variantWins": 57,
+        "baseWins": 65,
+        "sameOutcome": 147,
+        "noSmartChange": 31,
+        "pairWinRate": 0.467,
+        "ci95": [
+          38.1,
+          55.5
+        ]
+      },
+      "avgRoundsDelta": 0.18
+    },
+    {
+      "id": "lava_pierce_burnarmor",
+      "label": "Лава-атака C: поджог при броне",
+      "variants": {
+        "lavaPierce": "burnArmor"
+      },
+      "wins": {
+        "a": 146,
+        "b": 115,
+        "draw": 39
+      },
+      "decided": 261,
+      "smartWinRate": 0.559,
+      "smartWinRateAll": 0.487,
+      "avgRounds": 8.92,
+      "medianRounds": 9,
+      "doubleKill": 39,
+      "avgNexusA": 17.99,
+      "avgNexusB": 15.51,
+      "deltaWR": 3.2,
+      "paired": {
+        "variantWins": 63,
+        "baseWins": 55,
+        "sameOutcome": 148,
+        "noSmartChange": 34,
+        "pairWinRate": 0.534,
+        "ci95": [
+          44.4,
+          62.1
+        ]
+      },
+      "avgRoundsDelta": 0.18
+    },
+    {
+      "id": "water_strip_two",
+      "label": "Вода-атака B: -2 брони",
+      "variants": {
+        "waterStrip": "two"
+      },
+      "wins": {
+        "a": 142,
+        "b": 126,
+        "draw": 32
+      },
+      "decided": 268,
+      "smartWinRate": 0.53,
+      "smartWinRateAll": 0.473,
+      "avgRounds": 8.83,
+      "medianRounds": 9,
+      "doubleKill": 32,
+      "avgNexusA": 16.98,
+      "avgNexusB": 14.15,
+      "deltaWR": 0.3,
+      "paired": {
+        "variantWins": 25,
+        "baseWins": 21,
+        "sameOutcome": 246,
+        "noSmartChange": 8,
+        "pairWinRate": 0.543,
+        "ci95": [
+          40.2,
+          67.8
+        ]
+      },
+      "avgRoundsDelta": 0.09
+    },
+    {
+      "id": "sandstorm_shield_three",
+      "label": "Буря-защита B: щит +3",
+      "variants": {
+        "sandstormShield": "three"
+      },
+      "wins": {
+        "a": 125,
+        "b": 126,
+        "draw": 49
+      },
+      "decided": 251,
+      "smartWinRate": 0.498,
+      "smartWinRateAll": 0.417,
+      "avgRounds": 8.7,
+      "medianRounds": 9,
+      "doubleKill": 49,
+      "avgNexusA": 15.71,
+      "avgNexusB": 16.05,
+      "deltaWR": -2.9,
+      "paired": {
+        "variantWins": 53,
+        "baseWins": 66,
+        "sameOutcome": 139,
+        "noSmartChange": 42,
+        "pairWinRate": 0.445,
+        "ci95": [
+          35.9,
+          53.5
+        ]
+      },
+      "avgRoundsDelta": -0.04
+    }
+  ]
+}

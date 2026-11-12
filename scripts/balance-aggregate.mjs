@@ -19,27 +19,14 @@ function readGames(file) {
 // конфигами, поэтому матч по индексу строки.
 function byIndex(file) { return readGames(file); }
 
-// Точный биномиальный доверительный интервал (Клоппер-Пирсон) для доли.
-function ciExact(k, n, alpha = 0.05) {
-  if (n === 0) return [0, 1];
-  const lo = k === 0 ? 0 : betaInv(alpha / 2, k, n - k + 1);
-  const hi = k === n ? 1 : betaInv(1 - alpha / 2, k + 1, n - k);
-  return [lo, hi];
-}
-function betaInv(p, a, b) { // численная инверсия бета-распределения (бисекция по CDF)
-  const pdf = (x) => { // лог-плотность через гамма
-    const lg = (t) => { let s = 1; for (let i = 2; i <= Math.floor(t); i++) s += Math.log(i); return t <= 1 ? 0 : s; };
-    return Math.exp((a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x) - (lg(a + b - 1) - lg(a - 1) - lg(b - 1)));
-  };
-  let lo = 0, hi = 1;
-  for (let i = 0; i < 80; i++) {
-    const mid = (lo + hi) / 2;
-    // грубый CDF: численно интегрируем плотность
-    let sum = 0; const steps = 400;
-    for (let s = 1; s <= steps; s++) sum += pdf((s - 0.5) * mid / steps) * (mid / steps);
-    if (sum < p) lo = mid; else hi = mid;
-  }
-  return (lo + hi) / 2;
+// Доверительный интервал Уилсона для доли парных побед (устойчив при малых n).
+function ciWilson(k, n, z = 1.96) {
+  if (n === 0) return [0, 100];
+  const p = k / n;
+  const denom = 1 + z * z / n;
+  const center = (p + z * z / (2 * n)) / denom;
+  const half = z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n)) / denom;
+  return [+(Math.max(0, center - half) * 100).toFixed(1), +(Math.min(1, center + half) * 100).toFixed(1)];
 }
 
 function summarize(games) {
@@ -69,22 +56,26 @@ for (const exp of experiments) {
   if (!fs.existsSync(file)) { console.log('нет файла:', file); continue; }
   const games = byIndex(file);
   const sum = summarize(games);
-  // Парная статистика на решённых парах (обе решены, разные победители)
+  // Парная статистика: 'a' = умный бот в обеих конфигурациях.
+  // В парный рейтинг идут только переходы «победа умного ↔ не-победа умного»;
+  // пары draw↔победа старого бота не меняют винрейт умного и исключаются.
   let vWins = 0, bWins = 0, ties = 0, other = 0;
   for (let i = 0; i < Math.min(games.length, base.length); i++) {
     const wv = games[i].winner, wb = base[i].winner;
-    if (wv === wb) ties++; else if (wv !== 'draw' && wb === 'draw') vWins++;
-    else if (wv === 'draw' && wb !== 'draw') bWins++;
-    else other++;
+    if (wv === wb) { ties++; continue; }
+    const vSmart = wv === 'a', bSmart = wb === 'a';
+    if (vSmart && !bSmart) vWins++;
+    else if (bSmart && !vSmart) bWins++;
+    else other++; // draw↔b: на винрейт умного не влияет
   }
-  const pairs = vWins + bWins; // решённые парами
-  const [lo, hi] = ciExact(vWins, pairs);
+  const pairs = vWins + bWins;
+  const [lo, hi] = ciWilson(vWins, pairs);
   out.rows.push({
     id: exp.id, label: exp.label, variants: exp.variants,
     ...sum,
     deltaWR: +((sum.smartWinRate - baseSum.smartWinRate) * 100).toFixed(1),
-    paired: { variantWins: vWins, baseWins: bWins, sameOutcome: ties, crossType: other,
-      pairWinRate: pairs ? +(vWins / pairs).toFixed(3) : null, ci95: [+(lo * 100).toFixed(1), +(hi * 100).toFixed(1)] },
+    paired: { variantWins: vWins, baseWins: bWins, sameOutcome: ties, noSmartChange: other,
+      pairWinRate: pairs ? +(vWins / pairs).toFixed(3) : null, ci95: [lo, hi] },
     avgRoundsDelta: +(sum.avgRounds - baseSum.avgRounds).toFixed(2),
   });
 }
