@@ -1,0 +1,83 @@
+[
+  {
+    "name": "final_base_old-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--matchup",
+      "old-old",
+      "--out",
+      "reports/balance/final_base_old-old_g1000"
+    ]
+  },
+  {
+    "name": "final_base_new-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--matchup",
+      "new-old",
+      "--out",
+      "reports/balance/final_base_new-old_g1000"
+    ]
+  },
+  {
+    "name": "final_combo_new-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--matchup",
+      "new-old",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/final_combo_new-old_g1000"
+    ]
+  },
+  {
+    "name": "final_combo_old-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--matchup",
+      "old-old",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/final_combo_old-old_g1000"
+    ]
+  },
+  {
+    "name": "final_combo_new-new_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--matchup",
+      "new-new",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/final_combo_new-new_g1000"
+    ]
+  }
+]

@@ -1,0 +1,116 @@
+[
+  {
+    "name": "combo_ablate_fire_retaliation",
+    "args": [
+      "--games",
+      "300",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "300",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--ablate",
+      "fire_retaliation",
+      "--out",
+      "reports/balance/combo_ablate_fire_retaliation_g300"
+    ]
+  },
+  {
+    "name": "combo_ablate_lava_counter",
+    "args": [
+      "--games",
+      "300",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "300",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--ablate",
+      "lava_counter",
+      "--out",
+      "reports/balance/combo_ablate_lava_counter_g300"
+    ]
+  },
+  {
+    "name": "combo_ablate_steam_dampen",
+    "args": [
+      "--games",
+      "300",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "300",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--ablate",
+      "steam_dampen",
+      "--out",
+      "reports/balance/combo_ablate_steam_dampen_g300"
+    ]
+  },
+  {
+    "name": "combo_ablate_water_cleanse",
+    "args": [
+      "--games",
+      "300",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "300",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--ablate",
+      "water_cleanse",
+      "--out",
+      "reports/balance/combo_ablate_water_cleanse_g300"
+    ]
+  },
+  {
+    "name": "combo_ablate_lava_pierce_burn",
+    "args": [
+      "--games",
+      "300",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "300",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--ablate",
+      "lava_pierce_burn",
+      "--out",
+      "reports/balance/combo_ablate_lava_pierce_burn_g300"
+    ]
+  },
+  {
+    "name": "combo_ablate_sandstorm_shield",
+    "args": [
+      "--games",
+      "300",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "300",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--ablate",
+      "sandstorm_shield",
+      "--out",
+      "reports/balance/combo_ablate_sandstorm_shield_g300"
+    ]
+  }
+]
