@@ -1,0 +1,216 @@
+[
+  {
+    "name": "sidefair_base_old-old_s0",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "old-old",
+      "--shard",
+      "0",
+      "--shards",
+      "5",
+      "--out",
+      "reports/balance/sidefair_base_old-old_s0"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_base_old-old_s1",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "old-old",
+      "--shard",
+      "1",
+      "--shards",
+      "5",
+      "--out",
+      "reports/balance/sidefair_base_old-old_s1"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_base_old-old_s2",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "old-old",
+      "--shard",
+      "2",
+      "--shards",
+      "5",
+      "--out",
+      "reports/balance/sidefair_base_old-old_s2"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_base_old-old_s3",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "old-old",
+      "--shard",
+      "3",
+      "--shards",
+      "5",
+      "--out",
+      "reports/balance/sidefair_base_old-old_s3"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_base_old-old_s4",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "old-old",
+      "--shard",
+      "4",
+      "--shards",
+      "5",
+      "--out",
+      "reports/balance/sidefair_base_old-old_s4"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_combo_new-new_s0",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "new-new",
+      "--shard",
+      "0",
+      "--shards",
+      "5",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/sidefair_combo_new-new_s0"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_combo_new-new_s1",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "new-new",
+      "--shard",
+      "1",
+      "--shards",
+      "5",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/sidefair_combo_new-new_s1"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_combo_new-new_s2",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "new-new",
+      "--shard",
+      "2",
+      "--shards",
+      "5",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/sidefair_combo_new-new_s2"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_combo_new-new_s3",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "new-new",
+      "--shard",
+      "3",
+      "--shards",
+      "5",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/sidefair_combo_new-new_s3"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "sidefair_combo_new-new_s4",
+    "args": [
+      "scripts/side-fairness.mjs",
+      "--pairs",
+      "100",
+      "--matchup",
+      "new-new",
+      "--shard",
+      "4",
+      "--shards",
+      "5",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/sidefair_combo_new-new_s4"
+    ],
+    "script": "scripts/side-fairness.mjs"
+  },
+  {
+    "name": "lava_ab_base_g1000",
+    "args": [
+      "scripts/tournament.mjs",
+      "--games",
+      "1000",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--out",
+      "reports/balance/lava_ab_base_g1000"
+    ]
+  },
+  {
+    "name": "lava_ab_burnarmor_g1000",
+    "args": [
+      "scripts/tournament.mjs",
+      "--games",
+      "1000",
+      "--matchup",
+      "new-old",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--variant",
+      "lavaPierce=burnArmor",
+      "--out",
+      "reports/balance/lava_ab_burnarmor_g1000"
+    ]
+  }
+]

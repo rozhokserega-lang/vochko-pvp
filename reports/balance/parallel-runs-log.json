@@ -1,22 +1,42 @@
 [
   {
-    "name": "final_base_old-old_g1000",
-    "code": 0
+    "name": "sidefair_base_old-old_s0",
+    "code": 1
   },
   {
-    "name": "final_combo_old-old_g1000",
-    "code": 0
+    "name": "sidefair_base_old-old_s2",
+    "code": 1
   },
   {
-    "name": "final_combo_new-old_g1000",
-    "code": 0
+    "name": "sidefair_base_old-old_s1",
+    "code": 1
   },
   {
-    "name": "final_base_new-old_g1000",
-    "code": 0
+    "name": "sidefair_base_old-old_s3",
+    "code": 1
   },
   {
-    "name": "final_combo_new-new_g1000",
-    "code": 0
+    "name": "sidefair_base_old-old_s4",
+    "code": 1
+  },
+  {
+    "name": "sidefair_combo_new-new_s0",
+    "code": 1
+  },
+  {
+    "name": "sidefair_combo_new-new_s1",
+    "code": 1
+  },
+  {
+    "name": "sidefair_combo_new-new_s2",
+    "code": 1
+  },
+  {
+    "name": "sidefair_combo_new-new_s3",
+    "code": 1
+  },
+  {
+    "name": "sidefair_combo_new-new_s4",
+    "code": 1
   }
 ]

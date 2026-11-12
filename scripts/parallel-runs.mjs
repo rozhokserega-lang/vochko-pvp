@@ -15,7 +15,8 @@ const results = [];
 function next() {
   if (index >= jobs.length) return null;
   const job = jobs[index++];
-  const child = spawn(process.execPath, ['scripts/tournament.mjs', ...job.args], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const script = job.script ?? 'scripts/tournament.mjs';
+  const child = spawn(process.execPath, [script, ...job.args], { stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', d => out += d);
   child.stderr.on('data', d => out += d);

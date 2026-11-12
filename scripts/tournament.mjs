@@ -66,7 +66,7 @@ function elementUsage(placements) {
 
 const add = (map, key, n) => { map[key] = (map[key] ?? 0) + n; };
 
-function playGame(kindA, kindB, seed) {
+function playGame(kindA, kindB, seed, mirror = false) {
   const rng = mulberry32(seed);
   const state = createGameState();
   const stats = {
@@ -79,8 +79,13 @@ function playGame(kindA, kindB, seed) {
   let result = null;
   while (true) {
     const hA = deal(rng), hB = deal(rng);
-    const planA = makePlan(kindA, state, hA, 'a', rng, null, COUNTERS_ON, VARIANTS);
-    const planB = makePlan(kindB, state, hB, 'b', rng, null, COUNTERS_ON, VARIANTS);
+    // Зеркальный режим: те же руки, стратегии на swapped-местах (проверка
+    // преимущества стороны на идентичных раздачах).
+    const [seatAKind, seatAHand, seatBKind, seatBHand] = mirror
+      ? [kindB, hB, kindA, hA]
+      : [kindA, hA, kindB, hB];
+    const planA = makePlan(seatAKind, state, seatAHand, 'a', rng, null, COUNTERS_ON, VARIANTS);
+    const planB = makePlan(seatBKind, state, seatBHand, 'b', rng, null, COUNTERS_ON, VARIANTS);
     stats.ms.a.push(planA.ms); stats.ms.b.push(planB.ms);
     for (const [side, plan] of [['a', planA], ['b', planB]])
       for (const [k, v] of Object.entries(elementUsage(plan.placements))) add(stats.elementUsage[side], k, v);
