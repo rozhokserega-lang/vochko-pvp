@@ -1,26 +1,22 @@
 [
   {
-    "name": "combo_ablate_sandstorm_shield",
+    "name": "final_base_old-old_g1000",
     "code": 0
   },
   {
-    "name": "combo_ablate_water_cleanse",
+    "name": "final_combo_old-old_g1000",
     "code": 0
   },
   {
-    "name": "combo_ablate_fire_retaliation",
+    "name": "final_combo_new-old_g1000",
     "code": 0
   },
   {
-    "name": "combo_ablate_steam_dampen",
+    "name": "final_base_new-old_g1000",
     "code": 0
   },
   {
-    "name": "combo_ablate_lava_counter",
-    "code": 0
-  },
-  {
-    "name": "combo_ablate_lava_pierce_burn",
+    "name": "final_combo_new-new_g1000",
     "code": 0
   }
 ]

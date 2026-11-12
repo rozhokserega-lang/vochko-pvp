@@ -1,0 +1,9 @@
+ability,activations,damage,heal,effectPerActivation,counterBlocked,timesPerGame
+water_cleanse,16676,0,10258,0.62,7890,5.56
+counter_triggered,52908,0,0,0,0,17.64
+air_reflect,13808,22892,0,1.66,530,4.60
+thunderstorm_discharge,15301,24312,0,1.59,7983,5.10
+burn_tick,26687,36140,0,1.35,0,8.90
+steam_dampen,2984,0,4265,1.43,109,0.99
+fire_retaliation,1384,2121,0,1.53,205,0.46
+lava_counter,743,1767,0,2.38,103,0.25
