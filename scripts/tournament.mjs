@@ -26,9 +26,10 @@ const SAMPLES = Number(arg('samples', 5));
 const LAYOUTS = Number(arg('layouts', 8));
 const BUDGET = Number(arg('budget', 700));
 const ABLATE = arg('ablate', null);
+const COUNTERS_ON = arg('counters', 'on') !== 'off'; // контрстихии вкл по умолчанию
 const OUT = arg('out', null);
 const MATCHUP = arg('matchup', 'new-old');
-const PARAMS = { games: GAMES, seed: SEED, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, ablate: ABLATE };
+const PARAMS = { games: GAMES, seed: SEED, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, ablate: ABLATE, counters: COUNTERS_ON };
 
 const ABILITY_IDS = ['fire_burn','fire_retaliation','water_strip_armor','water_cleanse','earth_pierce_def',
   'earth_armor','air_weaken_def','air_reflect','steam_weaken_def','steam_dampen','lava_pierce_burn','lava_counter',
@@ -36,7 +37,7 @@ const ABILITY_IDS = ['fire_burn','fire_retaliation','water_strip_armor','water_c
   'thunderstorm_charge','sandstorm_weaken_atk','sandstorm_shield'];
 
 // Ход бота: 'old' — legacy botPlan, 'new' — Monte Carlo.
-function makePlan(kind, state, hand, side, rng, disabled) {
+function makePlan(kind, state, hand, side, rng, disabled, counters) {
   const t0 = performance.now();
   let placements;
   if (kind === 'old') {
@@ -45,7 +46,7 @@ function makePlan(kind, state, hand, side, rng, disabled) {
     placements = botPlan(hand, enemyBoard, ownBoard);
   } else {
     placements = choosePlan({
-      state, hand, side, rng, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET,
+      state, hand, side, rng, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, counters,
     }).plan.placements;
   }
   return { placements, ms: performance.now() - t0 };
@@ -75,13 +76,13 @@ function playGame(kindA, kindB, seed) {
   let result = null;
   while (true) {
     const hA = deal(rng), hB = deal(rng);
-    const planA = makePlan(kindA, state, hA, 'a', rng, null);
-    const planB = makePlan(kindB, state, hB, 'b', rng, null);
+    const planA = makePlan(kindA, state, hA, 'a', rng, null, COUNTERS_ON);
+    const planB = makePlan(kindB, state, hB, 'b', rng, null, COUNTERS_ON);
     stats.ms.a.push(planA.ms); stats.ms.b.push(planB.ms);
     for (const [side, plan] of [['a', planA], ['b', planB]])
       for (const [k, v] of Object.entries(elementUsage(plan.placements))) add(stats.elementUsage[side], k, v);
     result = resolveRound(state, planA, planB, {
-      abilities: true, rng, ...(ABLATE ? { disabled: [ABLATE] } : {}),
+      abilities: true, rng, counters: COUNTERS_ON, ...(ABLATE ? { disabled: [ABLATE] } : {}),
     });
     stats.rounds += 1;
     for (const e of result.abilityEvents) {
@@ -221,13 +222,13 @@ async function main() {
     const agg = aggregate(games);
     agg.defensive = defensiveStats(games);
     agg.wallMs = wall;
-    const base = `tournament_${matchup}${ABLATE ? '_ablate-' + ABLATE : ''}_g${GAMES}`;
+    const base = `tournament_${matchup}${ABLATE ? '_ablate-' + ABLATE : ''}_g${GAMES}${COUNTERS_ON ? '_ctr' : ''}`;
     fs.writeFileSync(path.join('reports', base + '.json'), JSON.stringify({ params: PARAMS, matchup, ...agg }, null, 2));
     const csv = 'seed,matchup,winner,rounds,nexusA,nexusB\n' +
       games.map(g => [g.seed, g.matchup, g.winner, g.rounds, g.nexus.a, g.nexus.b].join(',')).join('\n');
     fs.writeFileSync(path.join('reports', base + '.csv'), csv);
     results.push({ matchup, ...agg });
-    console.log(`${matchup}: smartWinRate=${agg.smartWinRate} wins a/b/draw=${agg.wins.a}/${agg.wins.b}/${agg.wins.draw} avgRounds=${agg.avgRounds} wall=${wall}ms`);
+    console.log(`${matchup}${COUNTERS_ON ? ' [counters]' : ''}: smartWinRate=${agg.smartWinRate} wins a/b/draw=${agg.wins.a}/${agg.wins.b}/${agg.wins.draw} avgRounds=${agg.avgRounds} wall=${wall}ms`);
     if (agg.decisionTime.new) console.log(`  decision new: mean=${agg.decisionTime.new.mean}ms p95=${agg.decisionTime.new.p95}ms max=${agg.decisionTime.new.max}ms`);
   }
   if (hasFlag('all')) {
