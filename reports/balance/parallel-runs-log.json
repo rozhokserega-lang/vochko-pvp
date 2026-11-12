@@ -1,42 +1,50 @@
 [
   {
-    "name": "sidefair_base_old-old_s0",
-    "code": 1
-  },
-  {
-    "name": "sidefair_base_old-old_s2",
-    "code": 1
-  },
-  {
-    "name": "sidefair_base_old-old_s1",
-    "code": 1
+    "name": "sidefair_base_old-old_s4",
+    "code": 0
   },
   {
     "name": "sidefair_base_old-old_s3",
-    "code": 1
+    "code": 0
   },
   {
-    "name": "sidefair_base_old-old_s4",
-    "code": 1
+    "name": "sidefair_base_old-old_s1",
+    "code": 0
+  },
+  {
+    "name": "sidefair_base_old-old_s0",
+    "code": 0
+  },
+  {
+    "name": "sidefair_base_old-old_s2",
+    "code": 0
   },
   {
     "name": "sidefair_combo_new-new_s0",
-    "code": 1
+    "code": 4294967295
   },
   {
     "name": "sidefair_combo_new-new_s1",
-    "code": 1
+    "code": 4294967295
   },
   {
     "name": "sidefair_combo_new-new_s2",
-    "code": 1
+    "code": 4294967295
   },
   {
     "name": "sidefair_combo_new-new_s3",
-    "code": 1
+    "code": 4294967295
   },
   {
     "name": "sidefair_combo_new-new_s4",
-    "code": 1
+    "code": 4294967295
+  },
+  {
+    "name": "lava_ab_base_g1000",
+    "code": 0
+  },
+  {
+    "name": "lava_ab_burnarmor_g1000",
+    "code": 0
   }
 ]

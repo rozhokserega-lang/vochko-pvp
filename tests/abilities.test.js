@@ -458,6 +458,23 @@ test('PvE: правила матча (abilities+smartBot) — серверный
   assert.ok(Array.isArray(v.board.opponent.statuses));
 });
 
+test('RECOMMENDED: правила матча переключают баланс (Огонь-ответка при попадании)', async () => {
+  const { serverFixture } = await import('./server-fixture.mjs');
+  const { RECOMMENDED } = await import('../shared/abilities.js');
+  const f = serverFixture();
+  f.match.state.botMatch = true;
+  f.match.state.rules = { abilities: true, smartBot: true, variants: { ...RECOMMENDED } };
+  const turn = (seat) => {
+    const h = f.match.state.hands[seat];
+    const cards = h.slice(0, 7).flatMap((c, i) => [c, h[i + 7]]);
+    return { matchId: 'fixture', round: f.match.round,
+      placements: [0, 1, 2].map(lane => ({ lane, attack: cards.slice(lane * 4, lane * 4 + 2).map(c => c.id), defense: cards.slice(lane * 4 + 2, lane * 4 + 4).map(c => c.id) })), fortifyLane: null };
+  };
+  const r = await f.call('submit-turn', 1, turn(1));
+  assert.equal(r.status, 200);
+  assert.equal(r.body.resolved, true);
+});
+
 test('скрытая информация: в отчёте раунда нет рук, только committed карты', () => {
   const f = attackFixture(STRONG.fire, F.fireDef);
   const r = E.resolveRound(f.state, f.tA, f.tB, { abilities: true, rng: mulberry32(1) });

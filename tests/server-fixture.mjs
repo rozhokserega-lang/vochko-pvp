@@ -6,6 +6,7 @@ import { mulberry32 } from '../shared/rng.js';
 import * as validation from '../shared/validation.js';
 import { botPlan, choosePlan } from '../shared/bot.js';
 import { resolveRound, newState, shieldPct } from '../shared/engine.js';
+import { RECOMMENDED } from '../shared/abilities.js';
 
 export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
   const st = { board: { a: newState(), b: newState() }, hands: { 1: deal(mulberry32(3)), 2: deal(mulberry32(7)) } };
@@ -46,7 +47,7 @@ export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
       }, json: v => Response.json(v), err: (error, status) => Response.json({ error }, { status }),
       cors: {}, HttpError, sql, broadcastState: async () => {}, dealHand,
       ...validation, botPlan, choosePlan, resolveRound, shieldPct, mulberry32,
-      cryptoSeed: () => 42 };
+      RECOMMENDED, cryptoSeed: () => 42 };
     new Function(...Object.keys(dependencies), stripTypeScriptTypes(source))(...Object.values(dependencies));
   }
   const call = async (name, seat, body) => {

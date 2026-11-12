@@ -1,0 +1,1629 @@
+{
+  "summary": {
+    "matchup": "new-new",
+    "variants": {
+      "fireRetaliation": "onHit",
+      "lavaCounter": "three",
+      "steamDampen": "pct15",
+      "waterCleanse": "heal1",
+      "lavaPierce": "burnArmor",
+      "waterStrip": "two",
+      "sandstormShield": "three"
+    },
+    "pairs": 100,
+    "games": 200,
+    "firstMoverWins": 74,
+    "decided": 166,
+    "firstMoverWinRate": 0.446,
+    "ci95": [
+      37.2,
+      52.2
+    ],
+    "draws": 34,
+    "drawRate": 17,
+    "avgRounds": 6.79,
+    "shard": "0/5"
+  },
+  "rows": [
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 2,
+      "pair": 0
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 2,
+      "pair": 0
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 3,
+      "pair": 1
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 9,
+      "mirror": true,
+      "seed": 3,
+      "pair": 1
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 2002,
+      "pair": 2
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 2002,
+      "pair": 2
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 2003,
+      "pair": 3
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 2003,
+      "pair": 3
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 4002,
+      "pair": 4
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 4002,
+      "pair": 4
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 4003,
+      "pair": 5
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 4003,
+      "pair": 5
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 6002,
+      "pair": 6
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 4,
+      "mirror": true,
+      "seed": 6002,
+      "pair": 6
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 6003,
+      "pair": 7
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 6003,
+      "pair": 7
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 9,
+      "mirror": false,
+      "seed": 8002,
+      "pair": 8
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 8002,
+      "pair": 8
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 8003,
+      "pair": 9
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 8003,
+      "pair": 9
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 10002,
+      "pair": 10
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 10002,
+      "pair": 10
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 10003,
+      "pair": 11
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 4,
+      "mirror": true,
+      "seed": 10003,
+      "pair": 11
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 12002,
+      "pair": 12
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 12002,
+      "pair": 12
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 12003,
+      "pair": 13
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 9,
+      "mirror": true,
+      "seed": 12003,
+      "pair": 13
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 14002,
+      "pair": 14
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 14002,
+      "pair": 14
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 14003,
+      "pair": 15
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 14003,
+      "pair": 15
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 16002,
+      "pair": 16
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 16002,
+      "pair": 16
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 16003,
+      "pair": 17
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 16003,
+      "pair": 17
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 18002,
+      "pair": 18
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 4,
+      "mirror": true,
+      "seed": 18002,
+      "pair": 18
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 18003,
+      "pair": 19
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 18003,
+      "pair": 19
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 20002,
+      "pair": 20
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 20002,
+      "pair": 20
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 20003,
+      "pair": 21
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 20003,
+      "pair": 21
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 22002,
+      "pair": 22
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 9,
+      "mirror": true,
+      "seed": 22002,
+      "pair": 22
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 22003,
+      "pair": 23
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 9,
+      "mirror": true,
+      "seed": 22003,
+      "pair": 23
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 24002,
+      "pair": 24
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 24002,
+      "pair": 24
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 24003,
+      "pair": 25
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 24003,
+      "pair": 25
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 26002,
+      "pair": 26
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 26002,
+      "pair": 26
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 26003,
+      "pair": 27
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 26003,
+      "pair": 27
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 28002,
+      "pair": 28
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 28002,
+      "pair": 28
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 28003,
+      "pair": 29
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 28003,
+      "pair": 29
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 30002,
+      "pair": 30
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 30002,
+      "pair": 30
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 30003,
+      "pair": 31
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 30003,
+      "pair": 31
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 10,
+      "mirror": false,
+      "seed": 32002,
+      "pair": 32
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 32002,
+      "pair": 32
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 32003,
+      "pair": 33
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 32003,
+      "pair": 33
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 34002,
+      "pair": 34
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 9,
+      "mirror": true,
+      "seed": 34002,
+      "pair": 34
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 9,
+      "mirror": false,
+      "seed": 34003,
+      "pair": 35
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 4,
+      "mirror": true,
+      "seed": 34003,
+      "pair": 35
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 36002,
+      "pair": 36
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 36002,
+      "pair": 36
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 36003,
+      "pair": 37
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 36003,
+      "pair": 37
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 38002,
+      "pair": 38
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 10,
+      "mirror": true,
+      "seed": 38002,
+      "pair": 38
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 38003,
+      "pair": 39
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 38003,
+      "pair": 39
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 40002,
+      "pair": 40
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 40002,
+      "pair": 40
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 40003,
+      "pair": 41
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 40003,
+      "pair": 41
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 42002,
+      "pair": 42
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 42002,
+      "pair": 42
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 42003,
+      "pair": 43
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 42003,
+      "pair": 43
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 44002,
+      "pair": 44
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 44002,
+      "pair": 44
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 44003,
+      "pair": 45
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 44003,
+      "pair": 45
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 46002,
+      "pair": 46
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 46002,
+      "pair": 46
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 46003,
+      "pair": 47
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 46003,
+      "pair": 47
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 48002,
+      "pair": 48
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 48002,
+      "pair": 48
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 48003,
+      "pair": 49
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 48003,
+      "pair": 49
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 50002,
+      "pair": 50
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 50002,
+      "pair": 50
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 4,
+      "mirror": false,
+      "seed": 50003,
+      "pair": 51
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 50003,
+      "pair": 51
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 52002,
+      "pair": 52
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 52002,
+      "pair": 52
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 52003,
+      "pair": 53
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 52003,
+      "pair": 53
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 54002,
+      "pair": 54
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 54002,
+      "pair": 54
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 54003,
+      "pair": 55
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 54003,
+      "pair": 55
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 56002,
+      "pair": 56
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 56002,
+      "pair": 56
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 56003,
+      "pair": 57
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 56003,
+      "pair": 57
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 58002,
+      "pair": 58
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 58002,
+      "pair": 58
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 58003,
+      "pair": 59
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 58003,
+      "pair": 59
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 60002,
+      "pair": 60
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 60002,
+      "pair": 60
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 60003,
+      "pair": 61
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 60003,
+      "pair": 61
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 62002,
+      "pair": 62
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 62002,
+      "pair": 62
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 62003,
+      "pair": 63
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 62003,
+      "pair": 63
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 64002,
+      "pair": 64
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 64002,
+      "pair": 64
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 64003,
+      "pair": 65
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 64003,
+      "pair": 65
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 10,
+      "mirror": false,
+      "seed": 66002,
+      "pair": 66
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 66002,
+      "pair": 66
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 66003,
+      "pair": 67
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 66003,
+      "pair": 67
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 68002,
+      "pair": 68
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 68002,
+      "pair": 68
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 68003,
+      "pair": 69
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 68003,
+      "pair": 69
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 70002,
+      "pair": 70
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 70002,
+      "pair": 70
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 70003,
+      "pair": 71
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 70003,
+      "pair": 71
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 72002,
+      "pair": 72
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 72002,
+      "pair": 72
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 72003,
+      "pair": 73
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 72003,
+      "pair": 73
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 10,
+      "mirror": false,
+      "seed": 74002,
+      "pair": 74
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 74002,
+      "pair": 74
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 74003,
+      "pair": 75
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 74003,
+      "pair": 75
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 9,
+      "mirror": false,
+      "seed": 76002,
+      "pair": 76
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 76002,
+      "pair": 76
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 76003,
+      "pair": 77
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 76003,
+      "pair": 77
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 78002,
+      "pair": 78
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 78002,
+      "pair": 78
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 78003,
+      "pair": 79
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 78003,
+      "pair": 79
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 80002,
+      "pair": 80
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 80002,
+      "pair": 80
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 80003,
+      "pair": 81
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 9,
+      "mirror": true,
+      "seed": 80003,
+      "pair": 81
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 82002,
+      "pair": 82
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 82002,
+      "pair": 82
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 82003,
+      "pair": 83
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 82003,
+      "pair": 83
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 84002,
+      "pair": 84
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 84002,
+      "pair": 84
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 84003,
+      "pair": 85
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 84003,
+      "pair": 85
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 86002,
+      "pair": 86
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 10,
+      "mirror": true,
+      "seed": 86002,
+      "pair": 86
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 86003,
+      "pair": 87
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 86003,
+      "pair": 87
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 10,
+      "mirror": false,
+      "seed": 88002,
+      "pair": 88
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 88002,
+      "pair": 88
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 88003,
+      "pair": 89
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": true,
+      "seed": 88003,
+      "pair": 89
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 90002,
+      "pair": 90
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 90002,
+      "pair": 90
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 90003,
+      "pair": 91
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 90003,
+      "pair": 91
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 92002,
+      "pair": 92
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 10,
+      "mirror": true,
+      "seed": 92002,
+      "pair": 92
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": false,
+      "seed": 92003,
+      "pair": 93
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 92003,
+      "pair": 93
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 7,
+      "mirror": false,
+      "seed": 94002,
+      "pair": 94
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 94002,
+      "pair": 94
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 6,
+      "mirror": false,
+      "seed": 94003,
+      "pair": 95
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 94003,
+      "pair": 95
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 9,
+      "mirror": false,
+      "seed": 96002,
+      "pair": 96
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 8,
+      "mirror": true,
+      "seed": 96002,
+      "pair": 96
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 10,
+      "mirror": false,
+      "seed": 96003,
+      "pair": 97
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 5,
+      "mirror": true,
+      "seed": 96003,
+      "pair": 97
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "draw",
+      "rounds": 8,
+      "mirror": false,
+      "seed": 98002,
+      "pair": 98
+    },
+    {
+      "firstMoverWin": true,
+      "winner": "a",
+      "rounds": 7,
+      "mirror": true,
+      "seed": 98002,
+      "pair": 98
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 10,
+      "mirror": false,
+      "seed": 98003,
+      "pair": 99
+    },
+    {
+      "firstMoverWin": false,
+      "winner": "b",
+      "rounds": 10,
+      "mirror": true,
+      "seed": 98003,
+      "pair": 99
+    }
+  ]
+}

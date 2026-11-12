@@ -121,16 +121,30 @@ export function addStatus(statuses, lane, key, value) {
 export const cloneStatuses = (statuses) =>
   (statuses ?? emptyStatuses()).map((s) => ({ ...s }));
 
-// ── Варианты баланса (A/B-эксперименты; исходный баланс — дефолт) ───────────
-// Каждый ключ переключает конкретную механику; отсутствие ключа = исходное поведение.
+// ── Варианты баланса (A/B-эксперименты; исходный баланс — дефолт движка) ────
+// РЕКОМЕНДОВАННЫЙ баланс (reports/balance_recommendation.md) экспортируется
+// отдельно как RECOMMENDED и включается правилами матча (rules.variants,
+// см. supabase/functions/create-room). Исходный баланс — значения по умолчанию:
 export const VARIANT_DEFAULTS = Object.freeze({
-  fireRetaliation: 'blocked', // blocked | onHit (B) | blocked3 (C)
-  lavaCounter: 'onHit',       // onHit | three (B) | strongHit (C: удар ≥3 вскипятил лаву)
-  steamDampen: 'pct10',       // pct10 | pct15 (B) | healPartial (C: лечение при ударе ≤2)
-  waterCleanse: 'base',       // base | heal1 (B) | single (C: один негативный статус)
-  lavaPierce: 'pct10',        // pct10 | pct5 (B) | burnArmor (C: поджог только при броне)
-  waterStrip: 'three',        // three | two (B)
-  sandstormShield: 'four',    // four | three (B)
+  fireRetaliation: 'blocked', // blocked | onHit | blocked3
+  lavaCounter: 'onHit',       // onHit | three | strongHit
+  steamDampen: 'pct10',       // pct10 | pct15 | healPartial
+  waterCleanse: 'base',       // base | heal1 | single
+  lavaPierce: 'pct10',        // pct10 | pct5 | burnArmor
+  waterStrip: 'three',        // three | two
+  sandstormShield: 'four',    // four | three
+});
+
+// Рекомендованный баланс (Этапы 3–7): оживляет мёртвые защитные способности
+// и снижает доминацию Воды/Лавы/Бури. Подробности — reports/balance_recommendation.md.
+export const RECOMMENDED = Object.freeze({
+  fireRetaliation: 'onHit',
+  lavaCounter: 'three',
+  steamDampen: 'pct15',
+  waterCleanse: 'heal1',
+  lavaPierce: 'burnArmor',
+  waterStrip: 'two',
+  sandstormShield: 'three',
 });
 
 export function resolveVariants(opts) {
