@@ -167,15 +167,35 @@ export function evaluateState(state, side) {
 // доступа к реальной скрытой руке), симуляция depth раундов тем же движком.
 export function choosePlan({
   state, hand, side = 'a', rng = Math.random,
-  layouts = 8, samples = 5, depth = 2, budgetMs = 700,
+  layouts = 6, samples = 4, depth = 2, budgetMs = 700,
 } = {}) {
   const t0 = Date.now();
   const enemySide = side === 'a' ? 'b' : 'a';
   const own = state[side], enemy = state[enemySide];
-  const candidates = beamLayouts(hand, own, enemy, { count: layouts, rng });
+  // Кандидаты: оптимум старого бота (точный DP) + варианты beam search —
+  // MC-оценка ранжирует их одинаковым моделированием.
+  const candidates = [];
+  const seenKey = (placements) => placements.map(p => [...p.attack, ...p.defense].map(c => c.id).sort().join()).join('|');
+  const legacy = botPlan(hand, enemy, own);
+  candidates.push(legacy);
+  const legacyKey = seenKey(legacy);
+  for (const layout of beamLayouts(hand, own, enemy, { count: layouts, rng })) {
+    if (seenKey(layout) === legacyKey) continue;
+    candidates.push(layout);
+  }
   // Возможные руки противника: полная колода, 7 красных + 7 чёрных.
-  const oppLayouts = Array.from({ length: samples }, () =>
-    beamLayouts(deal(rng), enemy, own, { count: 1, rng, beamWidth: 12, perSlot: 8 })[0]);
+  // Модель ответа противника: точный DP-подбор (как у текущего боевого бота)
+  // и beam-варианты — чередование, чтобы не переобучаться под один класс.
+  const oppLayouts = Array.from({ length: samples }, (_, i) => {
+    const oppHand = deal(rng);
+    return i % 2 === 0
+      ? botPlan(oppHand, state[side], state[enemySide])
+      : beamLayouts(oppHand, enemy, own, { count: 1, rng, beamWidth: 12, perSlot: 8 })[0];
+  });
+  // Быстрый генератор для lookahead-раундов (без DP — экономия бюджета).
+  const quick = (h, ownB, enemyB) =>
+    beamLayouts(h, ownB, enemyB, { count: 1, rng, beamWidth: 8, perSlot: 5 })[0]
+      ?? botPlan(h, enemyB, ownB);
 
   const turn = placements => ({ placements });
   let best = null;
@@ -190,8 +210,8 @@ export function choosePlan({
         // Следующие раунды: свежие раздачи, быстрые greedy-раскладки обеих сторон.
         for (let d = 1; d < depth && !r.finished; d++) {
           const hSelf = deal(rng), hOpp = deal(rng);
-          const pSelf = beamLayouts(hSelf, sim[side], sim[enemySide], { count: 1, rng, beamWidth: 10, perSlot: 6 })[0];
-          const pOpp = beamLayouts(hOpp, sim[enemySide], sim[side], { count: 1, rng, beamWidth: 10, perSlot: 6 })[0];
+          const pSelf = quick(hSelf, sim[side], sim[enemySide]);
+          const pOpp = quick(hOpp, sim[enemySide], sim[side]);
           const a2 = side === 'a' ? [turn(pSelf), turn(pOpp)] : [turn(pOpp), turn(pSelf)];
           r = resolveRound(sim, a2[0], a2[1], { abilities: true, rng });
         }
