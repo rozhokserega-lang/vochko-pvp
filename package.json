@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/transparency.test.js tests/elements.test.js tests/server.test.js tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js tests/arena-ui.test.js tests/abilities.test.js tests/bot-smart.test.js",
+    "test": "node --test tests/transparency.test.js tests/elements.test.js tests/server.test.js tests/engine.test.js tests/audit.test.js tests/v19-ui.test.js tests/arena-ui.test.js tests/abilities.test.js tests/bot-smart.test.js tests/counters.test.js",
     "test:browser": "node tests/browser-elements.mjs",
     "test:local": "node tests/browser-local.mjs",
     "test:nexus": "node tests/browser-nexus.mjs",

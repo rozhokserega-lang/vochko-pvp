@@ -167,7 +167,7 @@ export function evaluateState(state, side) {
 // доступа к реальной скрытой руке), симуляция depth раундов тем же движком.
 export function choosePlan({
   state, hand, side = 'a', rng = Math.random,
-  layouts = 6, samples = 4, depth = 2, budgetMs = 700,
+  layouts = 6, samples = 4, depth = 2, budgetMs = 700, counters = false,
 } = {}) {
   const t0 = Date.now();
   const enemySide = side === 'a' ? 'b' : 'a';
@@ -205,7 +205,7 @@ export function choosePlan({
     for (const oppPlan of oppLayouts) {
       const sim = cloneGameState(state);
       const args = side === 'a' ? [turn(plan), turn(oppPlan)] : [turn(oppPlan), turn(plan)];
-      let r = resolveRound(sim, args[0], args[1], { abilities: true, rng });
+      let r = resolveRound(sim, args[0], args[1], { abilities: true, rng, counters });
       if (!r.finished && depth > 1) {
         // Следующие раунды: свежие раздачи, быстрые greedy-раскладки обеих сторон.
         for (let d = 1; d < depth && !r.finished; d++) {
@@ -213,7 +213,7 @@ export function choosePlan({
           const pSelf = quick(hSelf, sim[side], sim[enemySide]);
           const pOpp = quick(hOpp, sim[enemySide], sim[side]);
           const a2 = side === 'a' ? [turn(pSelf), turn(pOpp)] : [turn(pOpp), turn(pSelf)];
-          r = resolveRound(sim, a2[0], a2[1], { abilities: true, rng });
+          r = resolveRound(sim, a2[0], a2[1], { abilities: true, rng, counters });
         }
       }
       score += evaluateState(sim, side);

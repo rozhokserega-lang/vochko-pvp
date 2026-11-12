@@ -44,15 +44,17 @@ Deno.serve(async (req) => {
         values (${m.id}, ${m.round}, ${user.id}, ${seat},
                 ${sql.json(placements)}, ${null})`;
 
+      // Единый движок: способности/контрстихии по правилам матча.
+      const rules = st.rules ?? {};
+      const abilities = rules.abilities === true;
+      const counters = rules.counters !== false; // утверждённая механика: вкл для новых матчей
+
       const resolveAndStore = async (turnA, turnB) => {
         const board = { round: m.round, a: st.board.a, b: st.board.b };
-        // Единый движок: способности по правилам матча; seeded RNG →
-        // воспроизводимый расчёт раунда (seed хранится в state).
-        const rules = st.rules ?? {};
-        const abilities = rules.abilities === true;
+        // Seeded RNG → воспроизводимый расчёт раунда (seed хранится в state).
         const rng = mulberry32(Number(st.rngSeed) >>> 0);
         st.rngSeed = cryptoSeed(); // новый seed на следующий раунд
-        const resolved = resolveRound(board, turnA, turnB, { abilities, rng });
+        const resolved = resolveRound(board, turnA, turnB, { abilities, counters, rng });
         st.board = { a: board.a, b: board.b };
 
         st.fortifyUsed = { 1: false, 2: false }; // неактивное поле совместимости
@@ -93,7 +95,7 @@ Deno.serve(async (req) => {
         const botTurn = (st.rules?.smartBot === true)
           ? choosePlan({
               state: matchState, hand: st.hands['2'], side: 'b', rng: mulberry32(Number(st.rngSeed) >>> 0),
-              budgetMs: 800,
+              budgetMs: 800, counters,
             }).plan
           : { placements: botPlan(st.hands['2'], st.board.a, st.board.b), fortifyLane: null };
         return await resolveAndStore(

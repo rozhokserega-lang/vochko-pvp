@@ -19,6 +19,10 @@ function label(ev, seat) {
   if (ev.ability === 'burn_tick') {
     return `🔥 Поджог: ${who.toLowerCase()} ${laneName} −${ev.amount}`;
   }
+  if (ev.ability === 'counter_triggered') {
+    const canceled = ABILITIES[ev.canceled];
+    return `🛡 КОНТРСТИХИЯ: ${who} — «${canceled?.name ?? ev.canceled}» нейтрализована (${laneName})`;
+  }
   const ability = ABILITIES[ev.ability];
   const name = ability ? ability.name : ev.ability;
   if (ev.effect === 'cleanse') return `💧 ${who}: ${name} — очищение статусов (${laneName})`;
@@ -36,11 +40,27 @@ export function showAbilityFeed(abilityEvents, seat) {
   const items = abilityEvents.slice(0, 8); // без спама: первые 8 событий раунда
   for (const ev of items) {
     const el = document.createElement('div');
-    el.className = 'ability-feed-item' + ((ev.side === 'a' && seat === 1) || (ev.side === 'b' && seat === 2) ? ' mine' : '');
+    const mine = (ev.side === 'a' && seat === 1) || (ev.side === 'b' && seat === 2);
+    el.className = 'ability-feed-item'
+      + (mine ? ' mine' : '')
+      + (ev.ability === 'counter_triggered' ? ' counter' : '');
     el.textContent = label(ev, seat);
     feed.appendChild(el);
   }
   document.body.appendChild(feed);
   timers.push(setTimeout(() => feed.classList.add('fade'), 3200));
   timers.push(setTimeout(() => feed.remove(), 4200));
+  // Метки «КОНТРСТИХИЯ!» над затронутыми башнями линии (без задержек/подтверждений).
+  for (const ev of items.filter(e => e.ability === 'counter_triggered')) {
+    const laneEl = document.querySelectorAll('#lanes .lane')[ev.lane];
+    if (!laneEl) continue;
+    const rect = laneEl.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'counter-float';
+    el.textContent = 'КОНТРСТИХИЯ!';
+    el.style.left = Math.max(40, Math.min(window.innerWidth - 110, rect.left + rect.width / 2 - 45)) + 'px';
+    el.style.top = Math.max(40, rect.top - 4) + 'px';
+    document.body.appendChild(el);
+    timers.push(setTimeout(() => el.remove(), 1500));
+  }
 }

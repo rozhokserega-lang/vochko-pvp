@@ -27,11 +27,11 @@ Deno.serve(async (req) => {
           board: emptyBoard(),
           hands: { 1: dealHand(), 2: dealHand() },
           fortifyUsed: { 1: false, 2: false },
-          rules: { abilities: abilities !== false, smartBot: smartBot !== false },
+          rules: { abilities: abilities !== false, smartBot: smartBot !== false, counters: counters !== false },
           rngSeed: cryptoSeed(),
         }
       : {
-          rules: { abilities: abilities !== false, smartBot: false },
+          rules: { abilities: abilities !== false, smartBot: false, counters: counters !== false },
           rngSeed: cryptoSeed(),
         };
     const [match] = await sql`
