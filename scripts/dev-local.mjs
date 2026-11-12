@@ -13,6 +13,7 @@ export async function startLocalGame(port = 5185) {
     Object.assign(f.match, { id, room_code: code, status: bot ? 'planning' : 'waiting' });
     f.match.state.hands = { 1: deal(), 2: deal() };
     f.match.state.botMatch = bot;
+    f.match.state.rules = { abilities: true, smartBot: true }; // локальный стенд: новый режим
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };
     rooms.set(id, room);
     return room;

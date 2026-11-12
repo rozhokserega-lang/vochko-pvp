@@ -37,8 +37,9 @@ try {
   await a.locator('[data-act="create"]').click();
   await a.locator('.code').waitFor();
   const code = await a.locator('.code').innerText();
+  await b.locator('[data-open="join"]').click(); // модал «Подключиться» → #roomInput
   await b.locator('#roomInput').fill(code);
-  await b.locator('[data-act="join"]').click();
+  await b.locator('#joinRoomButton').click();
   await place(a); await place(b);
   await Promise.all([a, b].map(p => p.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield'))));
   for (const p of [a, b]) { await p.waitForFunction(() => !document.querySelector('#fightBtn')?.disabled); assert.equal(await p.locator('#hand .card').count(), 14); }
