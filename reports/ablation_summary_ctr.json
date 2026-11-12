@@ -1,0 +1,175 @@
+{
+  "params": {
+    "games": 300,
+    "seed": 1,
+    "matchup": "new-old",
+    "budgetMs": 300,
+    "counters": true
+  },
+  "base": {
+    "smartWinRate": 0.607,
+    "avgRounds": 8.87
+  },
+  "rows": [
+    {
+      "ability": "fire_burn",
+      "smartWinRate": 0.58,
+      "avgRounds": 8.86,
+      "abilityDamageTotal": 6506,
+      "delta": -0.027,
+      "roundsDelta": -0.01
+    },
+    {
+      "ability": "fire_retaliation",
+      "smartWinRate": 0.608,
+      "avgRounds": 8.86,
+      "abilityDamageTotal": 8506,
+      "delta": 0.001,
+      "roundsDelta": -0.01
+    },
+    {
+      "ability": "water_strip_armor",
+      "smartWinRate": 0.539,
+      "avgRounds": 8.92,
+      "abilityDamageTotal": 8665,
+      "delta": -0.068,
+      "roundsDelta": 0.05
+    },
+    {
+      "ability": "water_cleanse",
+      "smartWinRate": 0.51,
+      "avgRounds": 8.75,
+      "abilityDamageTotal": 9122,
+      "delta": -0.097,
+      "roundsDelta": -0.12
+    },
+    {
+      "ability": "earth_pierce_def",
+      "smartWinRate": 0.595,
+      "avgRounds": 8.93,
+      "abilityDamageTotal": 8687,
+      "delta": -0.012,
+      "roundsDelta": 0.06
+    },
+    {
+      "ability": "earth_armor",
+      "smartWinRate": 0.584,
+      "avgRounds": 8.58,
+      "abilityDamageTotal": 8329,
+      "delta": -0.023,
+      "roundsDelta": -0.29
+    },
+    {
+      "ability": "air_weaken_def",
+      "smartWinRate": 0.58,
+      "avgRounds": 8.87,
+      "abilityDamageTotal": 8529,
+      "delta": -0.027,
+      "roundsDelta": 0
+    },
+    {
+      "ability": "air_reflect",
+      "smartWinRate": 0.564,
+      "avgRounds": 9.14,
+      "abilityDamageTotal": 7081,
+      "delta": -0.043,
+      "roundsDelta": 0.27
+    },
+    {
+      "ability": "steam_weaken_def",
+      "smartWinRate": 0.566,
+      "avgRounds": 8.97,
+      "abilityDamageTotal": 8595,
+      "delta": -0.041,
+      "roundsDelta": 0.1
+    },
+    {
+      "ability": "steam_dampen",
+      "smartWinRate": 0.621,
+      "avgRounds": 8.72,
+      "abilityDamageTotal": 8571,
+      "delta": 0.014,
+      "roundsDelta": -0.15
+    },
+    {
+      "ability": "lava_pierce_burn",
+      "smartWinRate": 0.516,
+      "avgRounds": 9.14,
+      "abilityDamageTotal": 7972,
+      "delta": -0.091,
+      "roundsDelta": 0.27
+    },
+    {
+      "ability": "lava_counter",
+      "smartWinRate": 0.61,
+      "avgRounds": 8.91,
+      "abilityDamageTotal": 8480,
+      "delta": 0.003,
+      "roundsDelta": 0.04
+    },
+    {
+      "ability": "fire_vortex_spread",
+      "smartWinRate": 0.585,
+      "avgRounds": 8.95,
+      "abilityDamageTotal": 7841,
+      "delta": -0.022,
+      "roundsDelta": 0.08
+    },
+    {
+      "ability": "fire_vortex_zaslon",
+      "smartWinRate": 0.592,
+      "avgRounds": 8.86,
+      "abilityDamageTotal": 8555,
+      "delta": -0.015,
+      "roundsDelta": -0.01
+    },
+    {
+      "ability": "ice_weaken_def",
+      "smartWinRate": 0.566,
+      "avgRounds": 8.92,
+      "abilityDamageTotal": 8575,
+      "delta": -0.041,
+      "roundsDelta": 0.05
+    },
+    {
+      "ability": "ice_weaken_atk",
+      "smartWinRate": 0.587,
+      "avgRounds": 8.66,
+      "abilityDamageTotal": 8491,
+      "delta": -0.02,
+      "roundsDelta": -0.21
+    },
+    {
+      "ability": "thunderstorm_discharge",
+      "smartWinRate": 0.585,
+      "avgRounds": 9.06,
+      "abilityDamageTotal": 6332,
+      "delta": -0.022,
+      "roundsDelta": 0.19
+    },
+    {
+      "ability": "thunderstorm_charge",
+      "smartWinRate": 0.582,
+      "avgRounds": 8.95,
+      "abilityDamageTotal": 8636,
+      "delta": -0.025,
+      "roundsDelta": 0.08
+    },
+    {
+      "ability": "sandstorm_weaken_atk",
+      "smartWinRate": 0.582,
+      "avgRounds": 8.91,
+      "abilityDamageTotal": 8662,
+      "delta": -0.025,
+      "roundsDelta": 0.04
+    },
+    {
+      "ability": "sandstorm_shield",
+      "smartWinRate": 0.553,
+      "avgRounds": 8.56,
+      "abilityDamageTotal": 8442,
+      "delta": -0.054,
+      "roundsDelta": -0.31
+    }
+  ]
+}
