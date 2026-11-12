@@ -345,6 +345,15 @@ export function playRoundAnimation(view) {
         setNexusHealth(target, final);
         val.textContent = final + ' / ' + max;
       });
+      // Тик горения: короткая вспышка на получившей урон башне.
+      (rep.events || []).filter(e => e.burnTick && e.side === defenderSide).forEach((e) => {
+        const t = vfxTarget(e, seat);
+        if (!t) return;
+        t.classList.remove('status-burn-hit');
+        void t.offsetWidth;
+        t.classList.add('status-burn-hit');
+        combatLater(() => t.classList.remove('status-burn-hit'), 900);
+      });
     }, 2000 + offset);
   }
   // Reveal the final models only after both sides have finished attacking.

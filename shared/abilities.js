@@ -95,6 +95,53 @@ export function counterBlocks(atkElement, defElement, enabled) {
 // Статусы выставленные в раунде N применяются в начале раунда N+1 и стираются.
 // Накопление внутри раунда — через максимум; сверху жёсткие капы.
 export const NEGATIVE_STATUSES = Object.freeze(['burn', 'weakenAttack', 'weakenDefense']);
+// ── Метаданные статусов для UI (единый источник с движком) ─────────────────
+// Статусы в состоянии боя остаются числовыми (обратная совместимость контракта);
+// отображение/подсказки собираются из этой таблицы + значения статуса.
+export const STATUS_META = Object.freeze({
+  burn: {
+    icon: '🔥', name: 'Горение', kind: 'debuff', css: 'status-burn',
+    effect: (v) => `−${v} HP в начале следующего раунда (тик)`,
+    sources: (v) => v >= 2 ? ['fire'] : ['lava', 'fire_vortex'],
+    timing: 'в начале следующего раунда',
+    duration: '1 раунд (тик гасит горение)',
+    counterplay: 'Защитная пара Воды очищает негативные статусы в начале раунда (не сработает, если атака линии — Гроза: контрстихия).',
+  },
+  weakenAttack: {
+    icon: '❄️', name: 'Ослабление атаки', kind: 'debuff', css: 'status-weakenAttack',
+    effect: (v) => `атака линии ×(1 − ${v}/100) в следующем раунде`,
+    sources: () => ['sandstorm', 'ice'],
+    timing: 'в начале следующего раунда',
+    duration: '1 раунд',
+    counterplay: 'Защитная пара Воды очищает негативные статусы в начале раунда (не сработает против атаки Грозы).',
+  },
+  weakenDefense: {
+    icon: '💨', name: 'Ослабление защиты', kind: 'debuff', css: 'status-weakenDefense',
+    effect: (v) => `защита линии ×(1 − ${v}/100) в следующем раунде`,
+    sources: () => ['air', 'steam', 'ice'],
+    timing: 'в начале следующего раунда',
+    duration: '1 раунд',
+    counterplay: 'Защитная пара Воды очищает негативные статусы в начале раунда (не сработает против атаки Грозы).',
+  },
+  armor: {
+    icon: '🛡️', name: 'Временная броня', kind: 'buff', css: 'status-armor',
+    effect: (v) => `+${v} к защите линии в следующем раунде (сверх базовой)`,
+    sources: () => ['earth'],
+    timing: 'в начале следующего раунда',
+    duration: '1 раунд',
+    counterplay: 'Атака Воды смывает до 3 временной брони перед уроном.',
+  },
+  attackBoost: {
+    icon: '⚡', name: 'Заряд атаки', kind: 'buff', css: 'status-attackBoost',
+    effect: (v) => `+${v} к атаке линии в следующем раунде`,
+    sources: () => ['thunderstorm'],
+    timing: 'в начале следующего раунда',
+    duration: '1 раунд',
+    counterplay: 'Действует до конца следующего раунда; контрстихия Вода (у Грозы) не влияет на буст.',
+  },
+});
+
+// Ключи негативных статусов (для очищения Водой) — уже есть NEGATIVE_STATUSES.
 export const STATUS_CAPS = Object.freeze({
   burn: 5,            // 2/раунд максимум у Огня, Лава даёт 1
   armor: 9,           // 3/раунд от Земли

@@ -20,8 +20,7 @@ import { cardPanelHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPane
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { renderStatusBadges } from './ui/arena/StatusBadges.js';
-import './ui/arena/status-badges.css';
-import { EndScreen } from './ui/EndScreen.js';
+import './ui/arena/status-badges.css';import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
 const byId = (c) => document.getElementById(c);

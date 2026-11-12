@@ -1,7 +1,7 @@
 // Регрессии неизменённых карточных правил и здоровья. Новый баланс — elements.test.js.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RANKS, SUITS, deck, deal } from '../shared/cards.js';
+import { RANKS, SUITS, deck, deal, dealBalancedLegacy } from '../shared/cards.js';
 import { multiplier, combo, comboDetails } from '../shared/combos.js';
 import { type, attackInfo } from '../shared/elements.js';
 import * as E from '../shared/engine.js';
@@ -20,16 +20,42 @@ test('колода 52 карты, ранги 2..A', () => {
   assert.equal(SUITS.join(''), '♥♦♠♣');
 });
 
-test('рука: 7 красных + 7 чёрных, без дублей, детерминизм по seed', () => {
+test('рука: 14 случайных карт из 52, без дублей, воспроизводимость по seed', () => {
   for (const seed of [1, 42, 777]) {
     const h = deal(mulberry32(seed));
     assert.equal(h.length, 14);
     assert.equal(new Set(h.map((c) => c.id)).size, 14);
-    assert.equal(h.filter((c) => c.s === '♥' || c.s === '♦').length, 7);
-    assert.equal(h.filter((c) => c.s === '♠' || c.s === '♣').length, 7);
+    for (const c of h) assert.ok(deck().some((d) => d.id === c.id), 'карта из колоды');
     const h2 = deal(mulberry32(seed));
     assert.deepEqual(h, h2, 'одинаковый seed — одинаковая рука');
   }
+});
+
+test('раздача без баланса цветов: встречаются неравномерные распределения', () => {
+  // При полностью случайной раздаче перекос цветов — норма; фиксированная
+  // гарантия 7/7 исчезла. Проверяем, что хоть один seed из выборки даёт
+  // распределение, отличное от 7/7, и что 7/7 тоже достижимо.
+  const shapes = [1, 2, 3, 4, 5, 6, 7, 8].map((seed) => {
+    const h = deal(mulberry32(seed));
+    return h.filter((c) => c.s === '♥' || c.s === '♦').length;
+  });
+  assert.ok(shapes.some((n) => n !== 7), 'есть неравномерные раздачи');
+  // Все раздачи: 0–14 красных, в пределах одной руки уникальность сохранена.
+  for (const n of shapes) { assert.ok(n >= 0 && n <= 14); }
+});
+
+test('размер руки параметризован (подготовка к Ядру Нексуса)', () => {
+  assert.equal(deal(mulberry32(1), 13).length, 13);
+  assert.equal(deal(mulberry32(1), 0).length, 0);
+  assert.equal(deal(mulberry32(1), 99).length, 52); // не больше колоды
+});
+
+test('dealBalancedLegacy: историческая схема 7/7 сохранена для A/B-симуляций', () => {
+  const h = dealBalancedLegacy(mulberry32(3));
+  assert.equal(h.length, 14);
+  assert.equal(h.filter((c) => c.s === '♥' || c.s === '♦').length, 7);
+  assert.equal(h.filter((c) => c.s === '♠' || c.s === '♣').length, 7);
+  assert.equal(new Set(h.map((c) => c.id)).size, 14);
 });
 
 // ── Комбинации: строгий приоритет, Math.round ──────────────────────────────

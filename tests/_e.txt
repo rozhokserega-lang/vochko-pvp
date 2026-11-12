@@ -1,0 +1,49 @@
+﻿тЬФ ╨░╤Г╨┤╨╕╤В ╨┐.2: fortifyAllowed ╨╖╨░╨┐╤А╨╡╤Й╨░╨╡╤В ╨┐╨╛╨▓╤В╨╛╤А╨╜╨╛╨╡ ╤Г╨║╤А╨╡╨┐╨╗╨╡╨╜╨╕╨╡ (1.2265ms)
+тЬФ ╨░╤Г╨┤╨╕╤В ╨┐.3/╨┐.7: ╨│╨╛╤В╨╛╨▓╨╜╨╛╤Б╤В╤М ╨┐╨╛ ╤Б╨╕╨┤╨░╨╝ ╨╕ ╤Й╨╕╤В ╤Б╨▓╨╛╨╡╨╣ ╨┤╨╛╤Б╨║╨╕ ╨▓ DTO (0.4411ms)
+тЬФ ╨░╤Г╨┤╨╕╤В ╨┐.8: ╨┐╨╛╨╝╨╡╤В╨║╨░ ╨▒╨╛╤В╨░ ╨▓ DTO (╨╗╨╛╨│╨╕╨║╨░ ╤Б╨╛╤Б╤В╨╛╤П╨╜╨╕╤П) (0.1506ms)
+тЬФ ╨║╨╛╨╗╨╛╨┤╨░ 52 ╨║╨░╤А╤В╤Л, ╤А╨░╨╜╨│╨╕ 2..A (1.7425ms)
+тЬФ ╤А╤Г╨║╨░: 14 ╤Б╨╗╤Г╤З╨░╨╣╨╜╤Л╤Е ╨║╨░╤А╤В ╨╕╨╖ 52, ╨▒╨╡╨╖ ╨┤╤Г╨▒╨╗╨╡╨╣, ╨▓╨╛╤Б╨┐╤А╨╛╨╕╨╖╨▓╨╛╨┤╨╕╨╝╨╛╤Б╤В╤М ╨┐╨╛ seed (2.3825ms)
+тЬФ ╤А╨░╨╖╨┤╨░╤З╨░ ╨▒╨╡╨╖ ╨▒╨░╨╗╨░╨╜╤Б╨░ ╤Ж╨▓╨╡╤В╨╛╨▓: ╨▓╤Б╤В╤А╨╡╤З╨░╤О╤В╤Б╤П ╨╜╨╡╤А╨░╨▓╨╜╨╛╨╝╨╡╤А╨╜╤Л╨╡ ╤А╨░╤Б╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨╕╤П (0.5457ms)
+тЬФ ╤А╨░╨╖╨╝╨╡╤А ╤А╤Г╨║╨╕ ╨┐╨░╤А╨░╨╝╨╡╤В╤А╨╕╨╖╨╛╨▓╨░╨╜ (╨┐╨╛╨┤╨│╨╛╤В╨╛╨▓╨║╨░ ╨║ ╨п╨┤╤А╤Г ╨Э╨╡╨║╤Б╤Г╤Б╨░) (0.1604ms)
+тЬЦ dealBalancedLegacy: ╨╕╤Б╤В╨╛╤А╨╕╤З╨╡╤Б╨║╨░╤П ╤Б╤Е╨╡╨╝╨░ 7/7 ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨░ ╨┤╨╗╤П A/B-╤Б╨╕╨╝╤Г╨╗╤П╤Ж╨╕╨╣ (0.3046ms)
+тЬФ ╨┐╤А╨╕╨╛╤А╨╕╤В╨╡╤В╤Л ╨║╨╛╨╝╨▒╨╕╨╜╨░╤Ж╨╕╨╣ ╨╕ ╤В╨╛╤З╨╜╤Л╨╡ ╤З╨╕╤Б╨╗╨░ (0.2587ms)
+тЬФ ╤В╨╕╨┐╤Л ╨┐╨░╤А: ╤Б╤В╨╕╤Е╨╕╨╕, ╨Я╨░╤А, ╨С╤Г╤А╤П (0.2652ms)
+тЬФ ╨╜╨╛╨╗╤М ╤Г╤А╨╛╨╜╨░ тАФ ╨╜╨╡╤В ╨┐╨╛╨┤╨╢╨╛╨│╨░ (0.338ms)
+тЬФ ╤Г╤А╨╛╨╜: ╨▓╨╜╨╡╤И╨╜╨╕╨╣ 12 тЖТ ╨▓╨╜╤Г╤В╤А╨╡╨╜╨╜╨╕╨╣ 18 тЖТ ╨Э╨╡╨║╤Б╤Г╤Б, ╨╕╨╖╨╗╨╕╤И╨╡╨║ ╨Э╨Х ╨┐╨╡╤А╨╡╨╜╨╛╤Б╨╕╤В╤Б╤П (0.2619ms)
+тЬФ ╨Э╨╡╨║╤Б╤Г╤Б: ╤Й╨╕╤В 0/40/70/100 ╨┐╨╛ ╨┐╤А╨╛╨▒╨╕╤В╤Л╨╝ ╨╗╨╕╨╜╨╕╤П╨╝, ╨╛╨║╤А╤Г╨│╨╗╨╡╨╜╨╕╨╡ (0.2594ms)
+тЬФ validateTurn: ╨┤╤Г╨▒╨╗╨╕, ╤З╤Г╨╢╨╕╨╡ ╨║╨░╤А╤В╤Л, ╤Г╨║╤А╨╡╨┐╨╗╨╡╨╜╨╕╨╡; materializeTurn (0.5933ms)
+тЬФ comboDetails ╨┤╨╗╤П ╨┐╤А╨╡╨┤╨┐╤А╨╛╤Б╨╝╨╛╤В╤А╨░ (0.1209ms)
+(node:25676) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+тЬФ real submit/get-state handlers: private hands, two submissions, one resolve, mirrored DTO (59.1501ms)
+тЬФ real submit handler rejects forged stats/actions/ownership and fortify, including replay (6.9038ms)
+тЬФ real handlers: full PvP match reaches final report at the round limit or destruction (12.7682ms)
+тЬФ real submit handler: existing PvE mode resolves with a valid universal bot turn (22.8061ms)
+тЬФ ╤Б╨╡╤А╨▓╨╡╤А╨╜╤Л╨╣ ╤А╨░╤Б╤З╤С╤В: QтЩж JтЩж ╤В╨╛╨╗╤М╨║╨╛ ╨░╤В╨░╨║╤Г╤О╤В, 2тЩе 3тЩе ╤В╨╛╨╗╤М╨║╨╛ ╨╖╨░╤Й╨╕╤Й╨░╤О╤В (3.7782ms)
+тЬФ fire_vortex: real alpha in every frame, original timing and core pixels preserved (173.2295ms)
+тЬФ lava: real alpha in every frame, original timing and core pixels preserved (152.0544ms)
+тЬФ ice: real alpha in every frame, original timing and core pixels preserved (168.5023ms)
+тЬФ thunderstorm: real alpha in every frame, original timing and core pixels preserved (166.8914ms)
+тЬФ sandstorm: real alpha in every frame, original timing and core pixels preserved (170.6792ms)
+тД╣ tests 25
+тД╣ suites 0
+тД╣ pass 24
+тД╣ fail 1
+тД╣ cancelled 0
+тД╣ skipped 0
+тД╣ todo 0
+тД╣ duration_ms 1044.156
+
+тЬЦ failing tests:
+
+test at tests\engine.test.js:53:1
+тЬЦ dealBalancedLegacy: ╨╕╤Б╤В╨╛╤А╨╕╤З╨╡╤Б╨║╨░╤П ╤Б╤Е╨╡╨╝╨░ 7/7 ╤Б╨╛╤Е╤А╨░╨╜╨╡╨╜╨░ ╨┤╨╗╤П A/B-╤Б╨╕╨╝╤Г╨╗╤П╤Ж╨╕╨╣ (0.3046ms)
+  ReferenceError: dealBalancedLegacy is not defined
+      at TestContext.<anonymous> (file:///D:/Rotogochi/vochko-pvp/tests/engine.test.js:54:13)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
