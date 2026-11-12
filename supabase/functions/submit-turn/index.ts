@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
         const finished = resolved.finished;
         const newRound = finished ? m.round : m.round + 1;
-        if (!finished) st.hands = { 1: dealHand(), 2: dealHand() };
+        if (!finished) st.hands = { 1: dealHand(rules.dealMode ?? 'balanced'), 2: dealHand(rules.dealMode ?? 'balanced') };
 
         await tx`
           insert into private.round_events (match_id, round, public_result)
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
         const botTurn = (st.rules?.smartBot === true)
           ? choosePlan({
               state: matchState, hand: st.hands['2'], side: 'b', rng: mulberry32(Number(st.rngSeed) >>> 0),
-              budgetMs: 800, counters, variants,
+              budgetMs: 800, abilities, counters, variants, dealMode: rules.dealMode ?? 'balanced',
             }).plan
           : { placements: botPlan(st.hands['2'], st.board.a, st.board.b), fortifyLane: null };
         return await resolveAndStore(

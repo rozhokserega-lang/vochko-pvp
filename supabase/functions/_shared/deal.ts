@@ -1,6 +1,6 @@
 // Серверная раздача: доверенный источник случайности (README §6 — Math.random
 // клиента запрещён). Используем crypto.getRandomValues.
-import { deck, shuffled, deal } from '../../../shared/cards.js';
+import { deal, dealBalancedLegacy } from '../../../shared/cards.js';
 
 export function cryptoRng(): number {
   const buf = new Uint32Array(1);
@@ -8,9 +8,9 @@ export function cryptoRng(): number {
   return buf[0] / 4294967296;
 }
 
-// Рука раунда: 7 красных + 7 чёрных из перемешанной колоды (правила v1.5).
-export function dealHand() {
-  return deal(cryptoRng);
+// Версия раздачи фиксируется правилами матча, включая активные старые партии.
+export function dealHand(mode = 'random') {
+  return mode === 'balanced' ? dealBalancedLegacy(cryptoRng) : deal(cryptoRng);
 }
 
 // Seed раунда: сохраняется в state.matches → воспроизводимый resolve (аудит).

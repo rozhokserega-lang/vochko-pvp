@@ -1,3 +1,4 @@
+import { planningStats } from '../../../shared/abilities.js';
 import { pairStats } from '../../../shared/elements.js';
 // Сцена арены v20: единое дизайн-пространство (aspect-fit), фон из ресурса,
 // 12 башен и 2 Нексуса поверх него. Разметка совместима с боевой хореографией
@@ -18,10 +19,7 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
   const me = view.board.me, opp = view.board.opponent;
   const mark = (ready, icon, label) => `<span class="lane-pair-mark${ready ? ' placed' : ''}" role="img"
     aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
-  const preview = l => ({
-    shield: pairStats(mySlots[l].def)?.defense ?? 0,
-    attack: pairStats(mySlots[l].atk)?.attack ?? 0,
-  });
+  const preview = l => planningStats({ attack: mySlots[l].atk, defense: mySlots[l].def }, me.statuses?.[l], view.rules);
   const totals = l => `⚔ ${preview(l).attack} · 🛡 ${preview(l).shield}`;
   const towers = (l) => `
     <div class="side">
@@ -41,8 +39,8 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
   return `<div class="arena-scene" id="arenaScene">
     <img class="arena-bg" src="${ARENA_ASSETS.bg}" draggable="false" alt="" aria-hidden="true">
     <div class="battle-head" aria-hidden="true"><div>◀ МОИ ЛИНИИ</div><div>ЛИНИЯ</div><div>ЛИНИИ СОПЕРНИКА ▶</div></div>
-    ${nexusHTML(me, mySlots, false)}
-    ${nexusHTML(opp, mySlots, true)}
+    ${nexusHTML(me, mySlots, false, {rules: view.rules})}
+    ${nexusHTML(opp, mySlots, true, {rules: view.rules, ownStatuses: me.statuses})}
     ${[0, 1, 2].map((l) => `<div class="lane" data-row="${l}">${towers(l)}</div>`).join('')}
   </div>`;
 }

@@ -2,7 +2,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { roomCode } from '../_shared/deal.ts';
+import { roomCode, emptyBoard, dealHand, cryptoSeed } from '../_shared/deal.ts';
 import { RECOMMENDED } from '../../../shared/abilities.js';
 
 Deno.serve(async (req) => {
@@ -34,11 +34,11 @@ Deno.serve(async (req) => {
           board: emptyBoard(),
           hands: { 1: dealHand(), 2: dealHand() },
           fortifyUsed: { 1: false, 2: false },
-          rules: { abilities: abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants },
+          rules: { version: 2, dealMode: 'random', abilities: abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants },
           rngSeed: cryptoSeed(),
         }
       : {
-          rules: { abilities: abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants },
+          rules: { version: 2, dealMode: 'random', abilities: abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants },
           rngSeed: cryptoSeed(),
         };
     const [match] = await sql`

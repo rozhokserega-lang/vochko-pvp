@@ -7,3 +7,5 @@ supabase/.temp/
 vochko_pvp_standalone.html
 tests/.shots/
 _prototype_vochko_unified_ai/
+
+/node_modules

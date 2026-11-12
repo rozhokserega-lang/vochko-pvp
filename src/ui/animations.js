@@ -1,3 +1,4 @@
+import { closeStatusInspector } from './arena/StatusBadges.js';
 import { launchAttackCharge } from './arena/AttackCharge.js';
 import { setTowerShield, setTowerHealth } from './arena/TowerHealth.js';
 import { setNexusShield, setNexusHealth } from './arena/NexusHealth.js';
@@ -187,7 +188,7 @@ function combatHpSnapshot(events, seat) {
     const delta = hits.reduce((sum, ev) =>
       sum + (ev.heal ? -Math.max(0, +ev.amount || 0) : Math.max(0, +ev.amount || 0)), 0);
     const final = Math.max(0, Math.min(max, start - delta));
-    if (final >= start) return;
+    if (final === start) return;
     // Вертикальные полоски (арена v20) растут по height, v19 — по width.
     const axis = bar.dataset.vertical === '1' ? 'height' : 'width';
     val.dataset.combatRestoreText = val.textContent;
@@ -228,7 +229,7 @@ function combatResultPopup(target, text, kind, blocked = false) {
 }
 
 function combatHpPopup(target, amount) {
-  combatResultPopup(target, 'HP −' + amount, 'hp');
+  combatResultPopup(target, 'HP ' + (amount < 0 ? '+' : '−') + Math.abs(amount), 'hp');
   target.classList.remove('vfx-impact');
   void target.offsetWidth;
   target.classList.add('vfx-impact');
@@ -283,18 +284,29 @@ export function playRoundAnimation(view) {
   const rep = view.latestRoundReport;
   if (!rep || !Array.isArray(rep.events)) return;
   combatClear();
+  closeStatusInspector();
   combatPlaying = true;
   const run = combatRun;
   const seat = view.seat;
   // Способности: тик поджогов/очищение — в начале, остальные — после ударов.
   showAbilityFeed([
-    ...(rep.abilityEvents ?? []).filter(e => e.ability === 'burn_tick' || e.effect === 'cleanse' || e.effect === 'heal'),
+    ...(rep.abilityEvents ?? []).filter(e => e.ability === 'burn_tick' || e.effect === 'cleanse' || (e.effect === 'heal' && e.ability === 'water_cleanse')),
   ], seat);
   const mySide = seat === 1 ? 'a' : 'b';
   const valid = () => run === combatRun;
   // Подсветка выбора гаснет на время разрешения раунда (состояние resolving).
   document.querySelector('#lanes')?.classList.add('is-resolving');
+  const earlyEvents = rep.events.filter(e => e.burnTick || (e.heal && e.ability === 'water_cleanse'));
+  const earlyItems = combatHpSnapshot(earlyEvents, seat);
   const hpItems = combatHpSnapshot(rep.events, seat);
+  for (const item of hpItems) { const early=earlyItems.find(e=>e.target===item.target); if(early)item.start=early.final; }
+  combatLater(() => {
+    if(!valid())return;
+    for(const {target,val,bar,axis,start,final,max} of earlyItems){
+      bar.style[axis]=final/max*100+'%';setTowerHealth(target,final,max);setNexusHealth(target,final);val.textContent=final+' / '+max;combatHpPopup(target,start-final);
+    }
+    for(const event of earlyEvents.filter(e=>e.burnTick)){const target=vfxTarget(event,seat);target?.classList.add('status-burn-hit');combatLater(()=>target?.classList.remove('status-burn-hit'),900);}
+  },400);
   const shields = [];
   for (const e of shieldEntries(rep.report)) {
     const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
@@ -345,22 +357,13 @@ export function playRoundAnimation(view) {
         setNexusHealth(target, final);
         val.textContent = final + ' / ' + max;
       });
-      // Тик горения: короткая вспышка на получившей урон башне.
-      (rep.events || []).filter(e => e.burnTick && e.side === defenderSide).forEach((e) => {
-        const t = vfxTarget(e, seat);
-        if (!t) return;
-        t.classList.remove('status-burn-hit');
-        void t.offsetWidth;
-        t.classList.add('status-burn-hit');
-        combatLater(() => t.classList.remove('status-burn-hit'), 900);
-      });
     }, 2000 + offset);
   }
   // Reveal the final models only after both sides have finished attacking.
   combatLater(() => {
     if (!valid()) return;
     // Срабатывания способностей после удара (ответки, отражения, разряд).
-    showAbilityFeed((rep.abilityEvents ?? []).filter(e => e.ability !== 'burn_tick' && e.effect !== 'cleanse' && e.effect !== 'heal'), seat);
+    showAbilityFeed((rep.abilityEvents ?? []).filter(e => e.ability !== 'burn_tick' && e.effect !== 'cleanse' && !(e.effect === 'heal' && e.ability === 'water_cleanse')), seat);
     if (combatUI.renderFinal) combatUI.renderFinal();
   }, 5900);
   // Unlock planning (or show the finish screen) after the entire sequence.

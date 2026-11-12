@@ -1,10 +1,11 @@
+import { planningStats } from '../../../shared/abilities.js';
 import { pairStats } from '../../../shared/elements.js';
 import { nexusFloorOpen } from '../combat-logic.js';
 
-export function nexusHealthHTML(board, placements, isEnemy) {
+export function nexusHealthHTML(board, placements, isEnemy, rules = {}) {
   const hp = Math.max(0, board.nexus);
   const lanes = [0, 1, 2].filter(lane => nexusFloorOpen(board, lane));
-  const shields = lanes.map(lane => ({ lane, full: isEnemy ? 0 : (pairStats(placements[lane]?.def || [])?.defense || 0) }));
+  const shields = lanes.map(lane => ({ lane, full: isEnemy ? 0 : planningStats({ defense: placements[lane]?.def || [] }, board.statuses?.[lane], rules).shield }));
   const total = shields.reduce((sum, entry) => sum + entry.full, 0);
   return `<div class="nexus-health-readout"><strong class="hp">${hp} / 80</strong><span class="nexus-armor" aria-label="Броня: ${total}">🛡 <strong>${total}</strong></span></div>
     <div class="bar nexus-crystal ${hp > 0 && hp <= 20 ? 'critical' : ''}" data-hp="${hp}">

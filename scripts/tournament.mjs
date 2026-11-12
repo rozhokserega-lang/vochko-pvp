@@ -25,7 +25,8 @@ const SEED = Number(arg('seed', 1));
 const DEPTH = Number(arg('depth', 2));
 const SAMPLES = Number(arg('samples', 5));
 const LAYOUTS = Number(arg('layouts', 8));
-const BUDGET = Number(arg('budget', 700));
+// Fixed work by default: seed replay does not depend on machine speed.
+const BUDGET = Number(arg('budget', Infinity));
 const ABLATE = arg('ablate', null);
 const COUNTERS_ON = arg('counters', 'on') !== 'off'; // контрстихии вкл по умолчанию
 const DEAL = arg('deal', 'random') === 'balanced' ? dealBalancedLegacy : deal; // режим раздачи
@@ -33,7 +34,7 @@ const VARIANTS = (arg('variant', '') || '').split(',').filter(Boolean)
   .map(v => v.split('=')).reduce((acc, [k, v]) => (acc[k] = v, acc), {});
 const OUT = arg('out', null);
 const MATCHUP = arg('matchup', 'new-old');
-const PARAMS = { games: GAMES, seed: SEED, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, ablate: ABLATE, counters: COUNTERS_ON, variants: VARIANTS, deal: arg('deal', 'random') };
+const PARAMS = { games: GAMES, seed: SEED, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: Number.isFinite(BUDGET) ? BUDGET : null, computationMode: Number.isFinite(BUDGET) ? 'time-budget' : 'fixed-work', ablate: ABLATE, counters: COUNTERS_ON, variants: VARIANTS, deal: arg('deal', 'random') };
 
 const ABILITY_IDS = ['fire_burn','fire_retaliation','water_strip_armor','water_cleanse','earth_pierce_def',
   'earth_armor','air_weaken_def','air_reflect','steam_weaken_def','steam_dampen','lava_pierce_burn','lava_counter',
@@ -50,7 +51,7 @@ function makePlan(kind, state, hand, side, rng, disabled, counters, variants) {
     placements = botPlan(hand, enemyBoard, ownBoard);
   } else {
     placements = choosePlan({
-      state, hand, side, rng, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, counters, variants,
+      state, hand, side, rng, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, counters, variants, disabled: ABLATE ? [ABLATE] : [], dealMode: arg('deal','random'),
     }).plan.placements;
   }
   return { placements, ms: performance.now() - t0 };
@@ -94,8 +95,10 @@ function playGame(kindA, kindB, seed, mirror = false) {
       abilities: true, rng, counters: COUNTERS_ON, variants: VARIANTS, ...(ABLATE ? { disabled: [ABLATE] } : {}),
     });
     stats.rounds += 1;
+    const triggered = new Set();
     for (const e of result.abilityEvents) {
-      add(stats.abilityTriggers, `${e.ability}/${e.effect}`, 1);
+      const key = `${e.ability}:${e.side}:${e.sourceLane ?? e.lane}`;
+      if (!triggered.has(key)) { add(stats.abilityTriggers, `${e.ability}/${e.effect}`, 1); triggered.add(key); }
       if (e.effect === 'damage') {
         add(stats.abilityDamage, e.ability, e.amount);
         add(stats.abilityDamage, '__total', e.amount);
@@ -229,6 +232,7 @@ async function main() {
         g.ms = { a: g.ms.b, b: g.ms.a };
         g.elementUsage = { a: g.elementUsage.b, b: g.elementUsage.a };
       }
+      g.physicalWinner = swap && g.winner !== 'draw' ? (g.winner === 'a' ? 'b' : 'a') : g.winner;
       g.matchup = matchup;
       games.push(g);
     }
@@ -239,8 +243,8 @@ async function main() {
     const auto = `tournament_${matchup}${ABLATE ? '_ablate-' + ABLATE : ''}_g${GAMES}${COUNTERS_ON ? '_ctr' : ''}${Object.keys(VARIANTS).length ? '_v-' + Object.keys(VARIANTS).join('_') : ''}`;
     const base = OUT ?? path.join('reports', auto);
     fs.writeFileSync(base + '.json', JSON.stringify({ params: PARAMS, matchup, ...agg }, null, 2));
-    const csv = 'seed,matchup,winner,rounds,nexusA,nexusB\n' +
-      games.map(g => [g.seed, g.matchup, g.winner, g.rounds, g.nexus.a, g.nexus.b].join(',')).join('\n');
+    const csv = 'seed,matchup,winner,rounds,nexusA,nexusB,physicalWinner\n' +
+      games.map(g => [g.seed, g.matchup, g.winner, g.rounds, g.nexus.a, g.nexus.b, g.physicalWinner].join(',')).join('\n');
     fs.writeFileSync(base + '.csv', csv);
     results.push({ matchup, ...agg });
     console.log(`${matchup}${COUNTERS_ON ? ' [counters]' : ''}${Object.keys(VARIANTS).length ? ' [v:' + Object.entries(VARIANTS).map(([k,v])=>k+'='+v).join(',') + ']' : ''}: smartWinRate=${agg.smartWinRate} wins a/b/draw=${agg.wins.a}/${agg.wins.b}/${agg.wins.draw} avgRounds=${agg.avgRounds} wall=${wall}ms`);

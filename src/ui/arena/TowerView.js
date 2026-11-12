@@ -35,7 +35,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots, preview }
   const hl = towerHighlightClass({ kind, cards, dead: !alive, resolving: false });
   return `<div class="tower tower-art ${team} ${size} stage-${stage} ${alive ? '' : 'dead'}${active && alive ? ' drop-target' : ''}${elClass} ${hl}"
     ${active ? `data-lane="${lane}" data-kind="${kind}"` : ''} data-arena-id="${towerId(team, kind, lane, size)}"
-    title="${label}: ${Math.max(0, hp)}/${max} HP">
+    title="Предварительная сила учитывает ваши эффекты; способности соперника могут изменить результат. ${label}: ${Math.max(0, hp)}/${max} HP">
     <div class="platform-glow" aria-hidden="true"></div>
     <div class="tower-visual">
       <img class="tower-sprite" src="${art}" draggable="false" alt="">

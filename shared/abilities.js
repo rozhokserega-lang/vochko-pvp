@@ -2,7 +2,7 @@
 // Единственный источник данных для движка, бота, клиента и симулятора.
 // Движок (engine.js) передаёт io-хелперы явно — модуль не импортирует engine.js,
 // поэтому циклических зависимостей нет.
-import { elementOf } from './elements.js';
+import { elementOf, pairStats } from './elements.js';
 
 // ── Таблица 20 способностей (10 стихий × атака/защита) ──────────────────────
 export const ABILITIES = Object.freeze(Object.fromEntries([
@@ -137,7 +137,7 @@ export const STATUS_META = Object.freeze({
     sources: () => ['thunderstorm'],
     timing: 'в начале следующего раунда',
     duration: '1 раунд',
-    counterplay: 'Действует до конца следующего раунда; контрстихия Вода (у Грозы) не влияет на буст.',
+    counterplay: 'Уже накопленный заряд действует один раунд. Контрстихия Земля мешает получить новый заряд, но не снимает существующий.',
   },
 });
 
@@ -237,9 +237,6 @@ export function applyStatuses(state, opts) {
         } else {
           healTarget(ctx, side, l, V.waterCleanse === 'heal1' ? 1 : 2, 'water_cleanse');
         }
-      } else if (defElement === 'water' && on('water_cleanse') && cleanseBlocked) {
-        abilityEvents.push({ ability: 'counter_triggered', side, lane: l, effect: 'counter',
-          by: oppAtkElement, canceled: 'water_cleanse', target: side });
       }
       // Тик поджога: урон по текущей цели, затем поджог погашен.
       if (s.burn) {
@@ -268,6 +265,7 @@ export function effectiveLine(p) {
   const on = (id) => !ctx.disabled.has(id);
   const blocks = counterBlocks(atkElement, defElement, counters);
   const V = resolveVariants(variants);
+  const trace = (ability, amount, side = attackerSide) => ctx.abilityEvents?.push({ ability, side, lane, effect: 'modifier', amount, target: side === attackerSide ? defenderSide : attackerSide });
   const atkS = ctx.applied[attackerSide][lane] || {};
   const defS = ctx.applied[defenderSide][lane] || {};
 
@@ -279,26 +277,31 @@ export function effectiveLine(p) {
   defense += armor;
   if (defElement === 'sandstorm' && on('sandstorm_shield') && !blocks.def) {
     defense += V.sandstormShield === 'three' ? 3 : 4;
+    trace('sandstorm_shield', V.sandstormShield === 'three' ? 3 : 4, defenderSide);
   }
 
   let armorStripped = 0;
   if (atkElement === 'water' && on('water_strip_armor') && !blocks.atk && armor > 0) {
     armorStripped = Math.min(V.waterStrip === 'two' ? 2 : 3, armor);
     defense = Math.max(0, defense - armorStripped);
+    trace('water_strip_armor', armorStripped);
   }
-  if (atkElement === 'earth' && on('earth_pierce_def') && !blocks.atk) defense = Math.round(defense * 0.85);
+  if (atkElement === 'earth' && on('earth_pierce_def') && !blocks.atk) { defense = Math.round(defense * 0.85); trace('earth_pierce_def', 15); }
   if (atkElement === 'lava' && on('lava_pierce_burn') && !blocks.atk) {
     defense = Math.round(defense * (V.lavaPierce === 'pct5' ? 0.95 : 0.90));
+    trace('lava_pierce_burn', V.lavaPierce === 'pct5' ? 5 : 10);
   }
 
   if (defElement === 'fire_vortex' && on('fire_vortex_zaslon') && !blocks.def &&
       [lane - 1, lane + 1].some((j) => j >= 0 && j < 3 && ctx.burned[defenderSide][j])) {
     attack = Math.round(attack * 0.90);
+    trace('fire_vortex_zaslon', 10, defenderSide);
   }
 
   let hit = Math.max(0, attack - defense);
   if (defElement === 'steam' && on('steam_dampen') && !blocks.def) {
     hit = Math.round(hit * (V.steamDampen === 'pct15' ? 0.85 : 0.90));
+    trace('steam_dampen', V.steamDampen === 'pct15' ? 15 : 10, defenderSide);
   }
   return { attack, defense, hit, armorStripped, ...blocks };
 }
@@ -310,16 +313,21 @@ export function hitConsequences(p) {
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
   const on = (id) => !ctx.disabled.has(id);
   const next = ctx.next;
+  const grant = (side, l, key, value, ability) => {
+    const before = next[side][l]?.[key] || 0;
+    addStatus(next[side], l, key, value);
+    if ((next[side][l]?.[key] || 0) > before) ctx.abilityEvents.push({ ability, side: ABILITIES[ability].role === 'defense' ? defenderSide : attackerSide, lane: l, sourceLane: lane, effect: 'status', status: key, amount: value, target: side });
+  };
   const blocks = counterBlocks(atkElement, defElement, counters);
   const V = resolveVariants(variants);
 
   // Нейтрализация — только специальная способность; числовой урон уже нанесён.
-  if (blocks.atk) {
+  if (blocks.atk && on(abilityIdOf(atkElement, 'attack'))) {
     const canceled = abilityIdOf(atkElement, 'attack');
     ctx.abilityEvents.push({ ability: 'counter_triggered', side: defenderSide, lane,
       effect: 'counter', by: defElement, canceled, target: defenderSide });
   }
-  if (blocks.def) {
+  if (blocks.def && on(abilityIdOf(defElement, 'defense'))) {
     const canceled = abilityIdOf(defElement, 'defense');
     ctx.abilityEvents.push({ ability: 'counter_triggered', side: defenderSide, lane,
       effect: 'counter', by: atkElement, canceled, target: defenderSide });
@@ -327,21 +335,21 @@ export function hitConsequences(p) {
 
   if (hit > 0 && !blocks.atk) { // способности, требующие попадания
     if (atkElement === 'fire' && on('fire_burn'))
-      addStatus(next[defenderSide], lane, 'burn', 2);
+      grant(defenderSide, lane, 'burn', 2, 'fire_burn');
     if (atkElement === 'lava' && on('lava_pierce_burn')) {
       const burnCondition = V.lavaPierce === 'burnArmor' ? ((ctx.applied[defenderSide][lane] || {}).armor || 0) > 0 : true;
-      if (burnCondition) addStatus(next[defenderSide], lane, 'burn', 1);
+      if (burnCondition) grant(defenderSide, lane, 'burn', 1, 'lava_pierce_burn');
     }
     if (atkElement === 'air' && on('air_weaken_def'))
-      addStatus(next[defenderSide], lane, 'weakenDefense', 10);
+      grant(defenderSide, lane, 'weakenDefense', 10, atkElement === 'ice' ? 'ice_weaken_def' : 'air_weaken_def');
     if (atkElement === 'steam' && on('steam_weaken_def'))
-      addStatus(next[defenderSide], lane, 'weakenDefense', 15);
+      grant(defenderSide, lane, 'weakenDefense', 15, 'steam_weaken_def');
     if (atkElement === 'ice' && on('ice_weaken_def'))
-      addStatus(next[defenderSide], lane, 'weakenDefense', 10);
+      grant(defenderSide, lane, 'weakenDefense', 10, atkElement === 'ice' ? 'ice_weaken_def' : 'air_weaken_def');
     if (atkElement === 'sandstorm' && on('sandstorm_weaken_atk'))
-      addStatus(next[defenderSide], lane, 'weakenAttack', 15);
+      grant(defenderSide, lane, 'weakenAttack', 15, 'sandstorm_weaken_atk');
     if (atkElement === 'fire_vortex' && on('fire_vortex_spread'))
-      for (const j of [lane - 1, lane + 1]) addStatus(next[defenderSide], j, 'burn', 1);
+      for (const j of [lane - 1, lane + 1]) grant(defenderSide, j, 'burn', 1, 'fire_vortex_spread');
     if (atkElement === 'thunderstorm' && on('thunderstorm_discharge')) {
       const others = [0, 1, 2].filter((j) => j !== lane);
       const j = others[Math.floor(rng() * others.length)];
@@ -352,11 +360,11 @@ export function hitConsequences(p) {
   // Защитные триггеры (элемент защитной пары линии).
   if (!blocks.def) {
     if (defElement === 'earth' && on('earth_armor'))
-      addStatus(next[defenderSide], lane, 'armor', 3);
+      grant(defenderSide, lane, 'armor', 3, 'earth_armor');
     if (defElement === 'ice' && on('ice_weaken_atk'))
-      addStatus(next[attackerSide], lane, 'weakenAttack', 15);
+      grant(attackerSide, lane, 'weakenAttack', 15, 'ice_weaken_atk');
     if (defElement === 'thunderstorm' && on('thunderstorm_charge') && hit > 0)
-      addStatus(next[defenderSide], lane, 'attackBoost', 2);
+      grant(defenderSide, lane, 'attackBoost', 2, 'thunderstorm_charge');
     if (defElement === 'steam' && on('steam_dampen')) {
       if (hit === 0) healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
       else if (V.steamDampen === 'healPartial' && hit <= 2) healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
@@ -383,6 +391,7 @@ export function hitConsequences(p) {
 // Доп. урон (ответный, отражённый, разряд) — по текущей цели линии,
 // со щитом Нексуса получающей стороны на начало раунда.
 function extraDamage(ctx, bySide, targetSide, lane, amount, ability) {
+  if (ctx.effects) { ctx.effects.push({ kind: 'damage', side: targetSide, bySide, lane, amount, ability }); return; }
   const board = ctx.state[targetSide];
   const before = ctx.io.snapshot(board), stage = ctx.io.damageStage(board, lane);
   ctx.io.damage(board, lane, amount, ctx.nexusPct[targetSide]);
@@ -393,6 +402,7 @@ function extraDamage(ctx, bySide, targetSide, lane, amount, ability) {
 
 // Лечение текущей цели линии с капом по максимуму структуры.
 function healTarget(ctx, side, lane, amount, ability) {
+  if (ctx.effects) { ctx.effects.push({ kind: 'heal', side, bySide: side, lane, amount, ability }); return; }
   const board = ctx.state[side];
   const healed = ctx.io.healStructure(board, lane, amount);
   if (healed > 0) {
@@ -400,4 +410,44 @@ function healTarget(ctx, side, lane, amount, ability) {
     ctx.events.push({ side, l: lane, stage, amount: healed, element: '💧', ability, heal: true });
   }
   ctx.abilityEvents.push({ ability, side, lane, effect: 'heal', amount: healed, target: side });
+}
+
+// Presentation is derived from the same versioned match variants as combat.
+export function statusDetails(key, value, rules = {}) {
+  const meta = STATUS_META[key], v = resolveVariants(rules.variants);
+  let counterplay = meta.counterplay;
+  if (key === 'armor') counterplay = `Атака Воды смывает до ${v.waterStrip === 'two' ? 2 : 3} временной брони перед уроном.`;
+  if (NEGATIVE_STATUSES.includes(key)) counterplay = 'Защитная пара Воды очищает негативные статусы этой линии до тика горения.'
+    + (rules.counters !== false ? ' Очищение отменяется, только если на эту же линию атакует Гроза противника.' : ' Контрстихии в этом матче выключены.');
+  return { ...meta, effect: meta.effect(value), counterplay };
+}
+export function abilityDescription(id, variants = {}) {
+  const v = resolveVariants(variants);
+  const descriptions = {
+    fire_retaliation: `${v.fireRetaliation === 'blocked3' ? 3 : 2} ответного урона ${v.fireRetaliation === 'onHit' ? 'при пробитии защиты' : 'при полной блокировке'}`,
+    lava_counter: `${v.lavaCounter === 'three' ? 3 : 2} ответного урона при попадании врага${v.lavaCounter === 'strongHit' ? ' не слабее 3' : ''}`,
+    steam_dampen: `Уменьшает входящий урон на ${v.steamDampen === 'pct15' ? 15 : 10}%; полная блокировка лечит 2 HP`,
+    water_cleanse: `Очищает ${v.waterCleanse === 'single' ? 'один негативный статус' : 'все негативные статусы'} до их применения; если их нет — лечит ${v.waterCleanse === 'heal1' ? 1 : 2} HP`,
+    lava_pierce_burn: `Игнорирует ${v.lavaPierce === 'pct5' ? 5 : 10}% защиты; поджог 1 при попадании${v.lavaPierce === 'burnArmor' ? ' только по цели с временной бронёй' : ''}`,
+    water_strip_armor: `Смывает до ${v.waterStrip === 'two' ? 2 : 3} временной брони до удара`,
+    sandstorm_shield: `Добавляет ${v.sandstormShield === 'three' ? 3 : 4} к защите текущего раунда`,
+  };
+  return descriptions[id] ?? ABILITIES[id]?.desc ?? '';
+}
+// Known own modifiers only: opposing unrevealed cards can still counter them.
+export function planningStats(placement, statuses = {}, rules = {}) {
+  const result = { attack: 0, shield: 0 };
+  const atk = placement.attack?.length === 2 ? placement.attack : null;
+  const def = placement.defense?.length === 2 ? placement.defense : null;
+  if (atk) result.attack = pairStats(atk).attack;
+  if (def) result.shield = pairStats(def).defense;
+  if (rules.abilities !== true) return result;
+  const s = { ...statuses };
+  if (def && elementOf(def).id === 'water') for (const key of NEGATIVE_STATUSES) delete s[key];
+  if (atk) result.attack = Math.round((result.attack + (s.attackBoost || 0)) * (1-(s.weakenAttack||0)/100));
+  if (def) {
+    result.shield = Math.round(result.shield*(1-(s.weakenDefense||0)/100))+(s.armor||0);
+    if (elementOf(def).id==='sandstorm') result.shield += resolveVariants(rules.variants).sandstormShield==='three'?3:4;
+  }
+  return result;
 }

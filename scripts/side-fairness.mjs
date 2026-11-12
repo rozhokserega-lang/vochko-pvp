@@ -21,7 +21,7 @@ const SEED = Number(arg('seed', 1));
 const VARIANT = (arg('variant', '') || '').split(',').filter(Boolean)
   .map(v => v.split('=')).reduce((acc, [k, v]) => (acc[k] = v, acc), {});
 const OUT = arg('out', `reports/balance/sidefair_${MATCHUP}${Object.keys(VARIANT).length ? '_v' : ''}_s${SHARD}`);
-const DEPTH = Number(arg('depth', 2)), BUDGET = Number(arg('budget', 500));
+const DEPTH = Number(arg('depth', 2)), BUDGET = Number(arg('budget', Infinity));
 const COUNTERS_ON = true;
 
 const [kindA0, kindB0] = MATCHUP.split('-');
@@ -37,14 +37,17 @@ function plan(kind, state, hand, side, rng) {
 }
 
 function game(seed, mirror) {
-  const rng = mulberry32(seed);
+  const dealRng = mulberry32(seed);
   const state = createGameState();
   let winner = null, rounds = 0;
   while (true) {
-    const hA = deal(rng), hB = deal(rng);
+    const hA = deal(dealRng), hB = deal(dealRng);
     const [saK, saH, sbK, sbH] = mirror ? [kindB0, hB, kindA0, hA] : [kindA0, hA, kindB0, hB];
-    const pa = plan(saK, state, saH, 'a', rng), pb = plan(sbK, state, sbH, 'b', rng);
-    const r = resolveRound(state, pa, pb, { abilities: true, rng, counters: COUNTERS_ON, variants: VARIANT });
+    // Separate random streams keep the exact same hands and luck for each identity after swapping seats.
+    const identityA = mirror ? 1 : 0, identityB = 1 - identityA;
+    const stream = offset => mulberry32(gameSeed(seed, rounds * 8 + offset));
+    const pa = plan(saK, state, saH, 'a', stream(identityA)), pb = plan(sbK, state, sbH, 'b', stream(identityB));
+    const r = resolveRound(state, pa, pb, { abilities: true, rngBySide: { a: stream(identityA+2), b: stream(identityB+2) }, counters: COUNTERS_ON, variants: VARIANT });
     rounds++;
     if (r.finished) { winner = r.winner; break; }
     if (rounds >= 45) { winner = 'draw'; break; }

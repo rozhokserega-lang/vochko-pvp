@@ -3,7 +3,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { dealHand, emptyBoard, roomCode } from '../_shared/deal.ts';
+import { dealHand, emptyBoard, roomCode, cryptoSeed } from '../_shared/deal.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 
 Deno.serve(async (req) => {
@@ -21,6 +21,11 @@ Deno.serve(async (req) => {
       if (m.status !== 'finished') throw new HttpError('match is not finished', 409);
 
       const st = m.state ?? {};
+      if (st.nextMatchId) {
+        const [existing] = await tx`select * from private.matches where id = ${st.nextMatchId}`;
+        if (existing) return { waiting: false, matchId: existing.id, roomCode: existing.room_code, version: Number(existing.version) };
+      }
+      if (st.botMatch) st.rematchWants = { ...st.rematchWants, 2: true };
       st.rematchWants = { ...st.rematchWants, [seat]: true };
       if (!(st.rematchWants[1] && st.rematchWants[2])) {
         await tx`update private.matches set state = ${sql.json(st)}, updated_at = now() where id = ${m.id}`;
@@ -33,7 +38,9 @@ Deno.serve(async (req) => {
         insert into private.matches (room_code, player1_id, player2_id, status, round, state)
         values (${roomCode()}, ${m.player1_id}, ${m.player2_id}, 'planning', 1, ${sql.json({
           board: emptyBoard(),
-          hands: { 1: dealHand(), 2: dealHand() },
+          hands: { 1: dealHand(st.rules?.dealMode ?? 'balanced'), 2: dealHand(st.rules?.dealMode ?? 'balanced') },
+          rules: st.rules ?? { abilities: false, smartBot: false, counters: false, dealMode: 'balanced' },
+          rngSeed: cryptoSeed(),
           fortifyUsed: { 1: false, 2: false },
           botMatch: !!st.botMatch, // реванш с ботом остаётся PvE
         })})

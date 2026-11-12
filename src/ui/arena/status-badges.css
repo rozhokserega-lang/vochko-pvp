@@ -152,3 +152,23 @@
   .status-panel { transition: none; }
   .tower.status-burning, .tower.status-armored { filter: none; }
 }
+
+/* Inspector is portalled to body: never clipped or scaled with the arena. */
+.status-badges{border:0;background:none;padding:3px;min-height:24px;font:inherit;cursor:help;color:inherit;}
+.status-badges:focus-visible{outline:2px solid #80d7ff;outline-offset:2px;border-radius:6px;}
+body > .status-panel{position:fixed;inset:auto;transform:none;width:min(430px,calc(100vw - 16px));max-width:none;max-height:calc(100dvh - 16px);box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;z-index:14000;padding:18px;background:linear-gradient(140deg,#101922f5,#080e17fa);border:1px solid #8c9ca54d;border-radius:16px;box-shadow:0 16px 48px #000b;font-size:14px;line-height:1.45;pointer-events:auto;}
+.structure-summary{display:flex;gap:15px;align-items:center;padding-right:10px;}
+.structure-portrait{width:104px;height:116px;object-fit:contain;flex:none;border-radius:12px;background:radial-gradient(ellipse,#51616c88,#17222d55);}
+.structure-owner{font-size:11px;color:#99aec2;margin-bottom:5px;}
+.status-panel-head{font-size:21px;line-height:1.15;font-weight:750;color:#f5f0e6;margin:0 0 8px;}
+.structure-hp{font-size:18px;color:#e6e8ec;}.structure-hp:first-letter{color:#ff6b64;}
+.status-close{position:absolute;right:6px;top:5px;width:32px;height:32px;border:0;background:none;color:#bdc8d2;font-size:25px;cursor:pointer;}
+.status-detail{margin:12px 0 0;padding:12px 0 0;border-top:1px solid #ffffff16;}
+.status-detail-title{font-size:15px;margin-bottom:5px;gap:7px;}.status-detail-title .st-val{border-radius:20px;padding:2px 9px;font-size:13px;color:#93d8ff;background:#16334a;}
+.status-detail-burn .st-val{color:#ff8070;background:#5a221d66;}
+.status-detail-row{margin-top:4px;color:#d1d7df;}.status-timing,.status-line-name{font-size:12px;color:#96aabd;}
+.status-counterplay{color:#56bbff;margin-top:6px;}.status-empty{color:#aebdcb;font-size:13px;margin-top:10px;}
+.status-clear{margin-top:14px;border:1px solid #556979;background:#1c2d3b;color:#dcebf5;border-radius:8px;padding:9px 12px;cursor:pointer;font:inherit;width:100%;}
+.nexus-fortress:has(.status-panel),.tower:has(.status-panel){z-index:90;}
+@media(max-width:480px){body > .status-panel{font-size:13px;padding:14px;}.structure-portrait{width:88px;height:98px;}.status-panel-head{font-size:19px;}.structure-hp{font-size:16px;}}
+@media(prefers-reduced-motion:reduce){.status-burn-hit{animation:none!important;}}

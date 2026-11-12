@@ -1,6 +1,7 @@
 // Нексус арены v20: спрайт с тремя независимыми рядами. В каждом ряду —
 // два интерактивных слота карт и круг стихии. Карты кладутся в ряд только
 // когда линия пробита (nexusFloorOpen), правила доступа — из combat-logic.
+import { planningStats } from '../../../shared/abilities.js';
 import { pairStats, type } from '../../../shared/elements.js';
 import { breaches, shieldPct } from '../../../shared/engine.js';
 import { nexusFloorOpen } from '../combat-logic.js';
@@ -11,7 +12,7 @@ import { cardSlotHTML } from './CardSlot.js';
 import { elementAnimHTML } from './ElementEffect.js';
 import { nexusHealthHTML } from './NexusHealth.js';
 
-export function nexusHTML(board, placements, isEnemy) {
+export function nexusHTML(board, placements, isEnemy, { rules = {}, ownStatuses = board.statuses } = {}) {
   const side = isEnemy ? 'enemy' : 'ally';
   const kind = isEnemy ? 'atk' : 'def';
   const hintId = `nexus-damage-${side}`;
@@ -19,7 +20,9 @@ export function nexusHTML(board, placements, isEnemy) {
     const opened = nexusFloorOpen(board, lane);
     const cards = opened ? (placements[lane][kind] || []) : [];
     const slotsHTML = cardSlotHTML(0, cards) + cardSlotHTML(1, cards);
-    const power = cards.length === 2 ? pairStats(cards) : null;
+    const base = cards.length === 2 ? pairStats(cards) : null;
+    const preview = planningStats({ attack: kind === 'atk' ? cards : [], defense: kind === 'def' ? cards : [] }, ownStatuses?.[lane], rules);
+    const power = base ? { ...base, attack: preview.attack, defense: preview.shield } : null;
     const element = power ? type(cards) : '';
     return `<div class="nexus-floor ${opened ? 'open drop-target' : 'locked'}"
       data-lane="${lane}" data-kind="${kind}" data-row="${lane}"
@@ -40,7 +43,7 @@ export function nexusHTML(board, placements, isEnemy) {
       <span>Для прорыва линии нужно разрушить обе башни.</span>
     </div>
     <div class="nexus-fortress-stats"><b>${isEnemy ? 'НЕКСУС ВРАГА' : 'МОЙ НЕКСУС'}</b>
-      ${nexusHealthHTML(board, placements, isEnemy)}
+      ${nexusHealthHTML(board, placements, isEnemy, rules)}
     </div>
   </div>`;
 }

@@ -1,5 +1,6 @@
+import { mulberry32 } from './rng.js';
 import { pairStats, elementOf } from './elements.js';
-import { deal } from './cards.js';
+import { deal, dealBalancedLegacy } from './cards.js';
 import { resolveRound, cloneGameState } from './engine.js';
 
 // ── Старый бот (совместимость с текущим сервером PvE) ──────────────────────
@@ -142,7 +143,7 @@ export function beamLayouts(hand, ownBoard, enemyBoard, {
       attack: atkLane.get(l).pair.cards,
       defense: defLane.get(l).pair.cards,
     }));
-    const key = placements.map(p => [...p.attack, ...p.defense].map(c => c.id).sort().join()).join('|');
+    const key = placements.map(p => [p.attack, p.defense].map(pair => pair.map(c => c.id).sort().join(',')).join('/')).join('|');
     if (seen.has(key)) continue;
     seen.add(key);
     layouts.push(placements);
@@ -159,7 +160,7 @@ export function evaluateState(state, side) {
   const opened = b => b.inner.filter(v => v <= 0).length; // линии, открытые к Нексусу
   return (me.nexus - en.nexus) * 2.2
     + (struct(me) - struct(en)) * 0.4
-    + (opened(me) - opened(en)) * 5   // открытая линия противника — угроза мне
+    + (opened(en) - opened(me)) * 5   // открытая линия противника — угроза мне
     + (isNegative(en.statuses?.[0]) ? 0 : 0); // статусы учитываются симуляцией
 }
 
@@ -167,15 +168,17 @@ export function evaluateState(state, side) {
 // доступа к реальной скрытой руке), симуляция depth раундов тем же движком.
 export function choosePlan({
   state, hand, side = 'a', rng = Math.random,
-  layouts = 6, samples = 4, depth = 2, budgetMs = 700, counters = false, variants = {},
+  layouts = 6, samples = 4, depth = 2, budgetMs = 700, counters = false, variants = {}, abilities = true, disabled = [], dealMode = 'random',
 } = {}) {
   const t0 = Date.now();
+  const draw = dealMode === 'balanced' ? dealBalancedLegacy : deal;
+  let evaluated = 0;
   const enemySide = side === 'a' ? 'b' : 'a';
   const own = state[side], enemy = state[enemySide];
   // Кандидаты: оптимум старого бота (точный DP) + варианты beam search —
   // MC-оценка ранжирует их одинаковым моделированием.
   const candidates = [];
-  const seenKey = (placements) => placements.map(p => [...p.attack, ...p.defense].map(c => c.id).sort().join()).join('|');
+  const seenKey = (placements) => placements.map(p => [p.attack, p.defense].map(pair => pair.map(c => c.id).sort().join(',')).join('/')).join('|');
   const legacy = botPlan(hand, enemy, own);
   candidates.push(legacy);
   const legacyKey = seenKey(legacy);
@@ -183,11 +186,11 @@ export function choosePlan({
     if (seenKey(layout) === legacyKey) continue;
     candidates.push(layout);
   }
-  // Возможные руки противника: полная колода, 7 красных + 7 чёрных.
+  // Возможные руки противника соответствуют версии раздачи матча.
   // Модель ответа противника: точный DP-подбор (как у текущего боевого бота)
   // и beam-варианты — чередование, чтобы не переобучаться под один класс.
   const oppLayouts = Array.from({ length: samples }, (_, i) => {
-    const oppHand = deal(rng);
+    const oppHand = draw(rng);
     return i % 2 === 0
       ? botPlan(oppHand, state[side], state[enemySide])
       : beamLayouts(oppHand, enemy, own, { count: 1, rng, beamWidth: 12, perSlot: 8 })[0];
@@ -198,22 +201,24 @@ export function choosePlan({
       ?? botPlan(h, enemyB, ownB);
 
   const turn = placements => ({ placements });
+  const combatOptions = () => ({ abilities, counters, variants, disabled, rng, rngBySide: { [side]: mulberry32(Math.floor(rng()*4294967296)), [enemySide]: mulberry32(Math.floor(rng()*4294967296)) } });
   let best = null;
   for (const plan of candidates) {
     if (best && Date.now() - t0 > budgetMs) break; // бюджет: берём лучший найденный
+    evaluated++;
     let score = 0;
     for (const oppPlan of oppLayouts) {
       const sim = cloneGameState(state);
       const args = side === 'a' ? [turn(plan), turn(oppPlan)] : [turn(oppPlan), turn(plan)];
-      let r = resolveRound(sim, args[0], args[1], { abilities: true, rng, counters, variants });
+      let r = resolveRound(sim, args[0], args[1], combatOptions());
       if (!r.finished && depth > 1) {
         // Следующие раунды: свежие раздачи, быстрые greedy-раскладки обеих сторон.
         for (let d = 1; d < depth && !r.finished; d++) {
-          const hSelf = deal(rng), hOpp = deal(rng);
+          const hSelf = draw(rng), hOpp = draw(rng);
           const pSelf = quick(hSelf, sim[side], sim[enemySide]);
           const pOpp = quick(hOpp, sim[enemySide], sim[side]);
           const a2 = side === 'a' ? [turn(pSelf), turn(pOpp)] : [turn(pOpp), turn(pSelf)];
-          r = resolveRound(sim, a2[0], a2[1], { abilities: true, rng, counters, variants });
+          r = resolveRound(sim, a2[0], a2[1], combatOptions());
         }
       }
       score += evaluateState(sim, side);
@@ -227,7 +232,7 @@ export function choosePlan({
   best.plan = { placements: best.plan };
   best.stats = {
     ms: Date.now() - t0,
-    candidates: candidates.length,
+    candidates: candidates.length, evaluated,
     samples: oppLayouts.length,
     depth,
     fallback: !!best.fallback,

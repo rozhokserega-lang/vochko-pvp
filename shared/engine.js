@@ -120,6 +120,15 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
     ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters, variants });
   }
 
+  // Every impact in this combat phase keeps its target: no mid-round retargeting.
+  const targets = Object.fromEntries(['a', 'b'].map(side => [side, [0,1,2].map(l => damageStage(state[side], l))]));
+  const damageFixed = (board, lane, amount, pct) => {
+    const side = board === state.a ? 'a' : 'b', stage = targets[side][lane];
+    if (stage === 'nexus') board.nexus = Math.max(0, board.nexus - Math.round(amount * pct / 100));
+    else board[stage][lane] = Math.max(0, board[stage][lane] - amount);
+  };
+  const consequences = [];
+  if (ctx) ctx.effects = [];
   const lanes = [0, 1, 2].map(l => {
     const pa = find(turnA, l), pb = find(turnB, l);
     return { pa, pb, a: lineStats(pa), b: lineStats(pb) };
@@ -142,13 +151,13 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
         at: type(ownCards.attack), dt: type(oppCards.defense),
         pairs: own.pairs, opponentPairs: opp.pairs };
       if (abilities) { info.atkElement = atkElement; info.defElement = defElement; info.armorStripped = mods.armorStripped; }
-      const before = snapshotForRecord(target), stage = damageStage(target, l);
-      damage(target, l, info.hit, nexusPct[side]);
+      const before = snapshotForRecord(target), stage = targets[side][l];
+      damageFixed(target, l, info.hit, nexusPct[side]);
       const dealt = recordDamage(before, target, l);
       events.push({ side, l, stage, amount: dealt, element: info.at,
         elements: [own.pairs[0].element] });
       if (abilities) {
-        hitConsequences({ ctx, state, attackerSide, lane: l, atkElement, defElement, hit: info.hit, rng, counters, variants });
+        consequences.push(() => hitConsequences({ ctx, state, attackerSide, lane: l, atkElement, defElement, hit: info.hit, rng: opts.rngBySide?.[attackerSide] ?? rng, counters, variants }));
       }
       return { info, attack: ownCards.attack, defense: oppCards.defense,
         ownPairs: [ownCards.attack, ownCards.defense],
@@ -158,6 +167,33 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
     report.push({ round: state.round, lane: l,
       a: entry(a, b, pa, pb, state.b, 'b'),
       b: entry(b, a, pb, pa, state.a, 'a') });
+  }
+
+  if (abilities) {
+    consequences.forEach(run => run());
+    // Aggregate secondary impacts per frozen structure; healing cannot resurrect.
+    const groups = new Map();
+    for (const effect of ctx.effects) {
+      const stage = targets[effect.side][effect.lane];
+      const key = `${effect.side}:${stage}:${stage === 'nexus' ? '' : effect.lane}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ ...effect, stage });
+    }
+    for (const group of groups.values()) {
+      const { side, stage, lane } = group[0], board = state[side];
+      const hp = () => stage === 'nexus' ? board.nexus : board[stage][lane];
+      const set = value => { if (stage === 'nexus') board.nexus = value; else board[stage][lane] = value; };
+      const max = stage === 'outer' ? OUTER_HP : stage === 'inner' ? INNER_HP : NEXUS_HP;
+      // Canonical ordering affects only attribution under HP caps, never the result.
+      group.sort((a,b) => (a.kind === b.kind ? 0 : a.kind === 'heal' ? -1 : 1) || a.lane-b.lane || a.ability.localeCompare(b.ability));
+      for (const e of group) {
+        const amount = e.kind === 'heal' ? (hp() > 0 ? Math.min(max-hp(),e.amount) : 0)
+          : Math.min(hp(), stage === 'nexus' ? Math.round(e.amount*nexusPct[side]/100) : e.amount);
+        set(hp() + (e.kind === 'heal' ? amount : -amount));
+        if (amount > 0) events.push({ side, l: e.lane, stage, amount, element: e.kind === 'heal' ? '💧' : '⚡', ability: e.ability, ...(e.kind === 'heal' ? { heal:true } : { extra:true }) });
+        abilityEvents.push({ ability:e.ability, side:e.bySide, lane:e.lane, effect:e.kind, amount, target:side });
+      }
+    }
   }
 
   if (abilities) { // перенос статусов на следующий раунд

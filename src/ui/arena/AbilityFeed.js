@@ -28,6 +28,7 @@ function label(ev, seat) {
   if (ev.effect === 'cleanse') return `💧 ${who}: ${name} — очищение статусов (${laneName})`;
   if (ev.effect === 'heal') return `✚ ${who}: ${name} — +${ev.amount} HP (${laneName})`;
   if (ev.effect === 'damage') return `⚔ ${who}: ${name} — −${ev.amount} (${laneName})`;
+  if (ev.effect === 'status') return `${who}: ${name} — эффект на следующий раунд (${laneName})`;
   return `${who}: ${name} (${laneName})`;
 }
 

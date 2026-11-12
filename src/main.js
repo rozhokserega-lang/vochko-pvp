@@ -19,7 +19,7 @@ import { loadLayoutOverrides } from './ui/arena/arenaLayout.js';
 import { cardPanelHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPanelPreview } from './ui/card-panel/CardPanel.js';
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
-import { renderStatusBadges } from './ui/arena/StatusBadges.js';
+import { renderStatusBadges, closeStatusInspector } from './ui/arena/StatusBadges.js';
 import './ui/arena/status-badges.css';import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -60,7 +60,7 @@ async function boot() {
   if (saved) {
     try {
       const v = await api.getState(saved);
-      if (v && v.seat && v.status !== 'finished') { lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
+      if (v && v.seat && v.status !== 'finished') { await api.joinRoom(v.roomCode); lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
     } catch { localStorage.removeItem('vochko_match'); }
   }
   renderLobby();
@@ -99,6 +99,7 @@ async function enterMatch(matchId) {
   refreshEpoch++;
   submission = null;
   clearFloats();
+  closeStatusInspector();
   if (unwatch) unwatch();
   localStorage.setItem('vochko_match', matchId); // реконнект после F5 (аудит п.4)
   unwatch = watchMatch(matchId, () => refresh(matchId));
@@ -112,7 +113,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   const isBot = view?.opponent?.isBot;
   const text = confirmText ?? (isBot
     ? 'Выйти из матча с ботом? Прогресс раунда будет потерян.'
-    : 'Выйти из матча? Соперник увидит «отключился»; у него будет 10 минут на возврат.');
+    : 'Выйти из матча? Соперник увидит, что ты вышел. До закрытия комнаты можно вернуться по её коду.');
   if (!window.confirm(text)) return;
   refreshEpoch++;
   localStorage.removeItem('vochko_match');
@@ -121,6 +122,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   history.replaceState(null, '', location.pathname + (params.size ? '?' + params : ''));
   if (unwatch) { unwatch(); unwatch = null; }
   clearFloats();
+  closeStatusInspector();
   lastReportRound = 0;
   selected = [];
   submission = null;
@@ -134,6 +136,7 @@ async function refresh(matchId) {
   const epoch = refreshEpoch; // сменился pantalla/матч — устаревший get-state игнорируем
   const next = await api.getState(matchId);
   if (epoch !== refreshEpoch || (view?.matchId === matchId && next.version < view.version)) return;
+  if (view?.matchId === matchId && next.version === view.version) return;
   view = next;
   (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, playing: isCombatPlaying(), at: Date.now() % 100000 });
   // Хореография боя захватывает UI: новое состояние применяется после неё.
@@ -159,6 +162,9 @@ async function refresh(matchId) {
   } else {
     const handIds = new Set(myHand.map((card) => card.id));
     keepDraftCards((id) => handIds.has(id));
+  }
+  if (view.me.ready && view.me.placements) {
+    slots = [...view.me.placements].sort((a,b)=>a.lane-b.lane).map(p => ({ atk: p.attack.map(cardById).filter(Boolean), def: p.defense.map(cardById).filter(Boolean) }));
   }
   // Финал без нового боя: переход в реванш или финальный экран.
   if (finished && !hasNewBattle) {
@@ -204,7 +210,7 @@ function render(force = false) {
   root.dataset.meterContext = `${view.matchId}:${view.round}`;
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
-      <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
+      <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div>${!view.opponent?.isBot && view.status === 'planning' && !view.opponent?.connected ? '<div class="sub">Соперник вышел. Ждём возвращения.</div>' : ''}</div>
       <button class="exit-btn" id="exitBtn" title="Выйти в лобби" aria-label="Выйти в лобби">🚪 Выйти</button></header>
     <div class="wrap">
       <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
@@ -217,7 +223,7 @@ function render(force = false) {
   const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
   app.replaceChildren(root);
   applyArenaLayout();
-  renderStatusBadges(root, view.board.me, view.board.opponent);
+  renderStatusBadges(root, view.board.me, view.board.opponent, { rules: view.rules, hasSelection: () => selected.length > 0, isLocked: turnLocked, onClear: target => placeCards(target, []) });
   restoreMeterAnimations();
   restoreChargeAnimations();
   // Consume placement flags once; another tower placement must not replay them.
@@ -335,6 +341,7 @@ async function submit() {
         const retryable = /stale|таймаут|timeout/i.test(e.message) || e.name === 'AbortError';
         if (!retryable || attempt >= 2 || currentSubmission() !== pending) throw e;
         await refresh(matchId);
+        turn.expectedVersion = view.version;
         if (currentSubmission() !== pending || view.status !== 'planning' || view.me.ready) return;
       }
     }

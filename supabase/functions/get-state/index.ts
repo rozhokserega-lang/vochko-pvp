@@ -3,6 +3,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
+import { RECOMMENDED } from '../../../shared/abilities.js';
 import { shieldPct } from '../../../shared/engine.js';
 
 Deno.serve(async (req) => {
@@ -37,7 +38,10 @@ Deno.serve(async (req) => {
       select public_result from private.round_events
        where match_id = ${m.id} and round = ${reportRound}`;
 
+    const [ownTurn] = await sql`select placements from private.turns
+      where match_id = ${m.id} and round = ${m.round} and player_id = ${user.id}`;
     return json({
+      rules: { abilities: st.rules?.abilities === true, counters: st.rules?.counters !== false, variants: st.rules?.variants ?? (st.rules?.abilities ? RECOMMENDED : {}), dealMode: st.rules?.dealMode ?? 'balanced' },
       matchId: m.id,
       roomCode: m.room_code,
       seat,
@@ -48,10 +52,11 @@ Deno.serve(async (req) => {
         userId: user.id,
         hand: st.hands?.[String(seat)] ?? [],
         ready: readyRow.mine > 0,
+        placements: ownTurn?.placements ?? null,
         fortifyUsed: false,
       },
       opponent: {
-        connected: st.botMatch ? true : (seat === 1 ? m.player2_id : m.player1_id) != null,
+        connected: st.botMatch ? true : (seat === 1 ? m.player2_id : m.player1_id) != null && st.leftSeat !== (seat === 1 ? 2 : 1),
         isBot: !!st.botMatch,
         ready: readyRow.theirs > 0,
         fortifyUsed: false,

@@ -2,7 +2,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { dealHand, emptyBoard } from '../_shared/deal.ts';
+import { dealHand, emptyBoard, cryptoSeed } from '../_shared/deal.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 
 Deno.serve(async (req) => {
@@ -14,6 +14,14 @@ Deno.serve(async (req) => {
     // Понятные коды ошибок: клиент показывает человеческий текст.
     const [m] = await sql`select * from private.matches where room_code = ${code}`;
     if (!m) throw new HttpError('room-not-found', 404);
+    if ([m.player1_id, m.player2_id].includes(user.id) && ['waiting', 'planning'].includes(m.status)) {
+      const seat = m.player1_id === user.id ? 1 : 2;
+      if (m.state?.leftSeat === seat) {
+        await sql`update private.matches set state = state - 'leftSeat', version = version + 1, expires_at = now() + interval '24 hours' where id = ${m.id} and (state->>'leftSeat')::int = ${seat}`;
+        await broadcastState(m.id, Number(m.version) + 1, 'returned');
+      }
+      return json({ matchId: m.id, seat });
+    }
     if (m.state?.botMatch) throw new HttpError('room-unavailable', 409);
     if (m.player1_id === user.id) throw new HttpError('own-room', 409);
     if (m.status !== 'waiting' || m.player2_id) throw new HttpError('room-unavailable', 409);
@@ -26,8 +34,10 @@ Deno.serve(async (req) => {
              round = 1,
              version = version + 1,
              state = ${sql.json({
+               ...m.state,
+               rngSeed: m.state?.rngSeed ?? cryptoSeed(),
                board: emptyBoard(),
-               hands: { 1: dealHand(), 2: dealHand() },
+               hands: { 1: dealHand(m.state?.rules?.dealMode ?? 'balanced'), 2: dealHand(m.state?.rules?.dealMode ?? 'balanced') },
                fortifyUsed: { 1: false, 2: false },
              })},
              updated_at = now()

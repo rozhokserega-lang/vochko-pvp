@@ -3,17 +3,18 @@ import { createServer } from 'vite';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { serverFixture } from '../tests/server-fixture.mjs';
-import { deal } from '../shared/cards.js';
+import { RECOMMENDED } from '../shared/abilities.js';
+import { deal, dealBalancedLegacy } from '../shared/cards.js';
 
 export async function startLocalGame(port = 5185) {
   const rooms = new Map();
   const makeRoom = (owner, bot = false) => {
-    const f = serverFixture({ dealHand: deal });
+    const f = serverFixture({ dealHand: mode => mode === 'balanced' ? dealBalancedLegacy() : deal() });
     const id = randomUUID(), code = id.replaceAll('-', '').slice(0, 6).toUpperCase();
     Object.assign(f.match, { id, room_code: code, status: bot ? 'planning' : 'waiting' });
     f.match.state.hands = { 1: deal(), 2: deal() };
     f.match.state.botMatch = bot;
-    f.match.state.rules = { abilities: true, smartBot: true }; // локальный стенд: новый режим
+    f.match.state.rules = { version: 2, dealMode: 'random', abilities: true, smartBot: true, counters: true, variants: RECOMMENDED }; // локальный стенд: новый режим
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };
     rooms.set(id, room);
     return room;
@@ -56,7 +57,10 @@ export async function startLocalGame(port = 5185) {
           if (action === 'join-room') {
             const room = [...rooms.values()].find(r => r.f.match.room_code === String(body.roomCode).toUpperCase());
             if (!room) return reply({ error: 'room-not-found' }, 404);
-            if (room.owner === user) return reply({ error: 'own-room' }, 409);
+            if (room.owner === user || room.guest === user) {
+              if (room.f.match.state.leftSeat === (room.owner === user ? 1 : 2)) { delete room.f.match.state.leftSeat; room.f.match.version++; }
+              return reply({ matchId: room.f.match.id, seat: room.owner === user ? 1 : 2 });
+            }
             if (room.f.match.status !== 'waiting') return reply({ error: 'room-unavailable' }, 409);
             room.guest = user; room.f.match.status = 'planning'; room.f.match.version++;
             return reply({ matchId: room.f.match.id, seat: 2 });
@@ -65,7 +69,7 @@ export async function startLocalGame(port = 5185) {
           if (!room) return reply({ error: 'match not found' }, 404);
           const seat = room.owner === user ? 1 : room.guest === user ? 2 : 0;
           if (!seat) return reply({ error: 'not a participant' }, 403);
-          if (action === 'leave-room') return reply({ ok: true });
+          if (action === 'leave-room') { room.f.match.state.leftSeat = seat; room.f.match.version++; return reply({ ok: true }); }
           if (action === 'rematch') {
             if (room.f.match.status !== 'finished') return reply({ error: 'match not finished' }, 409);
             room.rematch.add(seat);
@@ -82,7 +86,7 @@ export async function startLocalGame(port = 5185) {
           const run = room.pending.then(() => room.f.call(action, seat, body));
           room.pending = run.catch(() => {});
           const result = await run;
-          if (action === 'get-state') result.body.opponent.connected = !!room.guest || !!room.f.match.state.botMatch;
+          if (action === 'get-state') result.body.opponent.connected = (!!room.guest || !!room.f.match.state.botMatch) && room.f.match.state.leftSeat !== (seat === 1 ? 2 : 1);
           reply(result.body, result.status);
         } catch (error) { reply({ error: error.message }, 400); }
       });
@@ -94,7 +98,10 @@ export async function startLocalGame(port = 5185) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const server = await startLocalGame();
-  console.log('Локальная игра: http://127.0.0.1:5185/ — бот или PvP в двух профилях. Матчи хранятся в памяти до остановки сервера.');
+  const index = process.argv.indexOf('--port');
+  const port = Number(index >= 0 ? process.argv[index + 1] : process.env.PORT ?? 5185);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid local port');
+  const server = await startLocalGame(port);
+  console.log(`Локальная игра: http://127.0.0.1:${port}/ — бот или PvP в двух профилях. Матчи хранятся в памяти до остановки сервера.`);
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { await server.close(); process.exit(0); });
 }
