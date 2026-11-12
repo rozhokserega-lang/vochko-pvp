@@ -74,7 +74,7 @@ function playGame(kindA, kindB, seed) {
     elementUsage: { a: {}, b: {} },
     abilityTriggers: {}, abilityDamage: {}, abilityHeal: {},
     defensiveTriggers: 0, defensiveDamage: 0, defensiveHeal: 0,
-    burnTickDamage: 0,
+    burnTickDamage: 0, counterPairs: {},
   };
   let result = null;
   while (true) {
@@ -96,6 +96,10 @@ function playGame(kindA, kindB, seed) {
       }
       if (e.effect === 'heal') add(stats.abilityHeal, e.ability, e.amount);
       if (e.ability === 'burn_tick') stats.burnTickDamage += e.amount;
+    if (e.ability === 'counter_triggered') {
+      const key = `${e.by}->${e.canceled}`;
+      add(stats.counterPairs, key, 1);
+    }
     }
     if (result.finished) break;
     if (stats.rounds >= 45) break;
@@ -153,6 +157,7 @@ function aggregate(games) {
     agg.defensiveDamage += g.defensiveDamage;
     agg.defensiveHeal += g.defensiveHeal;
     agg.burnTickDamage += g.burnTickDamage;
+    for (const [k, v] of Object.entries(g.counterPairs ?? {})) add(agg.counterPairs ??= {}, k, v);
   }
   agg.avgRounds = +(agg.avgRounds / games.length).toFixed(2);
   agg.avgNexus.a = +(agg.avgNexus.a / games.length).toFixed(2);
