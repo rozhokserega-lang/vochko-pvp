@@ -22,6 +22,24 @@ GitHub Pages (статика Vite; vanilla JS)
 5. **Реконнект**: состояние полностью в БД (`matches.state` + `turns` +
    `round_events`); клиент перезапросом `get-state` восстанавливает экран.
 
+## Стихийные способности и AI (feature/elemental-ai)
+
+```
+shared/abilities.js  — таблица 20 способностей, статусы (1 раунд, капы),
+                       направленная таблица контрстихий (эффекты выключены)
+shared/engine.js     — resolveRound(state, a, b, {abilities, rng, disabled});
+                       abilities=false ≡ прежний движок (инварианс-тест)
+shared/bot.js        — legacy botPlan (DP) + smart-бот: beam-раскладки →
+                       Monte Carlo сэмплов рук соперника → тот же resolveRound
+supabase submit-turn — state.rules {abilities, smartBot} + rngSeed в state →
+                       воспроизводимый seeded resolve; отчёт хранит abilityEvents
+UI                   — StatusBadges.js (статусы на башнях) + AbilityFeed.js
+                       (лента срабатываний в хореографии)
+```
+
+Бот не получает скрытую руку соперника: только доски и свои карты; возможные
+руки противника генерируются по правилам раздачи (`shared/cards.deal`).
+
 ## Таблицы (private)
 
 - `matches` — матрь, статус, round, version (оптимистичная блокировка), state jsonb.
