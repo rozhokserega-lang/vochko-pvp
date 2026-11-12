@@ -1,0 +1,177 @@
+{
+  "params": {
+    "games": 300,
+    "seed": 1,
+    "depth": 2,
+    "samples": 5,
+    "layouts": 8,
+    "budgetMs": 300,
+    "ablate": "sandstorm_shield",
+    "counters": true,
+    "variants": {
+      "fireRetaliation": "onHit",
+      "lavaCounter": "three",
+      "steamDampen": "pct15",
+      "waterCleanse": "heal1",
+      "lavaPierce": "burnArmor",
+      "waterStrip": "two",
+      "sandstormShield": "three"
+    }
+  },
+  "matchup": "new-old",
+  "games": 300,
+  "wins": {
+    "a": 151,
+    "b": 112,
+    "draw": 37
+  },
+  "smartWins": 151,
+  "oldWins": 112,
+  "avgRounds": 8.38,
+  "avgNexus": {
+    "a": 20.18,
+    "b": 14.86
+  },
+  "decisionTime": {
+    "new": {
+      "mean": 135.61,
+      "p95": 167.42,
+      "max": 309.93
+    },
+    "old": {
+      "mean": 19.35,
+      "p95": 27.52,
+      "max": 35.42
+    }
+  },
+  "elementUsage": {
+    "a": {
+      "thunderstorm@atk": 1615,
+      "earth@def": 1891,
+      "air@atk": 296,
+      "water@def": 1256,
+      "fire@atk": 1429,
+      "lava@atk": 1452,
+      "sandstorm@def": 837,
+      "water@atk": 646,
+      "steam@atk": 533,
+      "ice@def": 1151,
+      "air@def": 1351,
+      "fire_vortex@atk": 1080,
+      "sandstorm@atk": 231,
+      "fire_vortex@def": 161,
+      "fire@def": 186,
+      "steam@def": 422,
+      "earth@atk": 84,
+      "lava@def": 106,
+      "ice@atk": 173,
+      "thunderstorm@def": 178
+    },
+    "b": {
+      "fire_vortex@atk": 1295,
+      "ice@def": 1504,
+      "steam@atk": 644,
+      "thunderstorm@atk": 1305,
+      "air@def": 1823,
+      "water@atk": 951,
+      "fire@atk": 1941,
+      "earth@def": 1889,
+      "sandstorm@def": 1022,
+      "lava@atk": 1303,
+      "water@def": 704,
+      "steam@def": 389,
+      "thunderstorm@def": 143,
+      "sandstorm@atk": 20,
+      "air@atk": 67,
+      "fire_vortex@def": 54,
+      "ice@atk": 13,
+      "lava@def": 9,
+      "fire@def": 2
+    }
+  },
+  "abilityTriggers": {
+    "water_cleanse/heal": 710,
+    "counter_triggered/counter": 4793,
+    "air_reflect/damage": 1021,
+    "thunderstorm_discharge/damage": 1411,
+    "water_cleanse/cleanse": 905,
+    "burn_tick/damage": 2417,
+    "steam_dampen/heal": 244,
+    "fire_retaliation/damage": 138,
+    "lava_counter/damage": 93
+  },
+  "abilityDamage": {
+    "air_reflect": 1646,
+    "__total": 7623,
+    "thunderstorm_discharge": 2277,
+    "burn_tick": 3226,
+    "fire_retaliation": 234,
+    "lava_counter": 240
+  },
+  "abilityHeal": {
+    "water_cleanse": 409,
+    "steam_dampen": 333
+  },
+  "defensiveTriggers": 0,
+  "defensiveDamage": 0,
+  "defensiveHeal": 0,
+  "burnTickDamage": 3226,
+  "counterPairs": {
+    "thunderstorm->water_cleanse": 690,
+    "earth->fire_vortex_spread": 602,
+    "fire->ice_weaken_atk": 559,
+    "ice->steam_weaken_def": 203,
+    "earth->thunderstorm_discharge": 754,
+    "water->fire_burn": 465,
+    "sandstorm->air_weaken_def": 59,
+    "water->lava_pierce_burn": 352,
+    "lava->earth_armor": 724,
+    "water->sandstorm_shield": 199,
+    "water->lava_counter": 12,
+    "water->sandstorm_weaken_atk": 19,
+    "water->fire_retaliation": 32,
+    "sandstorm->air_reflect": 71,
+    "thunderstorm->water_strip_armor": 38,
+    "ice->steam_dampen": 12,
+    "earth->thunderstorm_charge": 2
+  },
+  "smartWinRate": 0.574,
+  "defensive": {
+    "triggers": 5528,
+    "damage": 5346,
+    "heal": 742,
+    "byAbility": {
+      "water_cleanse": {
+        "triggers": 1615,
+        "damage": 0,
+        "heal": 409
+      },
+      "air_reflect": {
+        "triggers": 1021,
+        "damage": 1646,
+        "heal": 0
+      },
+      "burn_tick": {
+        "triggers": 2417,
+        "damage": 3226,
+        "heal": 0
+      },
+      "steam_dampen": {
+        "triggers": 244,
+        "damage": 0,
+        "heal": 333
+      },
+      "fire_retaliation": {
+        "triggers": 138,
+        "damage": 234,
+        "heal": 0
+      },
+      "lava_counter": {
+        "triggers": 93,
+        "damage": 240,
+        "heal": 0
+      }
+    }
+  },
+  "wallMs": 390295
+}
