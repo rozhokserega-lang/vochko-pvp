@@ -29,8 +29,8 @@ try {
     await p.goto('http://127.0.0.1:5187/');
     await p.locator('#hand .card').first().waitFor();
     for (const lane of [0,1,2]) for (const kind of ['def','atk']) {
-      await p.locator('#hand .card.red:not(.used)').first().click();
-      await p.locator('#hand .card:not(.red):not(.used)').first().click();
+      await p.locator('#hand .card.red:not(.used):not(.selected)').first().click();
+      await p.locator('#hand .card:not(.red):not(.used):not(.selected)').first().click();
       await p.waitForFunction(() => {
         const img=document.querySelector('#panelEffect img');return img?.complete && img.naturalWidth===414;
       });

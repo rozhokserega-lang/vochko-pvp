@@ -26,14 +26,10 @@ const watch = (ctx, key) => {
 const HAND_MINE = '…';
 async function placeTurn(page, laneNum) {
   await page.locator('#fightBtn:enabled').waitFor();
-  // TXX select two red attack for the enemy lane target, then two black on my assign
+  // Раздача случайна: пара = две любые неиспользованные карты (цвета не важны).
   for (const side of ['atk', 'def']) {
     for (let k = 0; k < 2; k++) {
-      const kind = side === 'atk' ? 'red' : 'black';
-      const selector = kind === 'red'
-        ? '#hand .card.red:not(.used):not(.selected)'
-        : '#hand .card:not(.red):not(.used):not(.selected)';
-      await page.locator(selector).first().click();
+      await page.locator('#hand .card:not(.used):not(.selected)').first().click();
     }
     const target = `#lanes .drop-target[data-kind="${side}"][data-lane="${laneNum}"]`;
     await page.locator(target).first().click();
@@ -159,7 +155,7 @@ const runBrowser = async () => {
     const firstAttack = pageA.locator('#lanes .drop-target[data-kind="atk"][data-lane="0"]');
     ok(await hand.locator('.used').count() === 11 && await firstAttack.locator('.slot-card').count() === 1,
       'отклонение карты освобождает только её место');
-    await hand.locator(`.card.red:not(.used):not([data-card="${rejectedCard}"])`).click();
+    await hand.locator(`.card:not(.used):not(.selected):not([data-card="${rejectedCard}"])`).first().click();
     await firstAttack.click();
     let submitCount = 0;
     let turnPayload;
@@ -304,9 +300,9 @@ ok(sidesOk.enemy.length === 6 && sidesOk.enemy.every((t) => '♥♦'.includes(t.
     ok(!layout.handOffscreen, `мобильный: нижняя панель на экране`);
     ok(layout.lanesNoScroll, 'мобильный: линии внутри контейнера');
     ok(layout.cardsInside, 'мобильный: карты в пределах своих групп');
-    const redCards = mobPage.locator('#hand .card.red');
-    await redCards.nth(0).tap();
-    await redCards.nth(1).tap();
+    const anyCards = mobPage.locator('#hand .card:not(.used)');
+    await anyCards.nth(0).tap();
+    await anyCards.nth(1).tap();
     ok(await mobPage.locator('.pair-target[data-kind="atk"]:visible').count() === 3
       && await mobPage.locator('.lane-pair-marks:visible').count() === 3, 'на телефоне касание подсвечивает цели, отметки линий видны');
     await mobPage.locator('#clearBtn').tap();

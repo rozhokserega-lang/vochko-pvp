@@ -55,10 +55,11 @@ try {
       });
     });
     assert.equal(previews.length, 10); assert.ok(previews.every(p => p.valid));
-    // Every slot gets one red and one black card: both directions must work.
+    // Каждая пара — две любые неиспользованные карты (раздача случайна, цвета
+    // не сбалансированы); обе роли работают с любой парой мастей.
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
-      await page.locator('#hand .card.red:not(.used)').first().click();
-      await page.locator('#hand .card:not(.red):not(.used)').first().click();
+      await page.locator('#hand .card:not(.used):not(.selected)').first().click();
+      await page.locator('#hand .card:not(.used):not(.selected)').first().click();
       assert.match(await page.locator('#panelPower').innerText(), /🛡.*⚔/s);
       if (lane === 0 && kind === 'atk') {
         await mkdir('tests/.shots', { recursive: true });
