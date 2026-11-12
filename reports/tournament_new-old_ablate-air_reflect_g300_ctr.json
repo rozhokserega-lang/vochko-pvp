@@ -1,0 +1,143 @@
+{
+  "params": {
+    "games": 300,
+    "seed": 1,
+    "depth": 2,
+    "samples": 5,
+    "layouts": 8,
+    "budgetMs": 300,
+    "ablate": "air_reflect",
+    "counters": true
+  },
+  "matchup": "new-old",
+  "games": 300,
+  "wins": {
+    "a": 141,
+    "b": 109,
+    "draw": 50
+  },
+  "smartWins": 141,
+  "oldWins": 109,
+  "avgRounds": 9.14,
+  "avgNexus": {
+    "a": 16.16,
+    "b": 13.95
+  },
+  "decisionTime": {
+    "new": {
+      "mean": 94.47,
+      "p95": 111.76,
+      "max": 173.16
+    },
+    "old": {
+      "mean": 13.27,
+      "p95": 15.19,
+      "max": 30.73
+    }
+  },
+  "elementUsage": {
+    "a": {
+      "fire@atk": 1582,
+      "ice@def": 1154,
+      "water@atk": 622,
+      "sandstorm@def": 957,
+      "air@def": 1474,
+      "lava@atk": 1546,
+      "fire_vortex@atk": 1282,
+      "earth@def": 2075,
+      "water@def": 1467,
+      "air@atk": 304,
+      "fire_vortex@def": 189,
+      "thunderstorm@atk": 1742,
+      "thunderstorm@def": 202,
+      "sandstorm@atk": 302,
+      "fire@def": 182,
+      "steam@atk": 573,
+      "steam@def": 437,
+      "earth@atk": 105,
+      "ice@atk": 168,
+      "lava@def": 89
+    },
+    "b": {
+      "lava@atk": 1377,
+      "ice@def": 1771,
+      "fire_vortex@atk": 1356,
+      "air@def": 1978,
+      "water@def": 725,
+      "earth@def": 2031,
+      "thunderstorm@atk": 1498,
+      "fire@atk": 2135,
+      "fire_vortex@def": 46,
+      "water@atk": 1038,
+      "sandstorm@def": 1111,
+      "steam@def": 419,
+      "steam@atk": 701,
+      "ice@atk": 12,
+      "air@atk": 66,
+      "thunderstorm@def": 139,
+      "sandstorm@atk": 42,
+      "lava@def": 5,
+      "fire@def": 1,
+      "earth@atk": 1
+    }
+  },
+  "abilityTriggers": {
+    "water_cleanse/heal": 705,
+    "counter_triggered/counter": 5142,
+    "burn_tick/damage": 3660,
+    "water_cleanse/cleanse": 1064,
+    "thunderstorm_discharge/damage": 1618,
+    "fire_retaliation/damage": 24,
+    "steam_dampen/heal": 271,
+    "lava_counter/damage": 72
+  },
+  "abilityDamage": {
+    "burn_tick": 4380,
+    "__total": 7081,
+    "thunderstorm_discharge": 2547,
+    "fire_retaliation": 39,
+    "lava_counter": 115
+  },
+  "abilityHeal": {
+    "water_cleanse": 804,
+    "steam_dampen": 351
+  },
+  "defensiveTriggers": 0,
+  "defensiveDamage": 0,
+  "defensiveHeal": 0,
+  "burnTickDamage": 4380,
+  "smartWinRate": 0.564,
+  "defensive": {
+    "triggers": 5796,
+    "damage": 4534,
+    "heal": 1155,
+    "byAbility": {
+      "water_cleanse": {
+        "triggers": 1769,
+        "damage": 0,
+        "heal": 804
+      },
+      "burn_tick": {
+        "triggers": 3660,
+        "damage": 4380,
+        "heal": 0
+      },
+      "fire_retaliation": {
+        "triggers": 24,
+        "damage": 39,
+        "heal": 0
+      },
+      "steam_dampen": {
+        "triggers": 271,
+        "damage": 0,
+        "heal": 351
+      },
+      "lava_counter": {
+        "triggers": 72,
+        "damage": 115,
+        "heal": 0
+      }
+    }
+  },
+  "wallMs": 296040
+}
