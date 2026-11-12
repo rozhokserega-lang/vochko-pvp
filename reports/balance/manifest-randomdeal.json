@@ -1,0 +1,74 @@
+[
+  {
+    "name": "random_old-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--deal",
+      "random",
+      "--matchup",
+      "old-old",
+      "--out",
+      "reports/balance/random_old-old_g1000"
+    ]
+  },
+  {
+    "name": "random_base_new-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--deal",
+      "random",
+      "--matchup",
+      "new-old",
+      "--out",
+      "reports/balance/random_base_new-old_g1000"
+    ]
+  },
+  {
+    "name": "random_combo_new-old_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--deal",
+      "random",
+      "--matchup",
+      "new-old",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/random_combo_new-old_g1000"
+    ]
+  },
+  {
+    "name": "random_combo_new-new_g1000",
+    "args": [
+      "--games",
+      "1000",
+      "--seed",
+      "1",
+      "--budget",
+      "500",
+      "--deal",
+      "random",
+      "--matchup",
+      "new-new",
+      "--variant",
+      "fireRetaliation=onHit,lavaCounter=three,steamDampen=pct15,waterCleanse=heal1,lavaPierce=burnArmor,waterStrip=two,sandstormShield=three",
+      "--out",
+      "reports/balance/random_combo_new-new_g1000"
+    ]
+  }
+]

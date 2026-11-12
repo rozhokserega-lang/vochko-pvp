@@ -4,7 +4,7 @@
 //   node scripts/tournament.mjs --games 300 --matchup new-new --ablate fire_burn
 //   node scripts/tournament.mjs --all --games 500
 // Результаты: reports/*.json + reports/*.csv (seed и параметры в каждом файле).
-import { deal } from '../shared/cards.js';
+import { deal, dealBalancedLegacy } from '../shared/cards.js';
 import { mulberry32 } from '../shared/rng.js';
 import { createGameState, resolveRound } from '../shared/engine.js';
 import { gameSeed } from '../shared/seeds.js';
@@ -28,11 +28,12 @@ const LAYOUTS = Number(arg('layouts', 8));
 const BUDGET = Number(arg('budget', 700));
 const ABLATE = arg('ablate', null);
 const COUNTERS_ON = arg('counters', 'on') !== 'off'; // контрстихии вкл по умолчанию
+const DEAL = arg('deal', 'random') === 'balanced' ? dealBalancedLegacy : deal; // режим раздачи
 const VARIANTS = (arg('variant', '') || '').split(',').filter(Boolean)
   .map(v => v.split('=')).reduce((acc, [k, v]) => (acc[k] = v, acc), {});
 const OUT = arg('out', null);
 const MATCHUP = arg('matchup', 'new-old');
-const PARAMS = { games: GAMES, seed: SEED, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, ablate: ABLATE, counters: COUNTERS_ON, variants: VARIANTS };
+const PARAMS = { games: GAMES, seed: SEED, depth: DEPTH, samples: SAMPLES, layouts: LAYOUTS, budgetMs: BUDGET, ablate: ABLATE, counters: COUNTERS_ON, variants: VARIANTS, deal: arg('deal', 'random') };
 
 const ABILITY_IDS = ['fire_burn','fire_retaliation','water_strip_armor','water_cleanse','earth_pierce_def',
   'earth_armor','air_weaken_def','air_reflect','steam_weaken_def','steam_dampen','lava_pierce_burn','lava_counter',
@@ -78,7 +79,7 @@ function playGame(kindA, kindB, seed, mirror = false) {
   };
   let result = null;
   while (true) {
-    const hA = deal(rng), hB = deal(rng);
+    const hA = DEAL(rng), hB = DEAL(rng);
     // Зеркальный режим: те же руки, стратегии на swapped-местах (проверка
     // преимущества стороны на идентичных раздачах).
     const [seatAKind, seatAHand, seatBKind, seatBHand] = mirror
