@@ -15,7 +15,8 @@
     "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",
     "dev": "vite",
     "dev:local": "node scripts/dev-local.mjs",
-    "dev:preview": "node scripts/dev-local.mjs --port 5191"
+    "dev:preview": "node scripts/dev-local.mjs --port 5191",
+    "dev:background": "node scripts/start-preview-detached.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

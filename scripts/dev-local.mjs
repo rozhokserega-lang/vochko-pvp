@@ -22,7 +22,9 @@ export async function startLocalGame(port = 5185) {
   const apiSource = `
     const user = localStorage.vochko_local_user ||= crypto.randomUUID();
     async function call(name,body={}){
-      const r=await fetch('/__local/'+name,{method:'POST',headers:{'content-type':'application/json','x-local-user':user},body:JSON.stringify(body)});
+      let r;
+      try { r=await fetch('/__local/'+name,{method:'POST',headers:{'content-type':'application/json','x-local-user':user},body:JSON.stringify(body)}); }
+      catch { throw new Error('Нет связи с локальным сервером. Запусти игру и повтори ход.'); }
       const data=await r.json();if(!r.ok)throw new Error(data.error);return data;
     }
     export const api={createRoom:(o={})=>call('create-room',o),joinRoom:roomCode=>call('join-room',{roomCode}),getState:matchId=>call('get-state',{matchId}),submitTurn:turn=>call('submit-turn',turn),rematch:matchId=>call('rematch',{matchId}),leaveRoom:matchId=>call('leave-room',{matchId})};`;
