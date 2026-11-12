@@ -1,5 +1,6 @@
 import { launchAttackCharge } from './arena/AttackCharge.js';
 import { setTowerShield, setTowerHealth } from './arena/TowerHealth.js';
+import { setNexusShield, setNexusHealth } from './arena/NexusHealth.js';
 import { ELEMENTS } from '../../shared/elements.js';
 import { damageSplit, revealAssignments, shieldEntries } from './combat-logic.js';
 
@@ -132,6 +133,7 @@ function combatShieldMeter(target, entry) {
   const num = meter.querySelector('b');
   if (!track || !num) return null;
   setTowerShield(target, entry.full, entry.full);
+  setNexusShield(target, entry.lane, entry.full, entry.full);
   num.textContent = String(entry.full);
   meter.classList.add('combat-shield-meter');
   meter.setAttribute('aria-label', `Щит: ${entry.full}`);
@@ -188,13 +190,13 @@ function combatHpSnapshot(events, seat) {
     bar.classList.add('combat-hp-restore');
     // На всякий случай фиксируем стартовое значение (без анимации).
     bar.style[axis] = (start / max) * 100 + '%';
-    const lag = target.querySelector('.crystal-lag');
+    const lag = target.querySelector('.crystal-lag,.nexus-crystal-lag');
     if (lag) {
-      lag.dataset.combatRestoreFill = lag.style.height;
-      lag.dataset.combatFillAxis = 'height';
+      lag.dataset.combatRestoreFill = lag.style[axis];
+      lag.dataset.combatFillAxis = axis;
       lag.classList.add('combat-hp-restore');
     }
-    items.push({ target, val, bar, axis, start, final, max });
+    items.push({ target, val, bar, axis, start, final, max, side: hits[0].side });
   });
   return items;
 }
@@ -268,10 +270,8 @@ export function combatRevealAttackCards(report, seat) {
   return overlays;
 }
 
-// Хореография раунда v19. Порядок фаз со стабильным таймлайном:
-// Карты открываются сразу и остаются видны при ударе по щиту и начале урона.
-// 1.9с щит тает в боковой шкале
-// → 3.25с HP падает → 5.25с свежий авторитетный рендер (+ финиш-экран).
+// Each client presents its own attacks first, then the opponent's attacks.
+// This presentation order never changes the simultaneous server result.
 export function playRoundAnimation(view) {
   const rep = view.latestRoundReport;
   if (!rep || !Array.isArray(rep.events)) return;
@@ -279,6 +279,7 @@ export function playRoundAnimation(view) {
   combatPlaying = true;
   const run = combatRun;
   const seat = view.seat;
+  const mySide = seat === 1 ? 'a' : 'b';
   const valid = () => run === combatRun;
   // Подсветка выбора гаснет на время разрешения раунда (состояние resolving).
   document.querySelector('#lanes')?.classList.add('is-resolving');
@@ -288,56 +289,59 @@ export function playRoundAnimation(view) {
     const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
     const meter = combatShieldMeter(target, e);
     if (!meter) continue; // мёртвая цель без боковой шкалы: останется только цифра урона
-    shields.push({ ...meter, full: e.full, attack: e.attack });
+    shields.push({ ...meter, full: e.full, attack: e.attack, side: e.side, lane: e.lane });
   }
   const revealedCards = combatRevealAttackCards(rep.report, seat);
   (window.__animLog = window.__animLog || []).push({ fn: 'anim', overlays: revealedCards.length, shields: shields.length, hp: hpItems.length });
   const phase = document.querySelector('#phase');
   if (phase) phase.textContent = '🃏 Раскрытие атак';
-  combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 3900);
-  combatLater(() => revealedCards.forEach((el) => el.remove()), 4250);
-  // The prepared elemental charge lands just before the shield absorption phase.
-  combatLater(() => {
-    if (!valid()) return;
-    for (const e of shieldEntries(rep.report)) {
-      const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
-      if (target?.classList.contains('tower-art')) launchAttackCharge(target, e.attackElement, e.attack);
-    }
-  }, 1450);
-  // 1.9с: удар по щитам. Защита тает в боковой шкале цели.
-  combatLater(() => {
-    if (!valid()) return;
-    if (phase) phase.textContent = '⚔️ Атака по щитам';
-    shields.forEach(({ target, meter, track, num, full, attack }) => {
-      const { absorbed, remaining, hpDamage } = damageSplit(attack, full);
-      track.style.transition = 'height 1000ms cubic-bezier(.22,.65,.3,1)';
-      track.style.height = (full ? remaining / full * 100 : 0) + '%';
-      setTowerShield(target, remaining, full);
-      num.textContent = String(remaining);
-      meter.setAttribute('aria-label', `Щит: ${remaining}`);
-      if (absorbed) combatResultPopup(target, 'Щит −' + absorbed, 'shield', hpDamage === 0);
-    });
-  }, 1900);
-  // 3.25с: только теперь падает HP — по фактическим серверным событиям.
-  combatLater(() => {
-    if (!valid()) return;
-    if (phase) phase.textContent = '💥 Урон башням';
-    hpItems.forEach(({ target, val, bar, axis, start, final, max }) => {
-      combatHpPopup(target, start - final);
-      bar.style.transition = axis + ' 1100ms cubic-bezier(.25,.7,.25,1)';
-      bar.style[axis] = (final / max) * 100 + '%';
-      setTowerHealth(target, final, max);
-      val.textContent = final + ' / ' + max;
-    });
-  }, 3250);
-  // 4.75с: полоски HP уже упали — только теперь меняем модели башен/руины,
-  // чтобы исход раунда не был виден до анимации урона.
+  combatLater(() => revealedCards.forEach((el) => el.classList.add('fade')), 5550);
+  combatLater(() => revealedCards.forEach((el) => el.remove()), 5900);
+  for (const [index, defenderSide] of [mySide === 'a' ? 'b' : 'a', mySide].entries()) {
+    const offset = index * 2400;
+    const label = index === 0 ? 'Ваша атака' : 'Атака соперника';
+    // Flights last 450ms; only their own targets lose shield and HP on impact.
+    combatLater(() => {
+      if (!valid()) return;
+      if (phase) phase.textContent = label;
+      combatStage(label);
+      for (const e of shieldEntries(rep.report)) {
+        if (e.side !== defenderSide) continue;
+        const target = combatShieldTarget(e.lane, e.side, seat, e.stage);
+        launchAttackCharge(target, e.attackElement, e.attack);
+      }
+    }, 1000 + offset);
+    combatLater(() => {
+      if (!valid()) return;
+      shields.filter(e => e.side === defenderSide).forEach(({ target, meter, track, num, full, attack, lane }) => {
+        const { absorbed, remaining, hpDamage } = damageSplit(attack, full);
+        track.style.transition = 'height 500ms cubic-bezier(.22,.65,.3,1)';
+        track.style.height = (full ? remaining / full * 100 : 0) + '%';
+        setTowerShield(target, remaining, full);
+        setNexusShield(target, lane, remaining, full);
+        num.textContent = String(remaining);
+        meter.setAttribute('aria-label', `Щит: ${remaining}`);
+        if (absorbed) combatResultPopup(target, 'Щит −' + absorbed, 'shield', hpDamage === 0);
+      });
+    }, 1450 + offset);
+    combatLater(() => {
+      if (!valid()) return;
+      hpItems.filter(e => e.side === defenderSide).forEach(({ target, val, bar, axis, start, final, max }) => {
+        combatHpPopup(target, start - final);
+        bar.style.transition = axis + ' 700ms cubic-bezier(.25,.7,.25,1)';
+        bar.style[axis] = (final / max) * 100 + '%';
+        setTowerHealth(target, final, max);
+        setNexusHealth(target, final);
+        val.textContent = final + ' / ' + max;
+      });
+    }, 2000 + offset);
+  }
+  // Reveal the final models only after both sides have finished attacking.
   combatLater(() => {
     if (!valid()) return;
     if (combatUI.renderFinal) combatUI.renderFinal();
-  }, 4750);
-  // 5.25с: UI разморожен, рендерим свежее авторитетное состояние; финальный
-  // экран показывается ТОЛЬКО после полного проигрыша последнего боя.
+  }, 5900);
+  // Unlock planning (or show the finish screen) after the entire sequence.
   combatLater(() => {
     if (!valid()) {
       if (import.meta.env.DEV) (window.__animLog = window.__animLog || []).push({ fn: 'anim-dropped' });
@@ -353,5 +357,5 @@ export function playRoundAnimation(view) {
     if (view.status === 'finished' || view.winner) {
       if (combatUI.showEndScreen) combatUI.showEndScreen(view);
     }
-  }, 5250);
+  }, 6400);
 }

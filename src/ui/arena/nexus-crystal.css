@@ -1,0 +1,15 @@
+/* Horizontal ruby core, with one equal cyan armor segment per open lane. */
+#lanes .nexus-fortress-stats .nexus-health-readout{display:flex;justify-content:space-between;align-items:center;width:88%;gap:4px;line-height:1.25}
+#lanes .nexus-fortress-stats .nexus-armor{color:#9aefff;font-size:clamp(7px,1cqw,14px);white-space:nowrap;text-shadow:0 1px 2px #000,0 0 4px #1686b6}
+#lanes .nexus-fortress-stats .bar.nexus-crystal{position:relative;height:clamp(6px,1cqw,14px)!important;margin:4px 0!important;border:2px solid #c7a96a;border-radius:2px;overflow:visible;background:#1d0b16;box-shadow:inset 0 0 0 1px #170d10,0 0 0 1px #4b321c,0 2px 4px #000b}
+.nexus-crystal-well{position:absolute;inset:0;overflow:hidden}
+#lanes .nexus-crystal .fill,.nexus-crystal-lag{position:absolute;inset:0 auto 0 0;height:100%;border-radius:0;transition:width .7s ease-out}
+#lanes .nexus-fortress .nexus-crystal .fill{background:linear-gradient(#ff9baf,#ed3b5b 27%,#b51538 62%,#650d25);box-shadow:inset 0 0 4px #ffb9c0,0 0 6px #f63e5d}
+.nexus-crystal .fill:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 15%,#ffd9e42b 16% 18%,transparent 19% 30%)}
+.nexus-crystal-lag{background:#efbf82;transition:width 1.2s ease-out .3s}
+.nexus-armor-shell{position:absolute;inset:-5px -4px;display:grid;grid-template-columns:repeat(var(--nexus-shield-slots),1fr);pointer-events:none;gap:2px}
+.nexus-armor-segment{position:relative;min-width:0;border:1px solid #428da14d;border-radius:3px}
+.nexus-armor-segment i{position:absolute;inset:-1px;border:1px solid #b2f7ff;border-radius:3px;background:linear-gradient(#75eaffbb,transparent 35% 65%,#75eaffbb);box-shadow:0 0 4px #51dfff,inset 0 0 3px #8eefff;transform-origin:left;transition:transform .5s ease-out}
+.nexus-crystal.critical .fill{animation:tower-crystal-critical 1.25s ease-in-out infinite}
+.arena-scene .nexus-floor .tower-shield{display:none!important}
+@media(prefers-reduced-motion:reduce){.nexus-crystal *{animation:none!important;transition:none!important}}

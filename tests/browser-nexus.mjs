@@ -35,6 +35,17 @@ try {
         const img=document.querySelector('#panelEffect img');return img?.complete && img.naturalWidth===414;
       });
       await p.locator(`.nexus-floor.open[data-lane="${lane}"][data-kind="${kind}"]`).click();
+      if (kind === 'def') {
+        const armor = await p.locator('.nexus.ally').evaluate(el => ({
+          total: Number(el.querySelector('.nexus-armor strong').textContent),
+          floors: [...el.querySelectorAll('.nexus-floor .tower-shield b')].reduce((sum, b) => sum + Number(b.textContent), 0),
+          filled: [...el.querySelectorAll('.nexus-armor-segment')].filter(s => Number(s.dataset.remaining) > 0).length,
+          slots: el.querySelector('.nexus-armor-shell').style.getPropertyValue('--nexus-shield-slots'),
+        }));
+        assert.equal(armor.total, armor.floors);
+        assert.equal(armor.filled, lane + 1);
+        assert.equal(armor.slots, '3');
+      }
     }
     assert.equal(await p.locator('.nexus-floor .slot-card').count(),12);
     await p.waitForFunction(() => [...document.querySelectorAll('.slot-card')].every(c => c.getAnimations().every(a => a.playState === 'finished')));
@@ -51,6 +62,37 @@ try {
     await p.waitForFunction(() => [...document.querySelectorAll('.nexus-floor .element-anim')].every(img => img.complete && img.naturalWidth===414));
     await mkdir('tests/.shots',{recursive:true});
     await p.locator('.nexus.ally').screenshot({path:`tests/.shots/nexus-cards-${width}.png`});
+    await p.locator('.nexus.ally .nexus-fortress-stats').screenshot({path:`tests/.shots/nexus-health-${width}.png`});
+    // A hit drains only its lane's part and updates the common armor total.
+    const drain = await p.evaluate(async () => {
+      const {setNexusShield} = await import('/src/ui/arena/NexusHealth.js');
+      const floor = document.querySelector('.nexus.ally .nexus-floor[data-lane="0"]');
+      const before = Number(document.querySelector('.nexus.ally .nexus-armor strong').textContent);
+      const full = Number(document.querySelector('.nexus.ally .nexus-armor-segment').dataset.full);
+      setNexusShield(floor, 0, 0, full);
+      return {before, full, after:Number(document.querySelector('.nexus.ally .nexus-armor strong').textContent)};
+    });
+    assert.equal(drain.after, drain.before - drain.full);
+    const enemyHand = f.match.state.hands[2];
+    const enemyTurn = {matchId:'fixture',round:1,expectedVersion:1,fortifyLane:null,
+      placements:[0,1,2].map(lane => ({lane,
+        attack:enemyHand.slice(lane*4,lane*4+2).map(c => c.id),
+        defense:enemyHand.slice(lane*4+2,lane*4+4).map(c => c.id),
+      }))};
+    assert.equal((await f.call('submit-turn',2,enemyTurn)).status,200);
+    await p.locator('#fightBtn').click();
+    await p.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim'));
+    const report = f.reports[0].public_result.report;
+    const enemyRemaining = report.reduce((sum,row) => sum + Math.max(0,row.a.info.d-row.a.info.a),0);
+    const ownFull = report.reduce((sum,row) => sum + row.b.info.d,0);
+    await p.waitForFunction(({enemyRemaining,ownFull}) =>
+      Number(document.querySelector('.nexus.enemy .nexus-armor strong').textContent) === enemyRemaining &&
+      Number(document.querySelector('.nexus.ally .nexus-armor strong').textContent) === ownFull,
+      {enemyRemaining,ownFull});
+    await p.waitForFunction(() => !document.querySelector('#fightBtn').disabled && /2/.test(document.querySelector('#roundBadge').textContent),null,{timeout:12000});
+    assert.equal(await p.locator('.nexus.ally .hp').innerText(), `${f.match.state.board.a.nexus} / 80`);
+    assert.equal(await p.locator('.nexus.enemy .hp').innerText(), `${f.match.state.board.b.nexus} / 80`);
+    assert.equal(await p.locator('.nexus.ally .nexus-armor strong').innerText(),'0');
     assert.deepEqual(errors,[]);
     console.log(`PASS ${width}px: 12 visible Nexus cards across all floors/sides, transparent fire vortex animation in all six circles and panel`);
     await ctx.close();

@@ -10,10 +10,7 @@ const COLORS = {
 export function attackChargeHTML(cards) {
   const stats = pairStats(cards);
   if (!stats) return '';
-  const element = ELEMENTS[stats.element];
-  const size = .88 + Math.min(stats.attack, 60) / 60 * .22;
-  return `<div class="tower-attack attack-charge" aria-label="Атака: ${stats.attack}" data-attack-key="${cards.map(c => c.id).sort().join(',')}" style="--attack-color:${COLORS[element.id]};--charge-scale:${size}">
-    <span class="attack-charge-core" aria-hidden="true"><i class="attack-orbit orbit-a"></i><i class="attack-orbit orbit-b"></i>${elementAnimHTML(element.icon)}<i class="attack-spark spark-a"></i><i class="attack-spark spark-b"></i></span>
+  return `<div class="tower-attack attack-charge" aria-label="Атака: ${stats.attack}" data-attack-key="${cards.map(c => c.id).sort().join(',')}">
     <span class="attack-charge-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l16 16-2 2L3 5V3h2zm8 12l-5 5m-3-3l6 6"/></svg><b>${stats.attack}</b></span>
   </div>`;
 }
@@ -26,17 +23,20 @@ export function launchAttackCharge(target, elementIcon, power) {
   if (!element) return;
   const rect = target.getBoundingClientRect();
   const charge = target.querySelector('.attack-charge');
-  const origin = charge?.querySelector('.attack-charge-core')?.getBoundingClientRect();
-  const mine = target.classList.contains('ally');
-  const x = origin ? origin.left + origin.width / 2 : rect.left + rect.width * (mine ? -.25 : 1.25);
-  const y = origin ? origin.top + origin.height / 2 : rect.top + rect.height * .5;
+  const mine = !!target.closest('.ally');
   const tx = rect.left + rect.width * .5, ty = rect.top + rect.height * .52;
+  // Targets on our side receive enemy spells from above. Our spells enter
+  // enemy targets from below, independently of the player's server seat.
+  const arena = document.querySelector('#arenaScene')?.getBoundingClientRect() ?? rect;
+  const x = tx;
+  const y = mine ? Math.max(12, arena.top + 12) : Math.min(innerHeight - 12, arena.bottom - 12);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const duration = reduced ? 0 : 450;
   charge?.classList.add('charge-fired');
   if (!reduced) {
     const projectile = document.createElement('div');
     projectile.className = 'attack-projectile';
+    projectile.dataset.attacker = mine ? 'opponent' : 'me';
     projectile.style.cssText = `left:${x}px;top:${y}px;width:${Math.max(16, Math.min(40, rect.width*.38))}px;--attack-color:${COLORS[element.id]};--flight-x:${tx-x}px;--flight-y:${ty-y}px;`;
     projectile.innerHTML = elementAnimHTML(element.icon);
     document.body.appendChild(projectile);
@@ -49,7 +49,7 @@ export function launchAttackCharge(target, elementIcon, power) {
   impact.addEventListener('animationend', () => impact.remove(), {once:true});
 }
 
-// Retain a prepared orb when another lane changes, so it does not recharge.
+// Retain the attack indicator when another lane changes.
 export function retainAttackCharges(previous, next) {
   if (!previous || previous.dataset.meterContext !== next.dataset.meterContext) return () => {};
   const kept = [];

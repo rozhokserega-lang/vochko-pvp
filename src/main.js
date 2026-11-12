@@ -6,6 +6,7 @@ import './styles.css';
 import './ui/arena/tower-crystal.css';
 import './combat-v5.css';
 import './ui/arena/arena.css';
+import './ui/arena/nexus-crystal.css';
 import './ui/card-panel/card-panel.css';
 import { ensureSession, supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';

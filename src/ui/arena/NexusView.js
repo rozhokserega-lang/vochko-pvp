@@ -9,6 +9,7 @@ import { ARENA_ASSETS } from './arena-assets.js';
 import { LAYOUT, nexusId } from './arenaLayout.js';
 import { cardSlotHTML } from './CardSlot.js';
 import { elementAnimHTML } from './ElementEffect.js';
+import { nexusHealthHTML } from './NexusHealth.js';
 
 export function nexusHTML(board, placements, isEnemy) {
   const side = isEnemy ? 'enemy' : 'ally';
@@ -39,8 +40,7 @@ export function nexusHTML(board, placements, isEnemy) {
       <span>Для прорыва линии нужно разрушить обе башни.</span>
     </div>
     <div class="nexus-fortress-stats"><b>${isEnemy ? 'НЕКСУС ВРАГА' : 'МОЙ НЕКСУС'}</b>
-      <strong class="hp">${Math.max(0, board.nexus)} / 80</strong>
-      <div class="bar"><div class="fill" style="width:${Math.max(0, board.nexus) / 80 * 100}%"></div></div>
+      ${nexusHealthHTML(board, placements, isEnemy)}
     </div>
   </div>`;
 }

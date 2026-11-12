@@ -78,6 +78,17 @@ try {
     await mkdir('tests/.shots', { recursive: true });
     await page.screenshot({ path: `tests/.shots/elements-${seat === 1 ? 'desktop' : 'mobile'}.png`, fullPage: true });
   }
+  for (const page of pages) await page.evaluate(() => {
+    window.__flights = [];
+    new MutationObserver(records => {
+      for (const record of records) for (const node of record.addedNodes) {
+        if (!node.matches?.('.attack-projectile')) continue;
+        window.__flights.push({ attacker: node.dataset.attacker, time: performance.now(),
+          dx: parseFloat(node.style.getPropertyValue('--flight-x')),
+          dy: parseFloat(node.style.getPropertyValue('--flight-y')) });
+      }
+    }).observe(document.body, {childList:true});
+  });
   await pages[0].locator('#fightBtn').click();
   await pages[0].waitForFunction(() => document.querySelector('#status')?.textContent.includes('Ход отправлен'));
   assert.equal(f.reports.length, 0);
@@ -86,7 +97,7 @@ try {
   await pages[0].evaluate(() => window.__fixtureBroadcast());
   await Promise.all(pages.map(async page => {
     await page.waitForFunction(() => document.querySelectorAll('.combat-card-reveal').length === 6);
-    assert.equal(await page.locator('.combat-reveal-card').count(), 24);
+    assert.equal(await page.locator('.combat-reveal-card').count(), 12);
   }));
   await pages[0].screenshot({ path: 'tests/.shots/elements-combat.png', fullPage: true });
   for (const page of pages) {
@@ -94,10 +105,41 @@ try {
     assert.equal(await page.locator('.report-btn').count(), 0);
     assert.equal(await page.locator('#hand .card').count(), 14);
     assert.match(await page.locator('#roundBadge').innerText(), /2/);
+    const flights = await page.evaluate(() => window.__flights);
+    assert.equal(flights.length, 6, 'three own spells, then three enemy spells');
+    assert.deepEqual(flights.map(f => f.attacker), ['me','me','me','opponent','opponent','opponent']);
+    assert.ok(flights.slice(0, 3).every(f => f.dy < 0 && f.dx === 0), 'own spells fly upward');
+    assert.ok(flights.slice(3).every(f => f.dy > 0 && f.dx === 0), 'enemy spells fly downward');
+    assert.ok(flights[3].time - flights[2].time >= 2000, 'sides do not attack together');
   }
   assert.equal(submissions.length, 2);
   assert.ok(submissions.every(s => s.body.fortifyLane === null));
   assert.equal(f.reports.length, 1);
+  // Nexus floors inherit their side from the fortress, not from the floor.
+  for (const page of pages) {
+    const nexusFlights = await page.evaluate(async () => {
+      const { launchAttackCharge } = await import('/src/ui/arena/AttackCharge.js');
+      const { cancelCombat } = await import('/src/ui/animations.js');
+      for (const side of ['enemy', 'ally']) launchAttackCharge(document.querySelector(`.nexus-fortress.${side} .nexus-floor`), '🔥', 10);
+      const flights = [...document.querySelectorAll('.attack-projectile')].map(el => ({
+        attacker: el.dataset.attacker, dy: parseFloat(el.style.getPropertyValue('--flight-y')),
+      }));
+      cancelCombat();
+      return { flights, remaining: document.querySelectorAll('.attack-projectile,.attack-impact-flash').length };
+    });
+    assert.deepEqual(nexusFlights.flights.map(f => f.attacker), ['me', 'opponent']);
+    assert.ok(nexusFlights.flights[0].dy < 0 && nexusFlights.flights[1].dy > 0);
+    assert.equal(nexusFlights.remaining, 0);
+    await page.emulateMedia({reducedMotion:'reduce'});
+    assert.equal(await page.evaluate(async () => {
+      const { launchAttackCharge } = await import('/src/ui/arena/AttackCharge.js');
+      const { cancelCombat } = await import('/src/ui/animations.js');
+      launchAttackCharge(document.querySelector('.nexus-fortress.enemy .nexus-floor'), '🔥', 10);
+      const count = document.querySelectorAll('.attack-projectile').length;
+      cancelCombat();
+      return count;
+    }), 0);
+  }
   await pages[1].setViewportSize({ width: 844, height: 390 });
   assert.equal(await pages[1].locator('#hand').isVisible(), true);
   assert.equal(await pages[1].evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true);

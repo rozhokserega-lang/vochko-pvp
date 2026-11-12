@@ -12,6 +12,7 @@ import {
 } from '../src/ui/arena/arenaLayout.js';
 import { battleHTML } from '../src/ui/arena/ArenaScene.js';
 import { nexusHTML } from '../src/ui/arena/NexusView.js';
+import { nexusHealthHTML } from '../src/ui/arena/NexusHealth.js';
 import { cardSlotHTML } from '../src/ui/arena/CardSlot.js';
 import { elementAnimHTML, ELEMENT_CLASS } from '../src/ui/arena/ElementEffect.js';
 import { towerHighlightClass } from '../src/ui/arena/TowerHighlight.js';
@@ -25,6 +26,24 @@ const view = () => ({
   },
 });
 const emptySlots = () => Array.from({ length: 3 }, () => ({ atk: [], def: [] }));
+
+test('Nexus: armor sums complete defensive pairs and gives equal space to each open lane', () => {
+  const board = view().board.me;
+  const slots = emptySlots();
+  const pair = [{ id: 'h2', s: '♥', r: '2', v: 2 }, { id: 'h3', s: '♥', r: '3', v: 3 }];
+  slots[0].def = pair;
+  slots[1].def = pair;
+  slots[2].atk = pair; // Attacks never supply armor.
+  for (const count of [1, 2, 3]) {
+    board.outer.fill(0, 0, count); board.inner.fill(0, 0, count);
+    const html = nexusHealthHTML(board, slots, false);
+    assert.match(html, new RegExp(`--nexus-shield-slots:${count}`));
+    assert.equal((html.match(/class="nexus-armor-segment"/g) || []).length, count);
+    assert.equal((html.match(/scaleX\(1\)/g) || []).length, Math.min(2, count));
+    assert.match(html, new RegExp(`aria-label="Броня: ${Math.min(2, count) * 6}"`));
+    assert.match(nexusHealthHTML(board, slots, true), /aria-label="Броня: 0"/);
+  }
+});
 
 test('layout: 12 башен с уникальными id, 3 ряда платформ, 2 нексуса', () => {
   const towers = LAYOUT.towers;
