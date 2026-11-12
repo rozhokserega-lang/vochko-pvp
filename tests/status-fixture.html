@@ -1,14 +1,16 @@
 <!doctype html><html lang="ru"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Статусы — проверка обеих сторон</title>
 <style>body{margin:0;background:#0b1320;color:white;font-family:system-ui}#controls{position:fixed;top:0;left:0;z-index:13000;display:flex;gap:8px;flex-wrap:wrap;padding:10px}#controls button{background:#263b50;color:white;border:1px solid #647f91;border-radius:6px;padding:8px;cursor:pointer}#lanes{height:100dvh;width:100vw;box-sizing:border-box}</style>
-<div id="controls"><button id="clearEffects">Очистить эффекты</button><button id="resetEffects">Вернуть эффекты</button><button id="swapSides">Поменять стороны</button></div><div id="lanes" class="battle"></div>
+<div id="controls"><button id="selectCards">Выбрать карты</button><span id="placementResult">Размещено: 0</span><button id="clearEffects">Очистить эффекты</button><button id="resetEffects">Вернуть эффекты</button><button id="swapSides">Поменять стороны</button></div><div id="lanes" class="battle"></div>
 <script type="module">
 import '../src/styles.css';import '../src/ui/arena/arena.css';import '../src/ui/arena/tower-crystal.css';import '../src/ui/arena/nexus-crystal.css';import '../src/ui/arena/status-badges.css';
-import {battleHTML,applyArenaLayout} from '../src/ui/arena/ArenaScene.js';import {renderStatusBadges} from '../src/ui/arena/StatusBadges.js';
+import {battleHTML,applyArenaLayout} from '../src/ui/arena/ArenaScene.js';import {renderStatusBadges,closeStatusInspector} from '../src/ui/arena/StatusBadges.js';
 import {newBoard} from '../shared/engine.js';import {RECOMMENDED} from '../shared/abilities.js';
-let me,opponent;
+let me,opponent,selected=false,placed=0;
 const rules={abilities:true,counters:true,variants:RECOMMENDED};
 const reset=()=>{me=newBoard();opponent=newBoard();for(const b of[me,opponent]){b.outer=[8,0,0];b.inner=[18,9,0];b.nexus=64;b.statuses=[{burn:2},{armor:3,weakenAttack:15},{attackBoost:2,weakenDefense:10}];}render();};
-function render(){const root=document.querySelector('#lanes'),slots=[0,1,2].map(()=>({atk:[],def:[]}));root.innerHTML=battleHTML({board:{me,opponent},rules},slots);applyArenaLayout(root);renderStatusBadges(root,me,opponent,{rules});}
+function render(){const root=document.querySelector('#lanes'),slots=[0,1,2].map(()=>({atk:[],def:[]}));root.innerHTML=battleHTML({board:{me,opponent},rules},slots);applyArenaLayout(root);renderStatusBadges(root,me,opponent,{rules,hasSelection:()=>selected});}
+document.querySelector('#selectCards').onclick=()=>{selected=true;document.querySelector('#selectCards').textContent='Карты выбраны';closeStatusInspector();};
+document.querySelector('#lanes').addEventListener('click',e=>{if(selected && e.target.closest('.drop-target')){placed++;selected=false;document.querySelector('#placementResult').textContent='Размещено: '+placed;}});
 document.querySelector('#clearEffects').onclick=()=>{me.statuses=[{},{},{}];opponent.statuses=[{},{},{}];render();};
 document.querySelector('#resetEffects').onclick=reset;document.querySelector('#swapSides').onclick=()=>{[me,opponent]=[opponent,me];render();};reset();
 </script></html>

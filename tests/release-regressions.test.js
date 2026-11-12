@@ -6,7 +6,7 @@ import {deck,deal,dealBalancedLegacy} from '../shared/cards.js';
 import {botPlan,evaluateState,choosePlan} from '../shared/bot.js';
 import {mulberry32} from '../shared/rng.js';
 import {RECOMMENDED,statusDetails,abilityDescription,planningStats} from '../shared/abilities.js';
-import {statusPanelHTML} from '../src/ui/arena/StatusBadges.js';
+import {statusPanelHTML,canInspectStatus} from '../src/ui/arena/StatusBadges.js';
 const opts={abilities:true,counters:true,variants:RECOMMENDED,rng:()=>0};
 const C=id=>deck().find(c=>c.id===id);
 const t=(rows)=>({placements:rows.map(([a,d],lane)=>({lane,attack:a.map(C),defense:d.map(C)}))});
@@ -80,4 +80,11 @@ test('descriptions and planning power use the selected match variants and public
   const preview=planningStats(p,{attackBoost:2,weakenAttack:15,armor:3},{abilities:true,variants:RECOMMENDED});assert.equal(preview.attack,Math.round((46+2)*.85));assert.ok(preview.shield>0);
   const panel=statusPanelHTML({burn:2,armor:3},{mine:false,rules:{counters:true,variants:RECOMMENDED},structure:{name:'Внешняя башня',hp:8,max:12,effects:[{key:'burn',value:2},{key:'armor',value:3}]}});
   assert.match(panel,/8 \/ 12/);assert.match(panel,/Горение/);assert.match(panel,/на эту же линию/);assert.match(panel,/до 2/);assert.doesNotMatch(panel,/hand|placements/);
+});
+
+test('structure inspection never intercepts selected-card or drag placement, including Nexus root',()=>{
+  assert.equal(canInspectStatus({}),true);
+  assert.equal(canInspectStatus({hasSelection:()=>true}),false);
+  assert.equal(canInspectStatus({isDragging:()=>true}),false);
+  assert.equal(canInspectStatus({hasSelection:()=>false,isDragging:()=>false}),true);
 });

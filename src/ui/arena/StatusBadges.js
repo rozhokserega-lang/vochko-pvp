@@ -39,13 +39,22 @@ export function closeStatusInspector() {
 }
 function position() {
   if (!popup || !current?.target.isConnected) return closeStatusInspector();
-  const r=current.target.getBoundingClientRect(), p=popup.getBoundingClientRect();
-  const left=Math.max(8,Math.min(innerWidth-p.width-8,r.left+r.width/2-p.width/2));
-  const top=r.top-p.height-12 >= 8 ? r.top-p.height-12 : Math.min(innerHeight-p.height-8,r.bottom+12);
-  popup.style.left=left+'px';popup.style.top=Math.max(8,top)+'px';
+  const r=current.target.getBoundingClientRect();
+  const hand=document.querySelector('#hand')?.getBoundingClientRect();
+  // Keep the hand usable even while reading a tall Nexus summary.
+  const bottom=hand && hand.top>180 ? Math.min(innerHeight-8,hand.top-8) : innerHeight-8;
+  popup.style.maxHeight=Math.max(160,bottom-8)+'px';
+  const p=popup.getBoundingClientRect();
+  let left,top;
+  if(r.left>=p.width+20){left=r.left-p.width-12;top=r.top+r.height/2-p.height/2;}
+  else if(innerWidth-r.right>=p.width+20){left=r.right+12;top=r.top+r.height/2-p.height/2;}
+  else{left=r.left+r.width/2-p.width/2;top=r.top-p.height-12>=8?r.top-p.height-12:r.bottom+12;}
+  popup.style.left=Math.max(8,Math.min(innerWidth-p.width-8,left))+'px';
+  popup.style.top=Math.max(8,Math.min(bottom-p.height,top))+'px';
 }
+export const canInspectStatus = (options = {}) => !options.hasSelection?.() && !options.isDragging?.();
 function openInspector(model, pin=false) {
-  if (model.target.closest('.is-resolving')) return;
+  if (!canInspectStatus(model.interaction) || model.target.closest('.is-resolving')) { closeStatusInspector(); return; }
   clearTimeout(closeTimer);
   if (current?.target===model.target && popup) { pinned ||= pin; return; }
   closeStatusInspector();current=model;pinned=pin;
@@ -67,13 +76,14 @@ function bind(model, options) {
   target.addEventListener('pointerleave',()=>{if(!pinned)closeTimer=setTimeout(closeStatusInspector,180);});
   target.addEventListener('focus',()=>openInspector(model));
   target.addEventListener('click',e=>{
+    if (!canInspectStatus(options)) return;
     const badge=e.target.closest('.status-badges');
     const inspecting=badge || (!options.hasSelection?.() && (matchMedia('(hover: none)').matches || !target.classList.contains('drop-target')));
     if (!inspecting) return;
     e.preventDefault();e.stopImmediatePropagation();
     if(pinned && current?.target===target)closeStatusInspector();else openInspector(model,true);
   },true);
-  target.querySelector('.status-badges')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();openInspector(model,true);}});
+  target.querySelector('.status-badges')?.addEventListener('keydown',e=>{if(canInspectStatus(options) && (e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();openInspector(model,true);}});
 }
 // Both teams are traversed by this same renderer. Only public board data is read.
 export function renderStatusBadges(root, boardMe, boardOpp, options={}) {
@@ -96,7 +106,7 @@ export function renderStatusBadges(root, boardMe, boardOpp, options={}) {
         if(st.weakenAttack||st.weakenDefense)target.classList.add('status-weakened');if(st.attackBoost)target.classList.add('status-boosted');
       }
       structure.canClear=!!options.onClear && target.classList.contains('drop-target') && !!target.querySelector('.slot-card') && !options.isLocked?.();
-      const model={target,structure,mine,rules:options.rules??{},onClear:options.onClear};models.push(model);bind(model,options);
+      const model={target,structure,mine,rules:options.rules??{},onClear:options.onClear,interaction:options};models.push(model);bind(model,options);
     };
     for(let lane=0;lane<3;lane++){
       const stage=board.outer[lane]>0?'outer':board.inner[lane]>0?'inner':'nexus';
@@ -112,11 +122,11 @@ export function renderStatusBadges(root, boardMe, boardOpp, options={}) {
     const nexus=root.querySelector(`.nexus-fortress.${team}`);
     const effects=statuses.flatMap((st,lane)=>board.outer[lane]<=0&&board.inner[lane]<=0&&board.nexus>0?active(st).map(([key,value])=>({key,value,lane})):[]);
     // Root inspection is only for the sprite/readout; a floor has its own model.
-    if(nexus){const model={target:nexus,mine,rules:options.rules??{},structure:{name:'Нексус',hp:board.nexus,max:80,image:nexus.querySelector('.nexus-sprite')?.src,effects}};
+    if(nexus){const model={target:nexus,mine,interaction:options,rules:options.rules??{},structure:{name:'Нексус',hp:board.nexus,max:80,image:nexus.querySelector('.nexus-sprite')?.src,effects}};
       nexus.dataset.inspectorKey=team+':Нексус:all';models.push(model);
       nexus.addEventListener('pointerover',e=>{if(!e.target.closest('.nexus-floor')&&e.pointerType!=='touch')openInspector(model);});
       nexus.addEventListener('pointerleave',()=>{if(!pinned)closeTimer=setTimeout(closeStatusInspector,180);});
-      nexus.addEventListener('click',e=>{if(!e.target.closest('.nexus-floor')){e.stopPropagation();openInspector(model,true);}});
+      nexus.addEventListener('click',e=>{if(canInspectStatus(options) && !e.target.closest('.nexus-floor')){e.stopPropagation();openInspector(model,true);}});
       nexus.addEventListener('focus',()=>openInspector(model));
     }
   }

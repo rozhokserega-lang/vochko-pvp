@@ -223,7 +223,7 @@ function render(force = false) {
   const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
   app.replaceChildren(root);
   applyArenaLayout();
-  renderStatusBadges(root, view.board.me, view.board.opponent, { rules: view.rules, hasSelection: () => selected.length > 0, isLocked: turnLocked, onClear: target => placeCards(target, []) });
+  renderStatusBadges(root, view.board.me, view.board.opponent, { rules: view.rules, hasSelection: () => selected.length > 0, isDragging: () => !!dragId, isLocked: turnLocked, onClear: target => placeCards(target, []) });
   restoreMeterAnimations();
   restoreChargeAnimations();
   // Consume placement flags once; another tower placement must not replay them.
@@ -296,6 +296,7 @@ function showEndScreen(v) {
 bindCombatUI({ render, showEndScreen, renderFinal: () => render(true) });
 
 function updatePreview() {
+  if (selected.length || dragId) closeStatusInspector();
   const cards = selected.map(cardById);
   renderPanelPreview(byId('hand'), cards);
   byId('lanes').querySelectorAll('.drop-target[data-kind]').forEach((target) => {
@@ -383,6 +384,7 @@ window.addEventListener('pointermove', (e) => {
   if (!dragStart || e.pointerId !== dragStart.pointerId) return;
   if (!dragId && Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y) > 9) {
     dragId = dragStart.id;
+    closeStatusInspector();
     ghost = dragStart.el.cloneNode(true);
     ghost.classList.add('panel-card-ghost');
     ghost.style.cssText = `position:fixed;z-index:13000;width:53px;left:${e.clientX - 26}px;top:${e.clientY - 37}px;pointer-events:none;opacity:.9`;

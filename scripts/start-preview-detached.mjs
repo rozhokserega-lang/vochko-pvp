@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const port=Number(process.env.PORT??5191);
+const port=Number(process.env.PORT??5193);
 if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid preview port');
 const url=`http://127.0.0.1:${port}/`;
 async function isRunning(){try{const r=await fetch(url,{signal:AbortSignal.timeout(800)});return r.ok&&(await r.text()).includes('ВОЧКО');}catch{return false;}}
