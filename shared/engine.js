@@ -96,12 +96,8 @@ export function getWinner(state) {
   return { finished, winner };
 }
 
-const io = {
-  damage, damageStage, recordDamage, healStructure, snapshot: snapshotForRecord,
-};
-
-// All hits in the attack phase address the structures visible at its start.
-// A retaliation/discharge cannot redirect a later attack into the next tower.
+// Lock targets before any round-start status is applied. Burn, primary hits
+// and secondary effects all address the same structure for the entire round.
 function phaseIO(state) {
   const stages = new Map([state.a, state.b].map(board => [board, [0, 1, 2].map(l => damageStage(board, l))]));
   const stageOf = (board, lane) => stages.get(board)[lane];
@@ -140,17 +136,16 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   const events = [], report = [], abilityEvents = [];
   // Прорывы этого раунда влияют на Нексус только со следующего раунда.
   const nexusPct = { a: shieldPct(state.a), b: shieldPct(state.b) };
+  const phase = phaseIO(state);
   state.a.burn = [0, 0, 0]; state.b.burn = [0, 0, 0]; // старое поле неактивно
 
   let ctx = null;
   if (abilities) {
     ensureStatuses(state.a); ensureStatuses(state.b);
-    ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters, variants, variantsBySide, disabledBySide: opts.disabledBySide, unblocked: opts.unblocked,
+    ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io:phase, counters, variants, variantsBySide, disabledBySide: opts.disabledBySide, unblocked: opts.unblocked,
       cores:opts.nexusCoreEnabled?{a:turnA.coreCard,b:turnB.coreCard}:{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled });
-    ctx.io = phaseIO(state);
     ctx.effects = [];
   }
-  const phase = ctx?.io ?? io;
   const consequences = [];
 
   const lanes = [0, 1, 2].map(l => {

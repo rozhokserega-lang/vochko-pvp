@@ -5,7 +5,7 @@ import {choosePlan,planKey,evaluateState,botPlan} from '../shared/bot.js';
 import {deal} from '../shared/cards.js';
 import {mulberry32} from '../shared/rng.js';
 import {C} from './helpers.js';
-import {RECOMMENDED} from '../shared/abilities.js';
+import {RECOMMENDED,ABILITIES} from '../shared/abilities.js';
 
 const pair = (s, r='A', r2='K') => [C(s,r),C(s,r2)];
 const weak = pair('♠','2','3');
@@ -28,6 +28,38 @@ test('audit: discharge and a primary hit cannot damage two buildings on the same
   a.placements[0].attack=[C('♦','A'),C('♣','K')];
   resolveRound(s,a,b,opts({rng:()=>0}));
   assert.deepEqual(s.b.outer,[0,0,0]);assert.deepEqual(s.b.inner,[18,18,18]);
+});
+
+for(const side of ['a','b'])for(const lane of [0,1,2])for(const stage of ['outer','inner'])test(`burn cannot redirect attacks: ${side}, lane ${lane}, ${stage}`,()=>{
+  const s=createGameState(),board=s[side];
+  if(stage==='inner'){board.outer.fill(0);board.inner.fill(0);}
+  board[stage][lane]=2;board.statuses[lane]={burn:2};
+  const strong=turn(pair('♥'),weak),options=opts({disabled:Object.keys(ABILITIES)});
+  for(const placement of strong.placements)if(placement.lane!==lane)placement.attack=weak;
+  const result=resolveRound(s,strong,strong,options);
+  assert.equal(board[stage][lane],0);
+  if(stage==='outer')assert.equal(board.inner[lane],18,'inner tower must not lose HP this round');
+  assert.equal(board.nexus,80,'Nexus must not lose HP after another structure falls');
+  const hits=result.events.filter(e=>e.side===side&&e.l===lane);
+  assert.ok(hits.some(e=>e.burnTick&&e.amount===2));
+  assert.ok(hits.every(e=>e.stage===stage));
+  const row=result.report[lane][side==='a'?'b':'a'];
+  assert.equal(row.stage,stage);assert.equal(row.dealt,0);assert.ok(row.info.hit>0);
+  const next=resolveRound(s,strong,strong,options);
+  assert.equal(next.report[lane][side==='a'?'b':'a'].stage,stage==='outer'?'inner':'nexus');
+  if(stage==='outer')assert.ok(board.inner[lane]<18,'inner tower becomes target next round');
+  else assert.ok(board.nexus<80,'Nexus becomes target next round');
+});
+
+test('burn-killed targets stay locked for elemental secondary damage too',()=>{
+  const s=createGameState();
+  for(const side of ['a','b']){s[side].outer.fill(1);s[side].statuses=[{burn:2},{burn:2},{burn:2}];}
+  const a=turn(pair('♥'),pair('♥')),b=turn(pair('♥'),pair('♥'));
+  a.placements[0].attack=[C('♦','A'),C('♣','K')];
+  const result=resolveRound(s,a,b,opts({variants:RECOMMENDED,rng:()=>0}));
+  for(const side of ['a','b']){assert.deepEqual(s[side].inner,[18,18,18]);assert.equal(s[side].nexus,80);}
+  assert.ok(result.events.every(e=>e.stage==='outer'));
+  assert.ok(result.abilityEvents.some(e=>e.ability==='thunderstorm_discharge'));
 });
 test('audit: partial-hit Steam cannot heal the next building after its target dies',()=>{
   const s=createGameState(),a=turn(weak,pair('♠')),b=turn(weak,pair('♠'));

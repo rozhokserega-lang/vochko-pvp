@@ -109,6 +109,20 @@ test('persistent PvE uses both independent server decks',async()=>{
   assert.equal(result.status,200,JSON.stringify(result.body));assert.equal(result.body.resolved,true);
   for(const seat of [1,2]){assert.equal(f.match.state.decks[seat].burnedCards.length,1);validatePlayerDeck(f.match.state.decks[seat],f.match.state.hands[seat]);}
 });
+test('server keeps the inner tower intact when burn destroys the outer before the primary attack',async()=>{
+  const f=serverFixture({core:true,persistent:true});
+  f.match.state.board.a.outer[0]=1;f.match.state.board.a.statuses[0]={burn:2};
+  f.match.state.rules.variants={};
+  const own=[...f.match.state.hands[1]].sort((a,b)=>a.v-b.v),enemy=[...f.match.state.hands[2]].sort((a,b)=>b.v-a.v);
+  for(const [seat,hand]of [[1,own],[2,enemy]]){
+    const t=wire(turn(hand));await seal(f,seat,t);
+    assert.equal((await f.call('submit-turn',seat,{matchId:'fixture',round:1,...t})).status,200);
+  }
+  assert.equal(f.match.state.board.a.outer[0],0);assert.equal(f.match.state.board.a.inner[0],18);
+  const report=f.reports[0].public_result;
+  assert.ok(report.report[0].b.info.hit>0);assert.equal(report.report[0].b.stage,'outer');assert.equal(report.report[0].b.dealt,0);
+  assert.ok(report.events.filter(e=>e.side==='a'&&e.l===0).every(e=>e.stage==='outer'));
+});
 test('Core effect report contains only triggered matching bonuses with the correct side and lane',()=>{
   const pair=id=>[...ELEMENTS[id].suits].map((s,i)=>C(s,i?'K':'A'));
   const make=(atk,def,suit)=>({coreCard:C(suit,'A'),placements:[0,1,2].map(lane=>({lane,attack:pair(atk),defense:pair(def)}))});
