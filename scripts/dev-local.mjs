@@ -1,19 +1,22 @@
 // Development-only host: existing client + real turn/state handlers + in-memory SQL.
 import { createServer } from 'vite';
-import { randomUUID } from 'node:crypto';
+import { randomUUID,randomInt } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { serverFixture } from '../tests/server-fixture.mjs';
 import { deal } from '../shared/cards.js';
+import {dealCoreHand} from '../shared/nexus-core.js';
+import {RECOMMENDED} from '../shared/abilities.js';
 
 export async function startLocalGame(port = 5185) {
   const rooms = new Map();
-  const makeRoom = (owner, bot = false) => {
-    const f = serverFixture({ dealHand: deal });
+  const makeRoom = (owner, bot = false,core=true) => {
+    const f = serverFixture({ dealHand: deal,seedNext:()=>randomInt(0,4294967296) });
     const id = randomUUID(), code = id.replaceAll('-', '').slice(0, 6).toUpperCase();
     Object.assign(f.match, { id, room_code: code, status: bot ? 'planning' : 'waiting' });
-    f.match.state.hands = { 1: deal(), 2: deal() };
+    f.match.state.hands = { 1: core?dealCoreHand():deal(), 2: core?dealCoreHand():deal() };
     f.match.state.botMatch = bot;
-    f.match.state.rules = { abilities: true, smartBot: true }; // локальный стенд: новый режим
+    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:1,variants:RECOMMENDED };
+    f.match.state.rngSeed=randomInt(0,4294967296);
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };
     rooms.set(id, room);
     return room;
@@ -24,7 +27,7 @@ export async function startLocalGame(port = 5185) {
       const r=await fetch('/__local/'+name,{method:'POST',headers:{'content-type':'application/json','x-local-user':user},body:JSON.stringify(body)});
       const data=await r.json();if(!r.ok)throw new Error(data.error);return data;
     }
-    export const api={createRoom:(o={})=>call('create-room',o),joinRoom:roomCode=>call('join-room',{roomCode}),getState:matchId=>call('get-state',{matchId}),submitTurn:turn=>call('submit-turn',turn),rematch:matchId=>call('rematch',{matchId}),leaveRoom:matchId=>call('leave-room',{matchId})};`;
+    export const api={createRoom:(o={})=>call('create-room',o),joinRoom:roomCode=>call('join-room',{roomCode}),getState:matchId=>call('get-state',{matchId}),prepareCore:turn=>call('prepare-core',turn),submitTurn:turn=>call('submit-turn',turn),rematch:matchId=>call('rematch',{matchId}),leaveRoom:matchId=>call('leave-room',{matchId})};`;
   const plugin = {
     name: 'local-game-only', enforce: 'pre',
     load(id) {
@@ -50,7 +53,7 @@ export async function startLocalGame(port = 5185) {
           let text = ''; for await (const chunk of req) { text += chunk; if (text.length > 16000) return reply({ error: 'too large' }, 413); }
           const body = JSON.parse(text || '{}'), action = req.url.split('?')[0].slice(1);
           if (action === 'create-room') {
-            const room = makeRoom(user, !!body.vsBot);
+            const room = makeRoom(user, !!body.vsBot,body.nexusCoreEnabled!==false);
             return reply({ matchId: room.f.match.id, roomCode: room.f.match.room_code, seat: 1 });
           }
           if (action === 'join-room') {
@@ -72,12 +75,12 @@ export async function startLocalGame(port = 5185) {
             if (!room.f.match.state.botMatch && room.rematch.size < 2) return reply({ waiting: true });
             let next = rooms.get(room.f.match.state.nextMatchId);
             if (!next) {
-              next = makeRoom(room.owner, room.f.match.state.botMatch); next.guest = room.guest;
+              next = makeRoom(room.owner, room.f.match.state.botMatch,room.f.match.state.rules.nexusCoreEnabled); next.guest = room.guest;
               next.f.match.status = 'planning'; room.f.match.state.nextMatchId = next.f.match.id; room.f.match.version++;
             }
             return reply({ waiting: false, matchId: next.f.match.id, roomCode: next.f.match.room_code });
           }
-          if (!['get-state', 'submit-turn'].includes(action)) return reply({ error: 'unknown action' }, 404);
+          if (!['get-state', 'submit-turn','prepare-core'].includes(action)) return reply({ error: 'unknown action' }, 404);
           // Serialize mutations, just as the production handler's FOR UPDATE does.
           const run = room.pending.then(() => room.f.call(action, seat, body));
           room.pending = run.catch(() => {});
@@ -94,7 +97,8 @@ export async function startLocalGame(port = 5185) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const server = await startLocalGame();
-  console.log('Локальная игра: http://127.0.0.1:5185/ — бот или PvP в двух профилях. Матчи хранятся в памяти до остановки сервера.');
+  const port=Number(process.argv[2]??process.env.PORT??5185);
+  const server = await startLocalGame(port);
+  console.log(`Локальная игра: http://127.0.0.1:${port}/ — бот или PvP в двух профилях. Матчи хранятся в памяти до остановки сервера.`);
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { await server.close(); process.exit(0); });
 }

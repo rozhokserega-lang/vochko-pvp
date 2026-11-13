@@ -7,9 +7,10 @@ let browser;
 try {
   browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || 'chrome' });
   const errors = [], remote = [];
-  async function page() {
+  async function page(legacy=false) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const p = await ctx.newPage();
+    if(legacy)await p.route('**/__local/create-room',route=>route.continue({postData:JSON.stringify({...route.request().postDataJSON(),nexusCoreEnabled:false})}));
     p.on('pageerror', e => errors.push(e.message));
     p.on('request', r => { if (/^https?:/.test(r.url()) && !r.url().startsWith('http://127.0.0.1:5186/')) remote.push(r.url()); });
     await p.goto('http://127.0.0.1:5186/');
@@ -18,15 +19,19 @@ try {
   async function place(p) {
     await p.locator('#hand .card').first().waitFor();
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
-      await p.locator('#hand .card.red:not(.used)').first().click();
-      await p.locator('#hand .card:not(.red):not(.used)').first().click();
+      await p.locator('#hand .card:not(.used)').first().click();
+      await p.locator('#hand .card:not(.used):not(.selected)').first().click();
       const target = p.locator(`.tower.drop-target[data-lane="${lane}"][data-kind="${kind}"]`);
       await target.click();
     }
     assert.equal(await p.locator('#hand .card.used').count(), 12);
+    if(await p.locator('#nexusCore').count()){
+      await p.locator('#nexusCore:enabled').waitFor();await p.locator('#hand .card:not(.used)').click();await p.locator('#nexusCore').click();
+      await p.locator('#fightBtn:enabled').waitFor();
+    }
     await p.locator('#fightBtn').click();
   }
-  const bot = await page();
+  const bot = await page(true);
   await bot.locator('[data-act="bot"]').click();
   await place(bot);
   await bot.waitForFunction(() => document.querySelector('#roundBadge')?.textContent.includes('2'));
@@ -42,7 +47,7 @@ try {
   await b.locator('#joinRoomButton').click();
   await place(a); await place(b);
   await Promise.all([a, b].map(p => p.waitForFunction(() => window.__animLog?.some(e => e.fn === 'anim') && !document.querySelector('.combat-card-reveal,.combat-shield'))));
-  for (const p of [a, b]) { await p.waitForFunction(() => !document.querySelector('#fightBtn')?.disabled); assert.equal(await p.locator('#hand .card').count(), 14); }
+  for (const p of [a, b]) { await p.locator('#hand .card:not(:disabled)').first().waitFor(); assert.equal(await p.locator('#hand .card').count(), 13); }
   await a.reload(); await a.locator('#hand .card').first().waitFor();
   assert.match(await a.locator('#roundBadge').innerText(), /2/);
   assert.deepEqual(errors, []); assert.deepEqual(remote, []);

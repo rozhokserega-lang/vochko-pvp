@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
 
       const st = m.state ?? {};
       st.rematchWants = { ...st.rematchWants, [seat]: true };
+      if(st.botMatch)st.rematchWants[2]=true;
       if (!(st.rematchWants[1] && st.rematchWants[2])) {
         await tx`update private.matches set state = ${sql.json(st)}, updated_at = now() where id = ${m.id}`;
         await tx`update private.matches set version = version + 1 where id = ${m.id}`;
@@ -33,7 +34,8 @@ Deno.serve(async (req) => {
         insert into private.matches (room_code, player1_id, player2_id, status, round, state)
         values (${roomCode()}, ${m.player1_id}, ${m.player2_id}, 'planning', 1, ${sql.json({
           board: emptyBoard(),
-          hands: { 1: dealHand(), 2: dealHand() },
+          hands: { 1: dealHand(st.rules?.nexusCoreEnabled===true), 2: dealHand(st.rules?.nexusCoreEnabled===true) },
+          rules:st.rules??{},rngSeed:st.rngSeed,
           fortifyUsed: { 1: false, 2: false },
           botMatch: !!st.botMatch, // реванш с ботом остаётся PvE
         })})

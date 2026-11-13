@@ -1,0 +1,46 @@
+﻿
+> vochko-pvp@0.1.0 build
+> vite build
+
+vite v8.3.7 building client environment for production...
+transforming...
+✓ 92 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                           0.43 kB │ gzip:     0.32 kB
+dist/assets/fire-x8nvgFeV.webp                            4.43 kB
+dist/assets/steam-D2df8pg_.webp                           6.05 kB
+dist/assets/air-5oZBhSI8.webp                             6.86 kB
+dist/assets/earth-BrNqQ46g.webp                           6.90 kB
+dist/assets/water-R0DCWdJb.webp                           6.93 kB
+dist/assets/fire_vortex-DmWzeaR3.webp                     8.94 kB
+dist/assets/lava-UM33vl_8.webp                            9.64 kB
+dist/assets/ice-LTzMmJbJ.webp                            13.12 kB
+dist/assets/sandstorm-BEQNtbjG.webp                      13.13 kB
+dist/assets/thunderstorm-ZNCXwUuu.webp                   13.89 kB
+dist/assets/elFire-BLvYMQET.webp                         63.38 kB
+dist/assets/elSteam-Drin4uLl.webp                        76.32 kB
+dist/assets/elAir-ClbmnJtD.webp                          91.46 kB
+dist/assets/elEarth-VEenjxS6.webp                        95.74 kB
+dist/assets/elWater-B04BstJy.webp                       101.47 kB
+dist/assets/closed-DeQs_vuU.png                         155.22 kB
+dist/assets/ready_normal-DzGnn65c.png                   247.60 kB
+dist/assets/ready_pressed-D93OLthT.png                  249.09 kB
+dist/assets/open-RSBJbzIN.png                           321.07 kB
+dist/assets/elLava-transparent-BBeevzk8.webp            531.50 kB
+dist/assets/elFireVortex-transparent-D9cqNa9p.webp      566.46 kB
+dist/assets/opening-MOQ5j2x3.webp                       844.23 kB
+dist/assets/elThunderstorm-transparent-D5jk3D5S.webp  1,417.26 kB
+dist/assets/elIce-transparent-DZzao_Ke.webp           1,531.58 kB
+dist/assets/elSandstorm-transparent-xeh-9tsD.webp     1,541.48 kB
+dist/assets/waiting-DNvpHoFT.webp                     1,766.16 kB
+dist/assets/panel-unified-BPXfav_Y.png                1,932.64 kB
+dist/assets/index-MuzCeOEd.css                        1,053.12 kB │ gzip:   752.12 kB
+dist/assets/index-B_deUTX9.js                         2,266.03 kB │ gzip: 1,557.87 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 314ms

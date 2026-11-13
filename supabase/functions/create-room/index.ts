@@ -2,14 +2,15 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { roomCode } from '../_shared/deal.ts';
+import { roomCode, dealHand, emptyBoard, cryptoSeed } from '../_shared/deal.ts';
 import { RECOMMENDED } from '../../../shared/abilities.js';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
     const user = await requireUser(req);
-    const { vsBot, abilities, smartBot, counters, variants } = await req.json().catch(() => ({}));
+    const { vsBot, abilities, smartBot, counters, variants, nexusCoreEnabled } = await req.json().catch(() => ({}));
+    const coreEnabled=nexusCoreEnabled!==false;
     // Старые waiting-комнаты игрока закрываем: они бессмысленны после ухода.
     await sql`
       update private.matches set status = 'finished', updated_at = now()
@@ -32,13 +33,13 @@ Deno.serve(async (req) => {
       ? {
           botMatch: true,
           board: emptyBoard(),
-          hands: { 1: dealHand(), 2: dealHand() },
+          hands: { 1: dealHand(coreEnabled), 2: dealHand(coreEnabled) },
           fortifyUsed: { 1: false, 2: false },
-          rules: { abilities: abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants },
+          rules: { abilities: coreEnabled||abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1 },
           rngSeed: cryptoSeed(),
         }
       : {
-          rules: { abilities: abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants },
+          rules: { abilities: coreEnabled||abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1 },
           rngSeed: cryptoSeed(),
         };
     const [match] = await sql`

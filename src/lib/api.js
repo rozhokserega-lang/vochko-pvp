@@ -44,6 +44,7 @@ export const api = {
   },
   getState: (matchId) => call('get-state', { matchId }),
   submitTurn: (turn) => call('submit-turn', turn),
+  prepareCore: (turn) => call('prepare-core',turn),
   rematch: (matchId) => call('rematch', { matchId }),
   leaveRoom: (matchId) => call('leave-room', { matchId }),
 };

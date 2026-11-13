@@ -1,0 +1,7 @@
+﻿
+> vochko-pvp@0.1.0 test:local
+> node tests/browser-local.mjs
+
+(node:11068) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS local launcher: bot round, two-browser PvP room/join/round/synchronization, reconnect, no external requests or JavaScript errors

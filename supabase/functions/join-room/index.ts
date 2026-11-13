@@ -26,8 +26,9 @@ Deno.serve(async (req) => {
              round = 1,
              version = version + 1,
              state = ${sql.json({
+               ...m.state,
                board: emptyBoard(),
-               hands: { 1: dealHand(), 2: dealHand() },
+               hands: { 1: dealHand(m.state?.rules?.nexusCoreEnabled===true), 2: dealHand(m.state?.rules?.nexusCoreEnabled===true) },
                fortifyUsed: { 1: false, 2: false },
              })},
              updated_at = now()
