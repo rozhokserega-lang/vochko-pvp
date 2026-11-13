@@ -8,6 +8,7 @@
     "test:core": "node tests/browser-nexus-core.mjs",
     "test:browser": "node tests/browser-elements.mjs",
     "test:local": "node tests/browser-local.mjs",
+    "test:network:live": "node tests/browser-network-live.mjs --allow-live",
     "test:nexus": "node tests/browser-nexus.mjs",
     "test:browser:live": "node tests/browser-v19.mjs",
     "tournament": "node scripts/tournament.mjs --all --games 1000 --seed 1",

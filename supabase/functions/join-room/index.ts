@@ -15,6 +15,8 @@ Deno.serve(async (req) => {
     const [m] = await sql`select * from private.matches where room_code = ${code}`;
     if (!m) throw new HttpError('room-not-found', 404);
     if (m.state?.botMatch) throw new HttpError('room-unavailable', 409);
+    const existingSeat=m.player1_id===user.id?1:m.player2_id===user.id?2:0;
+    if(existingSeat&&m.status!=='waiting')return json({matchId:m.id,seat:existingSeat});
     if (m.player1_id === user.id) throw new HttpError('own-room', 409);
     if (m.status !== 'waiting' || m.player2_id) throw new HttpError('room-unavailable', 409);
 

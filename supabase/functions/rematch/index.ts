@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
       if (m.status !== 'finished') throw new HttpError('match is not finished', 409);
 
       const st = m.state ?? {};
+      if(st.nextMatchId)return {waiting:false,matchId:st.nextMatchId,version:1,sourceVersion:Number(m.version)};
       st.rematchWants = { ...st.rematchWants, [seat]: true };
       if(st.botMatch)st.rematchWants[2]=true;
       if (!(st.rematchWants[1] && st.rematchWants[2])) {
@@ -42,12 +43,13 @@ Deno.serve(async (req) => {
         })})
         returning id, room_code, version`;
       st.nextMatchId = created.id;
+      const sourceVersion=Number(m.version)+1;
       await tx`update private.matches set state = ${sql.json(st)}, version = version + 1, updated_at = now() where id = ${m.id}`;
-      return { waiting: false, matchId: created.id, roomCode: created.room_code, version: created.version };
+      return { waiting: false, matchId: created.id, roomCode: created.room_code, version: created.version,sourceVersion };
     });
 
     if (!next.waiting) {
-      await broadcastState(matchId, 1, 'rematch');
+      await broadcastState(matchId, next.sourceVersion, 'rematch');
       await broadcastState(next.matchId, next.version, 'joined');
     }
     return json(next);

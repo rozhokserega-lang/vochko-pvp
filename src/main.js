@@ -61,13 +61,13 @@ async function boot() {
   const roomParam = new URLSearchParams(location.search).get('room');
   // Аудит п.4: восстановление матча после F5 — и для создателя комнаты тоже.
   const saved = localStorage.getItem('vochko_match');
-  if (roomParam) return joinRoom(roomParam);
   if (saved) {
     try {
       const v = await api.getState(saved);
-      if (v && v.seat && v.status !== 'finished') { lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
+      if (v && v.seat && v.status !== 'finished'&&(!roomParam||v.roomCode===roomParam.trim().toUpperCase())) { lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
     } catch { localStorage.removeItem('vochko_match'); }
   }
+  if (roomParam) return joinRoom(roomParam);
   renderLobby();
 }
 
@@ -108,6 +108,10 @@ async function enterMatch(matchId) {
   localStorage.setItem('vochko_match', matchId); // реконнект после F5 (аудит п.4)
   unwatch = watchMatch(matchId, () => refresh(matchId));
   await refresh(matchId);
+  if(view?.matchId===matchId&&new URLSearchParams(location.search).has('room')){
+    const params=new URLSearchParams(location.search);params.set('room',view.roomCode);
+    history.replaceState(null,'','?'+params);
+  }
 }
 
 // ── Выход из матча ─────────────────────────────────────────────────────────
@@ -140,6 +144,7 @@ async function refresh(matchId) {
   const epoch = refreshEpoch; // сменился pantalla/матч — устаревший get-state игнорируем
   const next = await api.getState(matchId);
   if (epoch !== refreshEpoch || (view?.matchId === matchId && next.version < view.version)) return;
+  if(view?.matchId===matchId&&next.version===view.version)return;
   view = next;
   (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, playing: isCombatPlaying(), at: Date.now() % 100000 });
   // Хореография боя захватывает UI: новое состояние применяется после неё.

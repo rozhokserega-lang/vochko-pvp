@@ -37,7 +37,7 @@ const RU = {
 };
 
 export const api = {
-  createRoom: (opts = {}) => call('create-room', opts),
+  createRoom: (opts = {}) => call('create-room', {nexusCoreEnabled:true,...opts}),
   joinRoom: async (roomCode) => {
     try { return await call('join-room', { roomCode }); }
     catch (e) { throw new Error(RU[e.message] ?? 'Не удалось войти: ' + e.message); }

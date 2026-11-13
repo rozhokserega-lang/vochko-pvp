@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   try {
     const user = await requireUser(req);
     const { vsBot, abilities, smartBot, counters, variants, nexusCoreEnabled } = await req.json().catch(() => ({}));
-    const coreEnabled=nexusCoreEnabled!==false;
+    const coreEnabled=nexusCoreEnabled===true; // Older clients keep their 14-card protocol.
     // Старые waiting-комнаты игрока закрываем: они бессмысленны после ухода.
     await sql`
       update private.matches set status = 'finished', updated_at = now()

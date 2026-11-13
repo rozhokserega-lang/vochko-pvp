@@ -15,7 +15,7 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
   const st = { board: { a: newState(), b: newState() }, hands: { 1: deal(mulberry32(3)), 2: deal(mulberry32(7)) } };
   const match = { id: 'fixture', room_code: 'TEST', player1_id: 'u1', player2_id: 'u2',
     status: 'planning', round: 1, version: 1, state: st };
-  const turns = [], reports = [];
+  const turns = [], reports = [],broadcasts=[];
   const createdMatches=[];
   if(core){st.rules={abilities:true,counters:true,smartBot:true,variants:RECOMMENDED,nexusCoreEnabled:true,coreProfile:'balanced'};st.hands={1:dealCoreHand(mulberry32(3)),2:dealCoreHand(mulberry32(7))};st.rngSeed=42;}
   if(persistent){st.rules={...st.rules,deckVersion:2};Object.assign(st,playerDeck.createDeckMatch(mulberry32(3)));}
@@ -69,7 +69,7 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
         if (!id) throw new HttpError('unauthorized', 401);
         return { id };
       }, json: v => Response.json(v), err: (error, status) => Response.json({ error }, { status }),
-      cors: {}, HttpError, sql, broadcastState: async () => {}, dealHand,
+      cors: {}, HttpError, sql, broadcastState: async (...args) => {broadcasts.push(args);}, dealHand,
       ...validation, botPlan, choosePlan, resolveRound, shieldPct, mulberry32,
       RECOMMENDED, cryptoSeed: seedNext,coreDescriptor,nextCoreHands,chooseCorePlan,
       ...playerDeck,dealMatchCards:rules=>rules?.nexusCoreEnabled&&rules.deckVersion===2?playerDeck.createDeckMatch(mulberry32(seedNext())):{hands:{1:dealHand(!!rules?.nexusCoreEnabled),2:dealHand(!!rules?.nexusCoreEnabled)}},
@@ -82,5 +82,5 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
     }));
     return { status: response.status, body: await response.json() };
   };
-  return { match, turns, reports, call,createdMatches };
+  return { match, turns, reports, call,createdMatches,broadcasts };
 }

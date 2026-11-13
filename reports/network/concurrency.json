@@ -1,0 +1,19 @@
+{
+  "backend": "https://ejjbkxtnjfpjbppcvijm.supabase.co",
+  "checks": [
+    "legacy client receives 14 cards",
+    "four simultaneous confirmations resolve exactly once",
+    "one burn per player; same public report and next round on both clients"
+  ],
+  "matches": [
+    "22b39958-03d6-4618-8726-06473d538321",
+    "8907e0ef-bddd-4f9f-b852-07f81bdbb0ab"
+  ],
+  "statuses": [
+    409,
+    200,
+    200,
+    409
+  ],
+  "success": true
+}
