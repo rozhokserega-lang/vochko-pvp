@@ -11,7 +11,7 @@ export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
   const st = { board: { a: newState(), b: newState() }, hands: { 1: deal(mulberry32(3)), 2: deal(mulberry32(7)) } };
   const match = { id: 'fixture', room_code: 'TEST', player1_id: 'u1', player2_id: 'u2',
     status: 'planning', round: 1, version: 1, state: st };
-  const turns = [], reports = [];
+  const turns = [], reports = [], broadcasts = [];
   const sql = async (parts, ...v) => {
     const q = parts.join('?').replace(/\s+/g, ' ').trim();
     if (q.startsWith('select * from private.matches')) return v[0] === match.id ? [match] : [];
@@ -44,7 +44,7 @@ export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
         if (!id) throw new HttpError('unauthorized', 401);
         return { id };
       }, json: v => Response.json(v), err: (error, status) => Response.json({ error }, { status }),
-      cors: {}, HttpError, sql, broadcastState: async () => {}, dealHand,
+      cors: {}, HttpError, sql, broadcastState: async (...args) => { broadcasts.push(args); }, dealHand,
       ...validation, botPlan, resolveRound, shieldPct };
     new Function(...Object.keys(dependencies), stripTypeScriptTypes(source))(...Object.values(dependencies));
   }
@@ -54,5 +54,5 @@ export function serverFixture({ dealHand = () => deal(mulberry32(11)) } = {}) {
     }));
     return { status: response.status, body: await response.json() };
   };
-  return { match, turns, reports, call };
+  return { match, turns, reports, broadcasts, call };
 }

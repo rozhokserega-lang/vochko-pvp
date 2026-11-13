@@ -19,6 +19,7 @@ test('real submit/get-state handlers: private hands, two submissions, one resolv
   assert.equal((await f.call('submit-turn', 'outsider', a)).status, 403);
   assert.equal((await f.call('get-state', 'outsider', { matchId })).status, 403);
   assert.equal((await f.call('submit-turn', 1, a)).body.resolved, undefined);
+  assert.deepEqual(f.broadcasts, [['fixture', 2, 'round']]);
   assert.equal(f.reports.length, 0);
   const before = (await f.call('get-state', 2, { matchId })).body;
   assert.equal(before.latestRoundReport, null);
