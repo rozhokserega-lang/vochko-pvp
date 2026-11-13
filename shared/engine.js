@@ -208,6 +208,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   return {
     events, report,
     ...(abilities ? { abilityEvents } : {}),
+    ...(opts.nexusCoreEnabled ? {coreEffects:ctx?.coreEffects??[]} : {}),
     finished, winner,
   };
 }

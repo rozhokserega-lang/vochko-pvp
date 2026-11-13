@@ -1,4 +1,5 @@
-.core-console{position:absolute;left:1%;bottom:1.6%;width:19%;height:24%;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:auto;color:#d4f4ff;text-align:center;--core-color:#85dfff}
+.core-console{position:absolute;left:1%;bottom:1.6%;width:19%;height:24%;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;pointer-events:none;color:#d4f4ff;text-align:center;--core-color:#85dfff}
+.core-drop,.core-details{pointer-events:auto}
 .core-drop{position:relative;display:block;width:100%;height:74%;min-height:44px;padding:0;background:none;border:0;cursor:pointer;isolation:isolate}
 .core-drop:disabled{cursor:default;opacity:1}.core-art{width:100%;height:100%;object-fit:contain;pointer-events:none}
 .core-state{font-size:clamp(9px,.9cqw,13px);font-weight:700;text-shadow:0 1px 3px #000,0 0 4px #000;line-height:1.2;max-width:100%}

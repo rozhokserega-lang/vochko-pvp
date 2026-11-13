@@ -18,7 +18,7 @@ Deno.serve(async(req)=>{
       if(m.status!=='planning'||m.round!==round)throw new HttpError('stale round or phase',409);
       const st=m.state;
       if(st.rules?.nexusCoreEnabled!==true)throw new HttpError('Ядро выключено для этого матча',409);
-      if(coreCardId&&st.coreExclusions?.[seat]?.includes(coreCardId))throw new HttpError('Эта карта исключена из текущей раздачи',400);
+      if(coreCardId&&(st.decks?.[seat]?.burnedCards??st.coreExclusions?.[seat]??[]).includes(coreCardId))throw new HttpError('Эта карта сожжена или исключена из текущей раздачи',400);
       const turn={placements,fortifyLane:null,...(coreCardId!=null?{coreCardId}:{})};
       const check=validateTurn(st.hands[String(seat)],turn,{nexusCoreEnabled:true,requireCore:false});
       if(!check.ok)throw new HttpError(check.error,400);

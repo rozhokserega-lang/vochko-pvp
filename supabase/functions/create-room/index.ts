@@ -2,7 +2,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { roomCode, dealHand, emptyBoard, cryptoSeed } from '../_shared/deal.ts';
+import { roomCode, emptyBoard, cryptoSeed,dealMatchCards } from '../_shared/deal.ts';
 import { RECOMMENDED } from '../../../shared/abilities.js';
 
 Deno.serve(async (req) => {
@@ -33,13 +33,13 @@ Deno.serve(async (req) => {
       ? {
           botMatch: true,
           board: emptyBoard(),
-          hands: { 1: dealHand(coreEnabled), 2: dealHand(coreEnabled) },
+          ...dealMatchCards({nexusCoreEnabled:coreEnabled,deckVersion:2}),
           fortifyUsed: { 1: false, 2: false },
-          rules: { abilities: coreEnabled||abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1 },
+          rules: { abilities: coreEnabled||abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1,deckVersion:coreEnabled?2:undefined },
           rngSeed: cryptoSeed(),
         }
       : {
-          rules: { abilities: coreEnabled||abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1 },
+          rules: { abilities: coreEnabled||abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1,deckVersion:coreEnabled?2:undefined },
           rngSeed: cryptoSeed(),
         };
     const [match] = await sql`

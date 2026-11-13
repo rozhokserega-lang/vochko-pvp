@@ -3,20 +3,24 @@ import {pairStats} from './elements.js';
 import {resolveRound,cloneGameState} from './engine.js';
 import {dealCoreHand,coreTier} from './nexus-core.js';
 import {mulberry32} from './rng.js';
+import {deck,shuffled} from './cards.js';
+import {sampleFutureDeck,exhaustionWinner} from './player-deck.js';
 
 export function simpleCoreTurn(hand,own,enemy) {
   const placements=botPlan(hand,enemy,own),used=new Set(placements.flatMap(p=>[...p.attack,...p.defense].map(c=>c.id)));
   return {placements,coreCard:hand.find(c=>!used.has(c.id)),fortifyLane:null};
 }
-export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800,samples=2,variants={},counters=true,coreProfile='balanced',policy='adaptive'}={}) {
+export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800,samples=2,variants={},counters=true,coreProfile='balanced',policy='adaptive',ownDeck=null,opponentBurned=[],opponentDeckCounts=null}={}) {
   if(hand?.length!==13)throw Error('Core AI requires 13 cards');
   // Sampled combat always uses the same viewer-relative orientation. A server
   // seat must not change the random future evaluated for an identical position.
   if(side==='b'){state={round:state.round,a:state.b,b:state.a};side='a';}
   const started=performance.now(),enemy=side==='a'?'b':'a';
   const samplesData=Array.from({length:samples},()=>{
-    const h=dealCoreHand(rng);
-    return {opponent:simpleCoreTurn(h,state[enemy],state[side]),seed:Math.floor(rng()*4294967296)};
+    const available=shuffled(deck().filter(c=>!opponentBurned.includes(c.id)),rng),h=available.slice(0,13);
+    const remaining=available.slice(13).map(c=>c.id),draw=opponentDeckCounts?.draw??remaining.length;
+    const knowledge={remainingCards:remaining.slice(0,draw),discardPile:remaining.slice(draw),burnedCards:[...opponentBurned]};
+    return {opponent:simpleCoreTurn(h,state[enemy],state[side]),hand:h,knowledge,seed:Math.floor(rng()*4294967296)};
   });
   let best=null,evaluated=0;
   const scores=[];
@@ -40,11 +44,12 @@ export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800
       };
       let result=resolve(plan,sample.opponent);
       if(!result.finished){
-        // Common future deck permutations: current spell triggers cannot change
-        // the next hand; only the explicitly excluded card can do that.
-        const ownNext=dealCoreHand(mulberry32(sample.seed^0x45d9f3b),[card.id]);
-        const enemyNext=dealCoreHand(mulberry32(sample.seed^0x27d4eb2d),[sample.opponent.coreCard.id]);
-        result=resolve(simpleCoreTurn(ownNext,sim[side],sim[enemy]),simpleCoreTurn(enemyNext,sim[enemy],sim[side]));
+        // Randomize unknown order; never inspect the server's future draw order
+        // or the opponent's hidden hand. Permanent burns remain excluded.
+        const ownNext=ownDeck?sampleFutureDeck(ownDeck,hand,plan,mulberry32(sample.seed^0x45d9f3b)):{hand:dealCoreHand(mulberry32(sample.seed^0x45d9f3b),[card.id])};
+        const enemyNext=ownDeck?sampleFutureDeck(sample.knowledge,sample.hand,sample.opponent,mulberry32(sample.seed^0x27d4eb2d)):{hand:dealCoreHand(mulberry32(sample.seed^0x27d4eb2d),[sample.opponent.coreCard.id])};
+        if(ownNext.exhausted||enemyNext.exhausted)result={finished:true,winner:exhaustionWinner(sim)};
+        else result=resolve(simpleCoreTurn(ownNext.hand,sim[side],sim[enemy]),simpleCoreTurn(enemyNext.hand,sim[enemy],sim[side]));
       }
       score+=result.finished?(result.winner==='draw'?0:result.winner===side?10000:-10000):evaluateState(sim,side);
     }

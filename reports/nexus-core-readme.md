@@ -1,3 +1,5 @@
+> Historical deck v1 report. Permanent deck v2 supersedes the dealing and burn rules below. See [current specification](nexus-core-deck-v2.md). Prior balance simulations do not validate deck v2.
+
 # Как проверить Ядро Нексуса
 
 Ветка: `feature/nexus-core`, рабочая копия `D:/Rotogochi/vochko-pvp-nexus-core`.

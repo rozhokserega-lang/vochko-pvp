@@ -30,7 +30,13 @@ export function coreAbilityBonus(ctx,side,id,key) {
   if(!tier||!ability||!ELEMENTS[ability.element].suits.includes(card.s))return 0;
   const baseline=ability[key];if(!baseline)return 0;
   const values=ctx.coreProfile==='base' ? (key==='percent'?strongPercent:['heal','armor','shield'].includes(key)?heavy:baseline) : baseline;
-  return values[tier-1];
+  const value=values[tier-1];
+  if(value&&ctx.coreEffects){
+    let effect=ctx.coreEffects.find(e=>e.side===side&&e.lane===ctx.lane&&e.ability===id);
+    if(!effect){effect={side,lane:ctx.lane,ability:id,bonuses:{}};ctx.coreEffects.push(effect);}
+    effect.bonuses[key]=value;
+  }
+  return value;
 }
 export function dealCoreHand(rng=Math.random,excluded=[]) {
   const banned=new Set(excluded);

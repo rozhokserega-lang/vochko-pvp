@@ -1,4 +1,11 @@
 /* Бейджи статусов + панель подробностей + лёгкие визуальные эффекты. */
+.effects-inspector{position:fixed;z-index:15000;box-sizing:border-box;max-height:70vh;overflow:auto;padding:16px;background:#0d1827fa;color:#e9f4ff;border:1px solid #8fcad0;border-radius:8px;box-shadow:0 6px 24px #000b;text-align:left;font:13px/1.45 system-ui,sans-serif}
+.effects-inspector>strong{display:block;padding-right:36px;color:#e0f6ff;font-size:15px}
+.effects-inspector .effects-close{position:absolute;right:4px;top:4px;width:40px;height:40px;padding:0;background:transparent;border:0;color:#e0f6ff;font-size:26px;cursor:pointer}
+.effects-inspector .status-panel{position:static;transform:none;width:auto;max-width:none;padding:0;opacity:1;visibility:visible;background:none;border:0;box-shadow:none;pointer-events:auto;font-size:12px}
+.effects-inspector h4{margin:12px 0 2px;color:#a9dfff}.effects-inspector p{margin:10px 0 0}.effects-inspector ul{padding-left:18px}.effects-inspector small{display:block;color:#b5c5d6}
+.effects-inspector .status-panel-head{display:none}.effects-empty{color:#b5c5d6}
+.core-battle-badge{pointer-events:auto!important;cursor:pointer;background:#102035;border:1px solid #6da8be;border-radius:4px;padding:3px 6px}
 
 .status-badges {
   position: absolute;

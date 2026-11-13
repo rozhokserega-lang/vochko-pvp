@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       status: m.status,
       round: m.round,
       version: Number(m.version),
-      rules:{nexusCoreEnabled:st.rules?.nexusCoreEnabled===true,coreProfile:st.rules?.coreProfile??'balanced',variants:st.rules?.variants??{}},
+      rules:{nexusCoreEnabled:st.rules?.nexusCoreEnabled===true,deckVersion:st.rules?.deckVersion??1,coreProfile:st.rules?.coreProfile??'balanced',variants:st.rules?.variants??{}},
       me: {
         userId: user.id,
         hand: st.hands?.[String(seat)] ?? [],
@@ -55,7 +55,8 @@ Deno.serve(async (req) => {
           preparation:st.corePreparations?.[seat]??null,
           phase:readyRow.mine>0?'ready':st.corePreparations?.[seat]?.phase??'placement',
           core:coreDescriptor((st.hands?.[String(seat)]??[]).find(c=>c.id===st.corePreparations?.[seat]?.coreCardId)),
-          excludedCards:st.coreExclusions?.[seat]??[],
+          excludedCards:st.decks?.[seat]?.burnedCards??st.coreExclusions?.[seat]??[],
+          ...(st.decks?.[seat]?{deck:{drawCount:st.decks[seat].drawPile.length,discardPile:st.decks[seat].discardPile,burnedCards:st.decks[seat].burnedCards}}:{}),
         }:{}),
       },
       opponent: {
@@ -71,6 +72,7 @@ Deno.serve(async (req) => {
       latestRoundReport: report?.public_result ?? null,
       winner: m.status === 'finished' ? (m.winner_seat == null ? 'draw' : m.winner_seat === seat ? 'me' : 'opponent') : null,
       canRematch: m.status === 'finished',
+      endReason:st.endReason??null,
       nextMatchId: st.nextMatchId ?? null,
     });
   } catch (e) {

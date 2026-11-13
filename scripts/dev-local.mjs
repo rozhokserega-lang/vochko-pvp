@@ -4,8 +4,8 @@ import { randomUUID,randomInt } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { serverFixture } from '../tests/server-fixture.mjs';
 import { deal } from '../shared/cards.js';
-import {dealCoreHand} from '../shared/nexus-core.js';
 import {RECOMMENDED} from '../shared/abilities.js';
+import {createDeckMatch} from '../shared/player-deck.js';
 
 export async function startLocalGame(port = 5185) {
   const rooms = new Map();
@@ -13,9 +13,9 @@ export async function startLocalGame(port = 5185) {
     const f = serverFixture({ dealHand: deal,seedNext:()=>randomInt(0,4294967296) });
     const id = randomUUID(), code = id.replaceAll('-', '').slice(0, 6).toUpperCase();
     Object.assign(f.match, { id, room_code: code, status: bot ? 'planning' : 'waiting' });
-    f.match.state.hands = { 1: core?dealCoreHand():deal(), 2: core?dealCoreHand():deal() };
+    Object.assign(f.match.state,core?createDeckMatch():{hands:{1:deal(),2:deal()}});
     f.match.state.botMatch = bot;
-    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:1,variants:RECOMMENDED };
+    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:1,deckVersion:core?2:undefined,variants:RECOMMENDED };
     f.match.state.rngSeed=randomInt(0,4294967296);
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };
     rooms.set(id, room);

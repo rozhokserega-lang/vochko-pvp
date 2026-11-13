@@ -23,6 +23,7 @@ import { cardPanelHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPane
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { renderStatusBadges } from './ui/arena/StatusBadges.js';
+import {bindStructureInspection,closeEffectInspector} from './ui/arena/EffectInspector.js';
 import './ui/arena/status-badges.css';import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -203,6 +204,7 @@ function doRematch(btn) {
 
 function render(force = false) {
   if (!force && isCombatPlaying()) return; // UI заморожен на время боевой хореографии
+  closeEffectInspector();
   const blocked = turnLocked();
   const panelState = { round: view.round, blocked, hint: blocked ? '' : missingPairHint(),
     progress: { attack: slots.filter((s) => s.atk.length === 2).length,
@@ -264,6 +266,7 @@ function render(force = false) {
   });
 
   byId('fightBtn').onclick = submit;
+  bindStructureInspection(root,{selected:()=>selected,boardMe:view.board.me,boardOpp:view.board.opponent});
   if(view.rules?.nexusCoreEnabled)byId('fightBtn').disabled=blocked||coreBusy||!view.me.preparation?.coreCardId;
   byId('exitBtn').onclick = () => exitMatch();
   wireDrag();
@@ -284,7 +287,7 @@ function setStatus(text) { const el = byId('status'); if (el) el.textContent = t
 function showEndScreen(v) {
   if (document.querySelector('.end-overlay')) return;
   const title = v.winner === 'draw' ? '🤝 Ничья' : v.winner === 'me' ? '🏆 Победа!' : '💀 Поражение';
-  const message = v.winner === 'draw'
+  const message = v.endReason==='deck_exhaustion' ? 'Колода истощена: осталось меньше 13 несожжённых карт. Итог определён по HP Нексусов.' : v.winner === 'draw'
     ? 'Оба Нексуса разрушены или лимит раундов.'
     : v.winner === 'me' ? 'Нексус соперника разрушен.' : 'Твой Нексус разрушен.';
   app.appendChild(EndScreen({

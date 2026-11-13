@@ -222,7 +222,7 @@ export function applyStatuses(state, opts) {
     burned: { a: [false, false, false], b: [false, false, false] },
     disabledBySide: opts.disabledBySide ?? {},
     unblocked: opts.unblocked ?? [],
-    cores:opts.cores??{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled??[],
+    cores:opts.cores??{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled??[],coreEffects:[],
   };
   const burns = [];
   for (const side of ['a', 'b']) {
@@ -232,6 +232,7 @@ export function applyStatuses(state, opts) {
     ensureStatuses(board);
     const ownTurn = side === 'a' ? turnA : turnB;
     for (let l = 0; l < 3; l++) {
+      ctx.lane=l;
       const s = board.statuses[l];
       const placement = ownTurn?.placements?.find((p) => p.lane === l);
       const defElement = elementOf(placement?.defense)?.id;
@@ -282,6 +283,7 @@ export function applyStatuses(state, opts) {
 // ослабление удара Паром.
 export function effectiveLine(p) {
   const { ctx, attackerSide, lane, atkStat, defStat, atkElement, defElement, counters = false, variants = {} } = p;
+  ctx.lane=lane;
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
   const on = id => !ctx.disabled.has(id) && !(ctx.disabledBySide?.[ABILITIES[id].role === 'attack' ? attackerSide : defenderSide] ?? []).includes(id);
   const blocks = collisionBlocks(ctx,attackerSide,lane,atkElement,defElement,counters);
@@ -325,6 +327,7 @@ export function effectiveLine(p) {
 // Требуемый порядок: урон уже нанесён → on-hit атакующего → триггеры защиты.
 export function hitConsequences(p) {
   const { ctx, state, attackerSide, lane, atkElement, defElement, hit, rng, counters = false, variants = {} } = p;
+  ctx.lane=lane;
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
   const on = id => !ctx.disabled.has(id) && !(ctx.disabledBySide?.[ABILITIES[id].role === 'attack' ? attackerSide : defenderSide] ?? []).includes(id);
   const next = ctx.next;

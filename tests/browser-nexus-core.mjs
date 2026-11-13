@@ -5,9 +5,10 @@ import {createServer} from 'vite';
 import {serverFixture} from './server-fixture.mjs';
 
 const server=await createServer({base:'/',server:{host:'127.0.0.1',port:5191,strictPort:true}});await server.listen();
-const browser=await chromium.launch({channel:'chrome'}),f=serverFixture({core:true}),errors=[];
-const openNexus=process.argv.includes('--open-nexus'),shotPrefix=openNexus?'open-nexus-':'';
+const browser=await chromium.launch({channel:'chrome'}),f=serverFixture({core:true,persistent:true}),errors=[];
+const openNexus=process.argv.includes('--open-nexus'),shotPrefix=`deck-v2-${openNexus?'open-nexus-':''}`;
 if(openNexus)for(const side of ['a','b']){f.match.state.board[side].outer.fill(0);f.match.state.board[side].inner.fill(0);}
+f.match.state.board.a.statuses[0]={burn:2};f.match.state.board.b.statuses[0]={armor:3};
 await mkdir('reports/nexus-core-screenshots',{recursive:true});
 try{
   const pages=[];
@@ -27,19 +28,34 @@ try{
     await p.addInitScript(()=>localStorage.setItem('vochko_match','fixture'));
     await p.goto('http://127.0.0.1:5191/');await p.locator('#hand .card').first().waitFor();
     assert.equal(await p.locator('#hand .card').count(),13);assert.equal(await p.locator('#nexusCore').isDisabled(),true);assert.equal(await p.locator('#fightBtn').isDisabled(),true);
+    const mineStatus=seat===1?'burn':'armor',oppStatus=seat===1?'armor':'burn';
+    const ownTarget=openNexus?'.nexus-fortress.ally .nexus-floor[data-lane="0"]':'.tower[data-arena-id="tower-ally-def-0-outer"]';
+    const enemyTarget=openNexus?'.nexus-fortress.enemy .nexus-floor[data-lane="0"]':'.tower[data-arena-id="tower-enemy-atk-0-outer"]';
+    await p.locator(ownTarget).click();await p.locator('.effects-inspector').waitFor();
+    assert.equal(await p.locator(`.effects-inspector .status-detail-${mineStatus}`).count(),1);
+    assert.equal(await p.locator(`.effects-inspector .status-detail-${oppStatus}`).count(),0);
+    await p.screenshot({path:`reports/nexus-core-screenshots/${shotPrefix}effects-structure-${seat}.png`,fullPage:true});
+    await p.locator('.effects-close').click();await p.locator(enemyTarget).click();
+    assert.equal(await p.locator(`.effects-inspector .status-detail-${oppStatus}`).count(),1);
+    await p.locator('.effects-close').click();
+    if(!openNexus){await p.locator('.tower[data-arena-id="tower-ally-def-0-inner"]').click();assert.match(await p.locator('.effects-inspector').innerText(),/Активных эффектов нет/);await p.locator('.effects-close').click();}
     for(const lane of [0,1,2])for(const kind of ['atk','def']){
       await p.locator('#hand .card:not(.used)').nth(0).click();await p.locator('#hand .card:not(.used):not(.selected)').first().click();
       await p.locator(`#lanes .drop-target[data-lane="${lane}"][data-kind="${kind}"]`).click();
     }
     if(seat===1){await p.waitForFunction(()=>document.querySelector('#status')?.textContent.includes('Нажми Ядро'));await p.locator('#nexusCore:enabled').click();}
-    await p.waitForFunction(()=>document.querySelector('.core-console')?.dataset.phase==='waiting');
+    await p.waitForFunction(()=>document.querySelector('.core-console')?.dataset.phase==='waiting').catch(async error=>{
+      await p.screenshot({path:`reports/nexus-core-screenshots/${shotPrefix}failure-${seat}.png`,fullPage:true});
+      throw Error(`${error.message}; seat=${seat}; ${await p.locator('.match-screen').innerText()}`);
+    });
     assert.equal(await p.locator('#hand .card.used').count(),12);
     await p.reload();await p.locator('#nexusCore:enabled').waitFor();
     assert.equal(await p.locator('#hand .card.used').count(),12,'server restores preparation after reconnect');
     await p.locator('.core-art').evaluate(img=>img.decode());
     await p.locator('.core-details summary').click();
     await p.locator('.core-preview').waitFor({state:'visible'});
-    assert.match(await p.locator('.core-preview').innerText(),/Контрстихия отменяет/);
+    assert.match(await p.locator('.core-preview').innerText(),/Активных эффектов нет/);
+    assert.equal(await p.locator('.core-preview li').count(),0);
     await p.screenshot({path:`reports/nexus-core-screenshots/${shotPrefix}preview-${seat}.png`,fullPage:true});
     await p.locator('.core-details summary').click();
     if(seat===1)await p.locator('#hand .card:not(.used)').dragTo(p.locator('#nexusCore'));
@@ -47,6 +63,12 @@ try{
     await p.waitForFunction(()=>document.querySelector('.core-console')?.dataset.phase==='absorbed');
     assert.equal(await p.locator('#hand .card').count(),12);assert.equal(await p.locator('#hand .card.used').count(),12);assert.equal(await p.locator('#fightBtn').isEnabled(),true);
     assert.equal(await p.locator('.core-battle-badge').count(),0,'opponent core is not revealed during preparation');
+    await p.locator('#nexusCore').click();await p.locator('.effects-inspector').waitFor();
+    assert.equal(await p.locator('.effects-inspector li:not(.core-present)').count(),0,'inactive abilities are hidden');
+    assert.equal(await p.locator('#hand .card.used').count(),12,'inspection preserves placements');
+    const popup=await p.locator('.effects-inspector').boundingBox();assert.ok(popup.x>=0&&popup.x+popup.width<=await p.evaluate(()=>innerWidth));
+    await p.screenshot({path:`reports/nexus-core-screenshots/${shotPrefix}effects-core-${seat}.png`,fullPage:true});
+    await p.locator('.effects-close').click();
     const layout=await p.evaluate(()=>{
       const core=document.querySelector('#nexusCore').getBoundingClientRect(),fight=document.querySelector('#fightBtn').getBoundingClientRect();
       const overlap=(a,b)=>Math.min(a.right,b.right)>Math.max(a.left,b.left)&&Math.min(a.bottom,b.bottom)>Math.max(a.top,b.top);
@@ -64,6 +86,12 @@ try{
   const hidden=(await f.call('get-state',2,{matchId:'fixture'})).body;assert.equal(hidden.opponent.core,undefined);
   await pages[1].locator('#fightBtn').click();await pages[1].waitForFunction(()=>window.__animLog?.some(x=>x.fn==='anim'));
   await pages[0].evaluate(()=>window.__fixtureBroadcast());
+  await pages[0].locator('.core-battle-badge').first().waitFor();
+  for(const index of [0,1]){
+    await pages[0].locator('.core-battle-badge').nth(index).click();
+    assert.match(await pages[0].locator('.effects-inspector').innerText(),/Сработавшие усиления Ядра/);
+    await pages[0].locator('.effects-close').click();
+  }
   await Promise.all(pages.map(async(p,i)=>{
     await p.waitForFunction(()=>document.querySelectorAll('.core-battle-badge').length===2);
     await p.screenshot({path:`reports/nexus-core-screenshots/${shotPrefix}combat-${i+1}.png`,fullPage:true});
@@ -71,6 +99,7 @@ try{
     assert.equal(await p.locator('#hand .card').count(),13);assert.equal(await p.locator('#hand .card.used').count(),0);
   }));
   assert.equal(f.reports.length,1);assert.deepEqual(errors,[]);
+  assert.equal(f.match.state.decks[1].burnedCards.length,1);assert.equal(f.match.state.decks[1].drawPile.length,26);
   await pages[0].locator('.core-details summary').click();await pages[0].locator('.core-preview').waitFor({state:'visible'});
   pages[0].on('dialog',dialog=>dialog.accept());await pages[0].locator('#exitBtn').click();
   await pages[0].waitForFunction(()=>!document.querySelector('#nexusCore,.core-preview'));

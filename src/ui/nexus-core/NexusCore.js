@@ -1,6 +1,7 @@
 import {coreDescriptor,coreAbilityBonus,CORE_TIERS} from '../../../shared/nexus-core.js';
 import {ELEMENTS,elementOf} from '../../../shared/elements.js';
 import {ABILITIES,resolveVariants} from '../../../shared/abilities.js';
+import {showEffectInspector,closeEffectInspector} from '../arena/EffectInspector.js';
 const assets={closed:new URL('./assets/closed.png',import.meta.url).href,opening:new URL('./assets/opening.webp',import.meta.url).href,
   waiting:new URL('./assets/waiting.webp',import.meta.url).href,open:new URL('./assets/open.png',import.meta.url).href};
 let instance=null,instanceKey='',openingTimer=null,absorbTimer=null,phase='',previewNode=null;
@@ -59,9 +60,9 @@ export function mountNexusCore(root,{view,slots,remaining,selected,blocked,onAct
   }
   instance.style.setProperty('--core-color',info?.color??'#85dfff');
   const complete=slots.every(s=>s.atk.length===2&&s.def.length===2);
-  drop.disabled=blocked||(!ready&&!complete)||chosen;
+  drop.disabled=!chosen&&(blocked||(!ready&&!complete));
   drop.classList.toggle('drop-target',ready&&!chosen&&!blocked);
-  drop.onclick=()=>ready?onActivate(card?.id):onPrepare();
+  drop.onclick=()=>chosen?showEffectInspector(drop,'Активные усиления Ядра',previewNode.innerHTML):ready?onActivate(card?.id):onPrepare();
   instance.querySelector('.core-state').textContent=chosen?`${info.icon} Ядро ${genitive[info.suit]} ${CORE_TIERS[info.tier-1]}`:ready?'Перенесите карту в Ядро Нексуса':complete?'Открыть Ядро Нексуса':'Ядро · сначала размести 12 карт';
   root.querySelector('.core-own-badge')?.remove();
   if(chosen){const badge=document.createElement('span');badge.className='core-own-badge';badge.textContent=`${info.icon} ${genitive[info.suit]} ${CORE_TIERS[info.tier-1]}`;badge.title=`Усилятся: ${info.elements.map(id=>ELEMENTS[id].name).join(', ')} — при выполнении условий; контрстихии действуют.`;root.querySelector('.nexus-fortress.ally .nexus-fortress-stats').append(badge);}
@@ -69,13 +70,13 @@ export function mountNexusCore(root,{view,slots,remaining,selected,blocked,onAct
   if(info){
     const context={cores:{a:card},coreProfile:view.rules.coreProfile};
     const placed=slots.flatMap(s=>[['attack',s.atk],['defense',s.def]]).filter(([,cards])=>cards.length===2);
-    const abilities=Object.values(ABILITIES).filter(a=>info.elements.includes(a.element));
-    preview.innerHTML=`<strong>${card.r}${card.s} — Ядро ${genitive[info.suit]}, уровень ${CORE_TIERS[info.tier-1]}</strong><p>${info.elements.map(id=>ELEMENTS[id].name).join(' · ')}</p><ul>${abilities.map(a=>{
+    const abilities=chosen?Object.values(ABILITIES).filter(a=>info.elements.includes(a.element)&&placed.some(([role,cards])=>role===a.role&&elementOf(cards)?.id===a.element)):[];
+    preview.innerHTML=`<strong>${card.r}${card.s} — Ядро ${genitive[info.suit]}, уровень ${CORE_TIERS[info.tier-1]}</strong><ul>${abilities.map(a=>{
       const present=placed.some(([role,cards])=>role===a.role&&elementOf(cards)?.id===a.element);
       const values=['damage','heal','burn','armor','percent','strip','shield','charge'].map(k=>[k,coreAbilityBonus(context,'a',a.id,k)]).filter(([,v])=>v);
       const labels={damage:'урон',heal:'лечение',burn:'горение',armor:'броня',percent:'п.п.',strip:'снятие брони',shield:'щит',charge:'заряд'};
       return `<li class="${present?'core-present':''}">${present?'✓':'○'} ${ELEMENTS[a.element].name} · ${a.name}: ${values.map(([k,v])=>`+${v} ${labels[k]}`).join(', ')}<small>${description(a,view.rules.variants)}. Контрстихия отменяет усиление.</small></li>`;
-    }).join('')}</ul><p>Усилятся только размещённые способности при выполнении условий. Не гарантирует срабатывание.</p>`;
+    }).join('')}</ul><p>${chosen?(abilities.length?'Усиления действуют на размещённые способности. Срабатывание зависит от условий боя и контрстихий.':'Активных эффектов нет: размещённые стихии не усилены этим Ядром.'):'Активных эффектов нет. Сначала сожгите оставшуюся карту в Ядре.'}</p>`;
   }else preview.textContent='Последняя карта усилит способности четырёх стихий. Масть определяет стихии, достоинство — уровень.';
   for(const target of root.querySelectorAll('.tower.drop-target,.nexus-floor.drop-target')){
     const cards=slots[Number(target.dataset.lane)]?.[target.dataset.kind]??[];
@@ -84,6 +85,7 @@ export function mountNexusCore(root,{view,slots,remaining,selected,blocked,onAct
   }
 }
 export function clearNexusCore(){
+  closeEffectInspector();
   clearTimeout(openingTimer);clearTimeout(absorbTimer);instance?.remove();previewNode?.remove();
   document.querySelectorAll('.core-flight-card').forEach(node=>node.remove());instance=null;previewNode=null;instanceKey='';phase='';
 }
@@ -98,9 +100,17 @@ export function showBattleCores(view){
     const mine=side===(view.seat===1?'a':'b'),nexus=document.querySelector(`.nexus-fortress.${mine?'ally':'enemy'}`);
     if(!nexus)continue;
     nexus.querySelector('.core-battle-badge')?.remove();
-    const badge=document.createElement('span');badge.className='core-battle-badge';
+    const badge=document.createElement('button');badge.type='button';badge.className='core-battle-badge';
     badge.textContent=`${core.icon} ${core.name} ${CORE_TIERS[core.tier-1]}`;
     badge.title=`Ядро: ${core.elements.map(id=>ELEMENTS[id].name).join(', ')}. Только текущий бой; контрстихии действуют.`;
+    const effects=view.latestRoundReport.coreEffects?.filter(e=>e.side===side)??[];
+    const labels={damage:'урон',heal:'лечение',burn:'горение',armor:'броня',percent:'п.п.',strip:'снятие брони',shield:'щит',charge:'заряд'};
+    const html=effects.map(e=>`<p><b>${['Верх','Центр','Низ'][e.lane]} · ${ABILITIES[e.ability]?.name??e.ability}</b><br>${Object.entries(e.bonuses).map(([key,value])=>`+${value} ${labels[key]??key}`).join(', ')}</p>`).join('');
+    badge.onclick=e=>{e.stopPropagation();showEffectInspector(badge,'Сработавшие усиления Ядра',html);};
+    if(mine&&instance){
+      const drop=instance.querySelector('#nexusCore');drop.disabled=false;drop.onclick=()=>showEffectInspector(drop,'Сработавшие усиления Ядра',html);
+      previewNode.innerHTML=html||'<p>Активных эффектов нет</p>';
+    }
     (nexus.querySelector('.nexus-fortress-stats')??nexus).append(badge);
   }
 }

@@ -3,7 +3,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { dealHand, emptyBoard, roomCode } from '../_shared/deal.ts';
+import { emptyBoard, roomCode,dealMatchCards } from '../_shared/deal.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 
 Deno.serve(async (req) => {
@@ -30,12 +30,13 @@ Deno.serve(async (req) => {
       }
 
       // Оба согласны — новая партия, новый код комнаты.
+      const nextRules={...st.rules,...(st.rules?.nexusCoreEnabled?{deckVersion:2}:{})};
       const [created] = await tx`
         insert into private.matches (room_code, player1_id, player2_id, status, round, state)
         values (${roomCode()}, ${m.player1_id}, ${m.player2_id}, 'planning', 1, ${sql.json({
           board: emptyBoard(),
-          hands: { 1: dealHand(st.rules?.nexusCoreEnabled===true), 2: dealHand(st.rules?.nexusCoreEnabled===true) },
-          rules:st.rules??{},rngSeed:st.rngSeed,
+          ...dealMatchCards(nextRules),
+          rules:nextRules,rngSeed:st.rngSeed,
           fortifyUsed: { 1: false, 2: false },
           botMatch: !!st.botMatch, // реванш с ботом остаётся PvE
         })})

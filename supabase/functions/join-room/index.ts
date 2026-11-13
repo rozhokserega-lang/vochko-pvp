@@ -2,7 +2,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { dealHand, emptyBoard } from '../_shared/deal.ts';
+import { emptyBoard,dealMatchCards } from '../_shared/deal.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 
 Deno.serve(async (req) => {
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
              state = ${sql.json({
                ...m.state,
                board: emptyBoard(),
-               hands: { 1: dealHand(m.state?.rules?.nexusCoreEnabled===true), 2: dealHand(m.state?.rules?.nexusCoreEnabled===true) },
+               ...dealMatchCards(m.state?.rules),
                fortifyUsed: { 1: false, 2: false },
              })},
              updated_at = now()

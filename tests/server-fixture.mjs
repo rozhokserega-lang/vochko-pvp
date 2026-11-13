@@ -9,14 +9,16 @@ import { resolveRound, newState, shieldPct } from '../shared/engine.js';
 import { RECOMMENDED } from '../shared/abilities.js';
 import {coreDescriptor,nextCoreHands,dealCoreHand} from '../shared/nexus-core.js';
 import {chooseCorePlan} from '../shared/core-bot.js';
+import * as playerDeck from '../shared/player-deck.js';
 
-export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHand(mulberry32(11)):deal(mulberry32(11)), core=false, seedNext=()=>42 } = {}) {
+export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHand(mulberry32(11)):deal(mulberry32(11)), core=false, persistent=false, seedNext=()=>42 } = {}) {
   const st = { board: { a: newState(), b: newState() }, hands: { 1: deal(mulberry32(3)), 2: deal(mulberry32(7)) } };
   const match = { id: 'fixture', room_code: 'TEST', player1_id: 'u1', player2_id: 'u2',
     status: 'planning', round: 1, version: 1, state: st };
   const turns = [], reports = [];
   const createdMatches=[];
   if(core){st.rules={abilities:true,counters:true,smartBot:true,variants:RECOMMENDED,nexusCoreEnabled:true,coreProfile:'balanced'};st.hands={1:dealCoreHand(mulberry32(3)),2:dealCoreHand(mulberry32(7))};st.rngSeed=42;}
+  if(persistent){st.rules={...st.rules,deckVersion:2};Object.assign(st,playerDeck.createDeckMatch(mulberry32(3)));}
   const sql = async (parts, ...v) => {
     const q = parts.join('?').replace(/\s+/g, ' ').trim();
     if (q.startsWith('select * from private.matches')) return v[0] === (q.includes('room_code')?match.room_code:match.id) ? [match] : [];
@@ -70,6 +72,7 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
       cors: {}, HttpError, sql, broadcastState: async () => {}, dealHand,
       ...validation, botPlan, choosePlan, resolveRound, shieldPct, mulberry32,
       RECOMMENDED, cryptoSeed: seedNext,coreDescriptor,nextCoreHands,chooseCorePlan,
+      ...playerDeck,dealMatchCards:rules=>rules?.nexusCoreEnabled&&rules.deckVersion===2?playerDeck.createDeckMatch(mulberry32(seedNext())):{hands:{1:dealHand(!!rules?.nexusCoreEnabled),2:dealHand(!!rules?.nexusCoreEnabled)}},
       emptyBoard:()=>({a:newState(),b:newState()}),roomCode:()=> 'TEST' };
     new Function(...Object.keys(dependencies), stripTypeScriptTypes(source))(...Object.values(dependencies));
   }

@@ -6,6 +6,7 @@ supabase/.temp/
 
 vochko_pvp_standalone.html
 tests/.shots/
+.local-*.log
 reports/nexus-core-simulations/
 reports/nexus-core-simulations-v1/
 _prototype_vochko_unified_ai/

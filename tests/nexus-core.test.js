@@ -146,8 +146,10 @@ test('create/join/rematch preserve feature rules; legacy match stays legacy',asy
   assert.equal((await f.call('create-room',1,{nexusCoreEnabled:true})).status,200);
   assert.equal((await f.call('join-room',2,{roomCode:'TEST'})).status,200);
   assert.equal(f.match.state.rules.nexusCoreEnabled,true);assert.equal(f.match.state.hands[1].length,13);
+  assert.equal(f.match.state.rules.deckVersion,2);assert.equal(f.match.state.decks[1].drawPile.length,39);
   f.match.status='finished';f.match.state.botMatch=true;
   const rematch=await f.call('rematch',1,{matchId:'fixture'});assert.equal(rematch.status,200);assert.equal(rematch.body.waiting,false);
   assert.equal(f.createdMatches.at(-1).state.rules.nexusCoreEnabled,true);assert.equal(f.createdMatches.at(-1).state.hands[2].length,13);
+  assert.equal(f.createdMatches.at(-1).state.rules.deckVersion,2);assert.equal(f.createdMatches.at(-1).state.decks[1].burnedCards.length,0);
   const old=serverFixture();assert.equal((await old.call('prepare-core',1,{matchId:'fixture',round:1,placements:[]})).status,409);
 });
