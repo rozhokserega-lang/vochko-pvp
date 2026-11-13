@@ -33,3 +33,9 @@
 .pvp-room .room-cancel{font-size:clamp(14px,1.45vw,20px);font-weight:700}
 @media(max-width:850px){.pvp-room .room-cancel{font-size:15px}}@media(max-width:560px){.pvp-room .room-cancel{font-size:14px}}
 @media(max-width:560px){.room-laurel svg{width:24px;height:36px}}@media(max-width:380px){.room-laurel{display:none}}
+
+/* Match each avatar to the circle in its source frame, independent of viewport. */
+.room-player-own{aspect-ratio:1100/395}.room-player-opponent{aspect-ratio:1100/367}
+.room-avatar{width:18.2%;overflow:hidden;pointer-events:none;transform:translate(-50%,-50%);filter:none}
+.room-avatar-own{left:21.55%;top:48.35%}.room-avatar-opponent{left:80%;right:auto;top:49.05%}
+.room-avatar picture,.room-avatar-image{display:block;width:100%;height:100%}.room-avatar-image{object-fit:cover;border-radius:50%}
