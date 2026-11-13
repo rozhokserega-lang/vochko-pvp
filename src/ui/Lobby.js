@@ -21,18 +21,4 @@ let motion=!matchMedia('(prefers-reduced-motion: reduce)').matches;$('motion').o
 function updateArt(){root.querySelectorAll('img[data-element]').forEach(img=>{const asset=art[img.dataset.element];img.src=motion?asset.animated:asset.still})}selectElement(0);updateArt();$('lobbyStatus').textContent=joinError??'';
 
 return root;}
-export function waitingRoom(matchId, roomCode, getLink, { onExit } = {}) {
-  const root = document.createElement('div');
-  root.className = 'lobby';
-  const link = getLink(roomCode);
-  root.innerHTML = `
-    <h2>Комната готова</h2>
-    <div class="sub">Отправь ссылку или код сопернику. Как только он войдёт — начнётся партия.</div>
-    <div class="code">${roomCode}</div>
-    <div class="sub"><a href="${link}">${link}</a></div>
-    <div class="row"><span class="toast">⏳ Ждём второго игрока…</span></div>
-    ${onExit ? '<div class="row"><button class="btn" data-act="exit">🚪 Отменить комнату и вернуться в лобби</button></div>' : ''}
-    <div class="status" data-info="match">${matchId}</div>`;
-  if (onExit) root.querySelector('[data-act="exit"]').onclick = () => onExit();
-  return root;
-}
+export {waitingRoom} from './waiting-room/WaitingRoom.js';

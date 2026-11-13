@@ -1,0 +1,29 @@
+{
+  "backend": "https://ejjbkxtnjfpjbppcvijm.supabase.co",
+  "frontend": "http://127.0.0.1:5194/",
+  "started": "2026-11-13T12:34:56.061Z",
+  "rounds": [
+    {
+      "round": 1,
+      "version": 8,
+      "nexus": [
+        80,
+        80
+      ],
+      "finished": false
+    }
+  ],
+  "matches": [
+    "cb1d815e-0b99-4c69-8997-6ad2c9f2781c"
+  ],
+  "checks": [
+    "anonymous auth, invite-link join, unauthorized state rejected",
+    "offline/online recovery and idempotent confirmation"
+  ],
+  "realtimeSignals": [
+    8,
+    7
+  ],
+  "success": true,
+  "finished": "2026-11-13T12:35:17.901Z"
+}

@@ -44,6 +44,13 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
     }];
     if (q.startsWith('insert into private.round_events')) { reports.push({ round: v[1], public_result: v[2] }); return []; }
     if (q.startsWith('select public_result')) return reports.filter(r => r.round === v[1]);
+    if(q.startsWith('update private.matches set state = state ||')){
+      const seat=match.player1_id===v[3]?1:match.player2_id===v[3]?2:0;
+      if(match.id!==v[2]||!seat||match.status==='finished')return [];
+      match.state={...match.state,leftSeat:seat};
+      if(match.status==='waiting'&&seat===1)match.status='finished';
+      match.version++;return [{id:match.id,version:match.version}];
+    }
     if (q.startsWith('update private.matches set state')) {
       if(!q.includes('round =')){match.state=v[0];if(q.includes('version = version + 1'))match.version++;return [{version:match.version}];}
       Object.assign(match, { state: v[0], round: v[1], status: v[2], winner_seat: v[3], version: match.version + 1 });
@@ -61,7 +68,7 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
   }; sql.json = v => structuredClone(v);
   class HttpError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
   const handlers = {};
-  for (const name of ['submit-turn', 'get-state','prepare-core','create-room','join-room','rematch']) {
+  for (const name of ['submit-turn', 'get-state','prepare-core','create-room','join-room','rematch','leave-room']) {
     const source = readFileSync(new URL(`../supabase/functions/${name}/index.ts`, import.meta.url), 'utf8').replace(/^import .*?;\r?\n/gm, '');
     const dependencies = { Deno: { serve: fn => { handlers[name] = fn; } },
       requireUser: async req => {

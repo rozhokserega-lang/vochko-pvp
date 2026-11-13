@@ -15,6 +15,7 @@ import { ensureSession, supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';
 import { watchMatch } from './lib/realtime.js';
 import { Lobby, waitingRoom } from './ui/Lobby.js';
+import {setRoomConnection} from './ui/waiting-room/WaitingRoom.js';
 import { battleHTML as Board, nexusPhaseBar } from './ui/arena/ArenaScene.js';
 import { applyArenaLayout } from './ui/arena/ArenaScene.js';
 import { initArenaLayoutEditor, isArenaDebugEnabled } from './ui/arena/ArenaLayoutEditor.js';
@@ -39,6 +40,8 @@ let unwatch = null;
 let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
 let refreshEpoch = 0;    // защита от «зависшего» get-state при смене экрана/матча
 let coreBusy=false;
+let roomConnection='online';
+const roomIntros=new Set();
 
 const cardById = (id) => myHand.find((c) => c.id === id);
 const usedIds = () => new Set([...slots.flatMap((s) => [...s.atk, ...s.def].map((c) => c.id)),...(view?.me?.preparation?.coreCardId?[view.me.preparation.coreCardId]:[])]);
@@ -74,7 +77,7 @@ async function boot() {
 function renderLobby(joinError) {
   byId('panelEditor')?.remove();
   app.replaceChildren(Lobby({
-    onCreate: async () => { try { const r = await api.createRoom(); app.replaceChildren(waitingRoom(r.matchId, r.roomCode, link, { onExit: () => exitMatch(r.matchId, 'Отменить комнату и вернуться в лобби?') })); await enterMatch(r.matchId); } catch (e) { renderLobby(e.message); } },
+    onCreate: async () => { try { const r = await api.createRoom(); app.replaceChildren(waitingRoom(r.matchId, r.roomCode, link, { onExit: () => cancelWaitingRoom(r.matchId) })); await enterMatch(r.matchId); } catch (e) { renderLobby(e.message); } },
     onBot: async () => {
       try {
         const r = await api.createRoom({ vsBot: true });
@@ -102,11 +105,14 @@ async function joinRoom(code) {
 // ── Экран матча ────────────────────────────────────────────────────────────
 async function enterMatch(matchId) {
   refreshEpoch++;
+  roomConnection=navigator.onLine===false?'offline':'online';
   submission = null;
   clearFloats();
   if (unwatch) unwatch();
   localStorage.setItem('vochko_match', matchId); // реконнект после F5 (аудит п.4)
-  unwatch = watchMatch(matchId, () => refresh(matchId));
+  unwatch = watchMatch(matchId, () => refresh(matchId),{onConnectionChange:status=>{
+    roomConnection=status;setRoomConnection(app.querySelector('.pvp-room'),status);
+  }});
   await refresh(matchId);
   if(view?.matchId===matchId&&new URLSearchParams(location.search).has('room')){
     const params=new URLSearchParams(location.search);params.set('room',view.roomCode);
@@ -117,12 +123,12 @@ async function enterMatch(matchId) {
 // ── Выход из матча ─────────────────────────────────────────────────────────
 // Кнопка в шапке + кнопка на экране ожидания. Чистит localStorage и ?room= —
 // иначе F5 (реконнект по п.4) вернул игрока в покинутый матч.
-function exitMatch(matchId = view?.matchId, confirmText) {
+function exitMatch(matchId = view?.matchId, confirmText, {confirmed=false,notify=true}={}) {
   const isBot = view?.opponent?.isBot;
   const text = confirmText ?? (isBot
     ? 'Выйти из матча с ботом? Прогресс раунда будет потерян.'
     : 'Выйти из матча? Соперник увидит «отключился»; у него будет 10 минут на возврат.');
-  if (!window.confirm(text)) return;
+  if (!confirmed&&!window.confirm(text)) return;
   refreshEpoch++;
   localStorage.removeItem('vochko_match');
   const params = new URLSearchParams(location.search);
@@ -136,7 +142,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   submission = null;
   slots = resetSlots(); slotsState.round = 0;
   myHand = []; view = null;
-  if (matchId) api.leaveRoom(matchId).catch(() => { /* finished/нет участия — не критично */ });
+  if (matchId&&notify) api.leaveRoom(matchId).catch(() => { /* finished/нет участия — не критично */ });
   renderLobby();
 }
 
@@ -146,6 +152,11 @@ async function refresh(matchId) {
   if (epoch !== refreshEpoch || (view?.matchId === matchId && next.version < view.version)) return;
   if(view?.matchId===matchId&&next.version===view.version)return;
   view = next;
+  if(view.status==='finished'&&!view.board?.me){
+    if(unwatch){unwatch();unwatch=null;}
+    localStorage.removeItem('vochko_match');
+    renderLobby('Комната закрыта создателем. Создай новую или войди по другому коду.');return;
+  }
   (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, playing: isCombatPlaying(), at: Date.now() % 100000 });
   // Хореография боя захватывает UI: новое состояние применяется после неё.
   if (isCombatPlaying()) return;
@@ -156,8 +167,13 @@ async function refresh(matchId) {
   const hasNewBattle = hasNewBattleReport(rep, repRound, lastReportRound);
   // Второй ещё не вошёл — показываем экран ожидания вместо поля.
   if (view.status === 'waiting') {
-    app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link, { onExit: () => exitMatch(view.matchId, 'Отменить комнату и вернуться в лобби?') }));
+    showWaitingRoom();
     return;
+  }
+  if(view.status==='planning'&&!view.opponent?.isBot&&view.round===1&&!roomIntros.has(matchId)&&slotsState.matchId!==matchId){
+    roomIntros.add(matchId);showWaitingRoom({connected:true,starting:true});
+    await new Promise(resolve=>setTimeout(resolve,matchMedia('(prefers-reduced-motion: reduce)').matches?0:500));
+    if(epoch!==refreshEpoch||view?.matchId!==matchId)return;
   }
   const newDeal = view.matchId !== slotsState.matchId || view.round !== slotsState.round;
   const previousOrder = new Map(myHand.map((card,i) => [card.id,i]));
@@ -198,6 +214,32 @@ async function refresh(matchId) {
 }
 
 const slotsState = { matchId: null, round: 0 };
+function showWaitingRoom(extra={}){
+  const matchId=view.matchId;
+  app.replaceChildren(waitingRoom(matchId,view.roomCode,link,{
+    rules:view.rules,seat:view.seat,connection:roomConnection,...extra,
+    onExit:()=>extra.starting?exitMatch(matchId):cancelWaitingRoom(matchId),
+    onRetry:async()=>{
+      roomConnection='reconnecting';setRoomConnection(app.querySelector('.pvp-room'),roomConnection);
+      try{await refresh(matchId);roomConnection='online';}catch{roomConnection='error';}
+      setRoomConnection(app.querySelector('.pvp-room'),roomConnection);
+    },
+  }));
+}
+async function cancelWaitingRoom(matchId){
+  if(!window.confirm('Отменить комнату и вернуться в лобби?'))return;
+  const epoch=refreshEpoch;
+  const root=app.querySelector('.pvp-room'),button=root?.querySelector('[data-act="exit"]');
+  const label=button?.querySelector('span'),originalLabel=label?.textContent;
+  if(button){button.disabled=true;button.setAttribute('aria-busy','true');}if(label)label.textContent='Отменяем комнату…';
+  try{await api.leaveRoom(matchId);if(epoch!==refreshEpoch)return;exitMatch(matchId,undefined,{confirmed:true,notify:false});}
+  catch(error){
+    if(epoch!==refreshEpoch)return;
+    if(/nothing to leave|match not found/.test(error.message)){exitMatch(matchId,undefined,{confirmed:true,notify:false});return;}
+    if(button){button.disabled=false;button.removeAttribute('aria-busy');}if(label)label.textContent=originalLabel;
+    const feedback=root?.querySelector('.room-feedback');if(feedback)feedback.textContent='Не удалось отменить комнату. Проверь соединение и попробуй ещё раз.';
+  }
+}
 const resetSlots = () => Array.from({ length: 3 }, () => ({ atk: [], def: [] }));
 
 function doRematch(btn) {

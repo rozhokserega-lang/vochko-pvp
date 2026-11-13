@@ -6,6 +6,7 @@ import { serverFixture } from '../tests/server-fixture.mjs';
 import { deal } from '../shared/cards.js';
 import {RECOMMENDED} from '../shared/abilities.js';
 import {createDeckMatch} from '../shared/player-deck.js';
+import {newState} from '../shared/engine.js';
 
 export async function startLocalGame(port = 5185) {
   const rooms = new Map();
@@ -17,6 +18,7 @@ export async function startLocalGame(port = 5185) {
     f.match.state.botMatch = bot;
     f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:1,deckVersion:core?2:undefined,variants:RECOMMENDED };
     f.match.state.rngSeed=randomInt(0,4294967296);
+    if(!bot){delete f.match.state.board;delete f.match.state.hands;delete f.match.state.decks;}
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };
     rooms.set(id, room);
     return room;
@@ -25,7 +27,7 @@ export async function startLocalGame(port = 5185) {
     const user = localStorage.vochko_local_user ||= crypto.randomUUID();
     async function call(name,body={}){
       const r=await fetch('/__local/'+name,{method:'POST',headers:{'content-type':'application/json','x-local-user':user},body:JSON.stringify(body)});
-      const data=await r.json();if(!r.ok)throw new Error(data.error);return data;
+      const data=await r.json();if(!r.ok)throw new Error(({'room-not-found':'Комната не найдена — проверь код','room-unavailable':'Комната недоступна: она закрыта или уже занята','own-room':'Это твоя комната — пригласи другого игрока'})[data.error]??data.error);return data;
     }
     export const api={createRoom:(o={})=>call('create-room',o),joinRoom:roomCode=>call('join-room',{roomCode}),getState:matchId=>call('get-state',{matchId}),prepareCore:turn=>call('prepare-core',turn),submitTurn:turn=>call('submit-turn',turn),rematch:matchId=>call('rematch',{matchId}),leaveRoom:matchId=>call('leave-room',{matchId})};`;
   const plugin = {
@@ -36,9 +38,11 @@ export async function startLocalGame(port = 5185) {
       if (path.endsWith('/src/lib/supabase.js')) return `export async function ensureSession(){return {access_token:'local'}};export function supabase(){return {}}`;
       if (path.endsWith('/src/lib/realtime.js')) return `
         import {api} from './api.js';
-        export function watchMatch(id,cb){let active=true,last=null,busy=false;
-          const timer=setInterval(async()=>{if(busy)return;busy=true;try{const v=await api.getState(id);if(active&&v.version!==last){last=v.version;cb()}}catch{}finally{busy=false}},800);
-          return ()=>{active=false;clearInterval(timer)};
+        export function watchMatch(id,cb,{onConnectionChange=()=>{}}={}){let active=true,last=null,busy=false;
+          const sync=async()=>{if(busy||!active)return;busy=true;try{const v=await api.getState(id);if(active){onConnectionChange('online');if(v.version!==last){last=v.version;await cb()}}}catch{if(active)onConnectionChange(navigator.onLine?'error':'offline')}finally{busy=false}};
+          const timer=setInterval(sync,800),offline=()=>onConnectionChange('offline');
+          window.addEventListener('offline',offline);window.addEventListener('online',sync);
+          return ()=>{active=false;clearInterval(timer);window.removeEventListener('offline',offline);window.removeEventListener('online',sync)};
         }`;
     },
     configureServer(server) {
@@ -59,16 +63,21 @@ export async function startLocalGame(port = 5185) {
           if (action === 'join-room') {
             const room = [...rooms.values()].find(r => r.f.match.room_code === String(body.roomCode).toUpperCase());
             if (!room) return reply({ error: 'room-not-found' }, 404);
+            if(room.f.match.status!=='waiting'&&room.f.match.status!=='finished'&&(room.owner===user||room.guest===user))return reply({matchId:room.f.match.id,seat:room.owner===user?1:2});
             if (room.owner === user) return reply({ error: 'own-room' }, 409);
             if (room.f.match.status !== 'waiting') return reply({ error: 'room-unavailable' }, 409);
             room.guest = user; room.f.match.status = 'planning'; room.f.match.version++;
+            Object.assign(room.f.match.state,{board:{a:newState(),b:newState()},...(room.f.match.state.rules.nexusCoreEnabled?createDeckMatch():{hands:{1:deal(),2:deal()}})});
             return reply({ matchId: room.f.match.id, seat: 2 });
           }
           const room = rooms.get(body.matchId);
           if (!room) return reply({ error: 'match not found' }, 404);
           const seat = room.owner === user ? 1 : room.guest === user ? 2 : 0;
           if (!seat) return reply({ error: 'not a participant' }, 403);
-          if (action === 'leave-room') return reply({ ok: true });
+          if(action==='leave-room'){
+            const leaving=room.pending.then(()=>room.f.call('leave-room',seat,body));room.pending=leaving.catch(()=>{});
+            const result=await leaving;return reply(result.body,result.status);
+          }
           if (action === 'rematch') {
             if (room.f.match.status !== 'finished') return reply({ error: 'match not finished' }, 409);
             room.rematch.add(seat);

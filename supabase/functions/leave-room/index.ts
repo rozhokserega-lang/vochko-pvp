@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
       update private.matches
          set state = state || jsonb_build_object('leftSeat',
                case when ${user.id} = player1_id then 1 else 2 end),
+             status = case when status = 'waiting' and ${user.id} = player1_id then 'finished' else status end,
              expires_at = least(expires_at, now() + interval '10 minutes'),
              version = version + 1,
              updated_at = now()
