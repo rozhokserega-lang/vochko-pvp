@@ -5,6 +5,7 @@ import { attackChargeHTML } from './AttackCharge.js';
 import { pairStats, type } from '../../../shared/elements.js';
 import { towerHealthHTML } from './TowerHealth.js';
 import { ARENA_ASSETS } from './arena-assets.js';
+import {INNER_TOWER_ASSETS} from './inner-tower-assets.js';
 import { LAYOUT, arenaStage, towerId } from './arenaLayout.js';
 import { cardSlotHTML } from './CardSlot.js';
 import { elementAnimHTML, ELEMENT_CLASS } from './ElementEffect.js';
@@ -31,7 +32,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots, preview }
   const charging = kind === 'def' && cards.some(c => c.justPlaced);
   const element = power ? type(cards) : '';
   const elClass = element ? ` element-${ELEMENT_CLASS[element]}` : '';
-  const art = ARENA_ASSETS[ART_KEY[`${team}-${stage}`]];
+  const art = size==='inner'?INNER_TOWER_ASSETS[team][stage]:ARENA_ASSETS[ART_KEY[`${team}-${stage}`]];
   const hl = towerHighlightClass({ kind, cards, dead: !alive, resolving: false });
   return `<div class="tower tower-art ${team} ${size} stage-${stage} ${alive ? '' : 'dead'}${active && alive ? ' drop-target' : ''}${elClass} ${hl}"
     ${active ? `data-lane="${lane}" data-kind="${kind}"` : ''} data-arena-id="${towerId(team, kind, lane, size)}"

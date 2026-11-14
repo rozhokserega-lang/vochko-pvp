@@ -144,7 +144,7 @@ function renderOverlay() {
     const selectedCls = t.id === state.selected ? ' dbg-selected' : '';
     shapes.push(`<div class="dbg-box dbg-green${selectedCls}" data-dbg-id="${t.id}" style="left:${pctOf(x, W)};top:${pctOf(y, H)};width:${pctOf(tbox.w, W)};height:${pctOf(tbox.h, H)};--dbg-color:#39e75f;--dbg-dash:0 none"></div>`);
     cross(t.cx, tbox.bottom, '#39e75f');
-    const art = towerArt(team, stage);
+    const art = towerArt(team, stage, size);
     for (const s of art.slots ?? []) {
       box(x + (s.x / 100) * tbox.w, y + (s.y / 100) * tbox.h, (s.w / 100) * tbox.w, (s.h / 100) * tbox.h, '#35d6ff');
     }

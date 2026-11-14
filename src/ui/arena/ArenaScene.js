@@ -77,7 +77,7 @@ export function applyArenaLayout(root = document) {
     const stage = t.classList.contains('stage-ruins') ? 'ruins' : t.classList.contains('stage-damaged') ? 'damaged' : 'full';
     const box = towerBox(team, kind, +lane, size, stage);
     boxStyle(t, box);
-    const art = towerArt(team, stage);
+    const art = towerArt(team, stage, size);
     // Слоты карт поверх нарисованных рамок.
     t.querySelectorAll('.card-slot').forEach((slot, i) => {
       const s = art.slots[i];
