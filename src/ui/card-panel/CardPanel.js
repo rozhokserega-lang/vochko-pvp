@@ -97,8 +97,10 @@ export function renderPanelPreview(hand, cards) {
     effect.dataset.element = element;
     effect.innerHTML = elementAnimHTML(element);
   }
-  power.innerHTML = info ? `<span class="pair-defense">🛡 ${info.defense}</span> <span class="pair-element">${ELEMENTS[info.element].name}</span> <span class="pair-attack">⚔ ${info.attack}</span>` : '';
-  power.setAttribute('aria-label', info ? `Защита ${info.defense}, ${ELEMENTS[info.element].name}, атака ${info.attack}` : '');
+  power.innerHTML = info
+    ? `<span class="pair-defense">🛡 ${info.defense}</span> <span class="pair-element">${ELEMENTS[info.element].name}</span> <span class="pair-attack">⚔ ${info.attack}</span>`
+    : '<span class="pair-hint">Выбери две карты</span>';
+  power.setAttribute('aria-label', info ? `Защита ${info.defense}, ${ELEMENTS[info.element].name}, атака ${info.attack}` : 'Пара не выбрана');
   power.dataset.kind = info ? 'pair' : '';
   power.dataset.element = info?.element ?? '';
   power.title = info ? `${elementOf(cards)?.name} · База ${info.basePower} · ×${info.m}` : '';

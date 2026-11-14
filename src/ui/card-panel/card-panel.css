@@ -31,6 +31,9 @@
 .panel-power .pair-element{color:#ffe7b6;font-size:clamp(12px,1.4cqw,18px);font-weight:800;line-height:1.1;text-align:center;white-space:normal;text-wrap:balance;-webkit-text-stroke:.3px #fff;paint-order:stroke fill;text-shadow:0 1px 3px #000}
 .panel-power .pair-defense{color:#69caff;border-color:#409ee4;text-shadow:0 1px 2px #000,0 0 7px #2395ef88}
 .panel-power .pair-attack{color:#ff7373;border-color:#dc5151;text-shadow:0 1px 2px #000,0 0 7px #ed393988}
+/* Пара не выбрана — мягкая подсказка вместо пустого чёрного кармана. */
+.panel-power .pair-hint{color:#9aa7bd;font-size:clamp(11px,1.3cqw,17px);font-weight:700;letter-spacing:.4px;text-shadow:0 1px 2px #000}
+.panel-power[data-kind=""]{box-shadow:inset 0 4px 9px #000c,inset 0 -1px 0 #a9c2da14,0 3px 6px #000a}
 .panel-cards{container-type:size;display:flex;align-items:center;justify-content:space-between;gap:.55%;overflow:visible;pointer-events:auto}
 .panel-card.card{position:relative;flex:none;width:6.45%;height:auto;max-width:none;min-width:0;aspect-ratio:5/7;display:block;padding:0;border-radius:9%;touch-action:none;transition:transform .13s ease,box-shadow .13s ease}
 .panel-card-corner{position:absolute;top:6%;left:8%;display:flex;gap:.1em;font:bold min(2.4cqw,18cqh)/1 Georgia,serif}

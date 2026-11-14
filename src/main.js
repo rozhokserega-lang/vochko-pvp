@@ -145,7 +145,12 @@ async function refresh(matchId) {
   const hasNewBattle = hasNewBattleReport(rep, repRound, lastReportRound);
   // Второй ещё не вошёл — показываем экран ожидания вместо поля.
   if (view.status === 'waiting') {
-    app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link, { onExit: () => exitMatch(view.matchId, 'Отменить комнату и вернуться в лобби?') }));
+    // Перерисовка только при смене комнаты: иначе каждое get-state перезапускало
+    // бы анимации «ждём…» и сбрасывало пульс.
+    const shown = document.querySelector('.lobby.waiting');
+    if (shown?.dataset.matchId !== view.matchId) {
+      app.replaceChildren(waitingRoom(view.matchId, view.roomCode, link, { onExit: () => exitMatch(view.matchId, 'Отменить комнату и вернуться в лобби?') }));
+    }
     return;
   }
   const newDeal = view.matchId !== slotsState.matchId || view.round !== slotsState.round;

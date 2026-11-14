@@ -35,6 +35,21 @@
 @keyframes tower-crystal-shatter{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.4) rotate(5deg)}}
 @keyframes tower-crystal-critical{50%{filter:brightness(1.55) drop-shadow(0 0 5px #fa3158)}}
 @media(prefers-reduced-motion:reduce){.tower-crystal *,.tower-crystal *:before,.tower-crystal *:after{animation:none!important;transition:none!important}}
+/* Узкая сцена (телефон): центральные HP-кристаллы двух противостоящих башен сходятся
+   у середины поля, их подписи «12 / 12» налезали друг на друга и на бейдж линии.
+   Уменьшаем отступ и шрифт подписи — readout остаётся читаемым и не пересекается. */
+@container (max-width:700px){
+  .arena-scene .tower-art .tower-crystal.meter-left{margin-right:.7cqw}
+  .arena-scene .tower-art .tower-crystal.meter-right{margin-left:.7cqw}
+  .arena-scene .tower-art .tower-crystal .crystal-readout{font-size:clamp(6px,.75cqw,11px);letter-spacing:-.2px;white-space:nowrap}
+  .arena-scene .tower-art .tower-crystal .crystal-shield{font-size:clamp(6px,.75cqw,11px)}
+}
+/* Очень узкие сцены (320–380): ещё плотнее — чуть сжимаем подписи по горизонтали. */
+@container (max-width:380px){
+  .arena-scene .tower-art .tower-crystal.meter-left{margin-right:.45cqw}
+  .arena-scene .tower-art .tower-crystal.meter-right{margin-left:.45cqw}
+  .arena-scene .tower-art .tower-crystal .crystal-readout{letter-spacing:-.3px;transform:translateX(-50%) scaleX(.92)}
+}
 .tower-crystal .crystal-shield [hidden]{display:none!important}
 /* The shield charges around HP; attack previews never create enemy shields. */
 .tower-crystal .crystal-shield-energy{position:absolute;inset:0;clip-path:polygon(50% 0,96% 12%,100% 85%,50% 100%,0 85%,4% 12%);background:linear-gradient(90deg,#d0fffff2,#40dbffbb 19%,transparent 25%,transparent 75%,#40dbffbb 81%,#d0fffff2);transform:scaleY(var(--shield-ratio));transform-origin:bottom;transition:transform 1s ease-out;opacity:1}

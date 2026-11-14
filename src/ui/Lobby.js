@@ -1,4 +1,5 @@
 import './fortress.css';
+import { ARENA_ASSETS } from './arena/arena-assets.js';
 import { ELEMENTS, pairStats } from '../../shared/elements.js';
 import { art } from './fortress-art.js';
 export function Lobby({onCreate,onBot,onJoin,joinError}){const root=document.createElement('div');root.className='fortress-root';root.innerHTML="<div class=\"scene\"></div><header class=\"hero\"><div class=\"hero-image\"></div><div class=\"topbar\"><div class=\"brand\">⚔ ВОЧКО <b>МОБА</b></div><div class=\"top-actions\"><button class=\"microbtn\" id=\"motion\" title=\"Включить или выключить эффекты\">✦ Эффекты</button><button class=\"microbtn\" id=\"rulesTop\">? Правила</button></div></div><div class=\"floating-card c1\">♥</div><div class=\"floating-card c2\">♠</div><div id=\"sparks\"></div><div class=\"hero-bottom\"><div class=\"eyebrow\">КАРТЫ · СТИХИИ · ТРИ ЛИНИИ</div><p>Собери комбинации. Пробей оборону. Уничтожь вражеский Нексус.</p></div></header><main class=\"shell\"><section class=\"glass menu\"><div class=\"menu-intro\"><div class=\"kicker\">⚜ ДОБРО ПОЖАЛОВАТЬ НА АРЕНУ</div><h1>ТРИ ЛИНИИ. ОДНА ПОБЕДА.</h1><p class=\"lead\">Дуэль на трёх линиях, где обычные игральные карты превращаются в стихийные атаки и защиту. Собирай пары и пробивай оборону соперника.</p><div id=\"lobbyStatus\" class=\"error\" role=\"status\" aria-live=\"polite\"></div><div class=\"features\"><span class=\"pill\">⚔ PvP 1 × 1</span><span class=\"pill\">🃏 Карточные комбинации</span><span class=\"pill\">🌪 10 стихий</span><span class=\"pill\">🏰 3 линии</span></div></div><div class=\"menu-actions\"><button class=\"action primary\" data-open=\"create\"><span class=\"ico\"><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 4l16 16M16 4L4 16m0-4l8 8m8-8l-8 8M4 4h5L4 9m16-5h-5l5 5'/></svg></span><span><strong>СОЗДАТЬ КОМНАТУ</strong><small>Создать комнату и пригласить друга</small></span><span class=\"arr\">›</span></button><button class=\"action\" data-open=\"join\"><span class=\"ico\"><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M10 14l4-4m-6 5l-2 2a4 4 0 005 5l4-4m-6-9l4-4a4 4 0 015 5l-2 2'/></svg></span><span><strong>ПРИСОЕДИНИТЬСЯ</strong><small>Войти в комнату по коду</small></span><span class=\"arr\">›</span></button><button class=\"action\" data-open=\"bot\"><span class=\"ico\"><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M5 9h14v11H5zM12 9V4m-2 0h4M8 13h2m4 0h2m-8 4h8'/></svg></span><span><strong>ИГРА ПРОТИВ БОТА</strong><small>Тренировка перед сетевой дуэлью</small></span><span class=\"arr\">›</span></button><button class=\"action\" id=\"how\"><span class=\"ico\"><svg viewBox='0 0 24 24' aria-hidden='true'><path d='M6 3h12v18H6zM9 7h6M9 11h6M9 15h4'/></svg></span><span><strong>КАК ИГРАТЬ</strong><small>Правила и комбинации карт</small></span><span class=\"arr\">↓</span></button></div></section><section class=\"section\" id=\"rules\"><div class=\"section-head\"><div><div class=\"kicker\">ПЕРВЫЕ ШАГИ</div><h2>Как играть</h2></div><p>Три простых шага до первой битвы</p></div><div class=\"steps\"><article class=\"glass step\"><div class=\"num\">01 / ♠</div><h3>Собери пары</h3><p>Получи 14 карт и составь шесть пар из 12 карт. Пара на башне врага атакует, пара на своей башне защищает.</p></article><article class=\"glass step\"><div class=\"num\">02 / ♜</div><h3>Займи три линии</h3><p>На каждой линии поставь атакующую пару на башню врага и защитную на свою. Любые масти разрешены.</p></article><article class=\"glass step\"><div class=\"num\">03 / ♜</div><h3>Пробей Нексус</h3><p>Разрушай сначала внешнюю башню, затем внутреннюю. Открой путь к Нексусу и уничтожь его, чтобы победить.</p></article></div></section><section class=\"section\" id=\"elements\"><div class=\"section-head\"><div><div class=\"kicker\">МАГИЯ КАРТОЧНЫХ МАСТЕЙ</div><h2>Энциклопедия стихий</h2></div><p>Выбери стихию, чтобы узнать её бонусы</p></div><div class=\"elements\" id=\"elementGrid\"></div><div class=\"glass detail\"><div><img class=\"detail-art\" id=\"detailArt\" alt=\"\"><div class=\"kicker\" id=\"elementSuits\">♥ + ♥</div><h3 id=\"elementTitle\">🔥 Огонь</h3><p id=\"elementDesc\">Стихия формируется сочетанием двух мастей.</p></div><div class=\"stats\"><div class=\"stat\"><span>⚔ АТАКА</span><b id=\"elementAttack\">+20%</b></div><div class=\"stat\"><span>🛡 ЗАЩИТА</span><b id=\"elementDefense\">−10%</b></div></div></div></section><section class=\"section\" id=\"calculator\"><div class=\"section-head\"><div><div class=\"kicker\">МАСТЕРСКАЯ КОМБИНАЦИЙ</div><h2>Калькулятор карт</h2></div><p>Проверь любую пару до боя</p></div><div class=\"glass calculator\"><div><h3>Выбери две карты</h3><p>Масти определяют стихию, номиналы — силу комбинации. Для примера можно выбрать любые карты из обычной колоды.</p><div class=\"calc-controls\"><select class=\"select-card\" id=\"cardA\" aria-label=\"Первая карта\"></select><select class=\"select-card\" id=\"cardB\" aria-label=\"Вторая карта\"></select></div><div class=\"notice\" id=\"calcNote\">Множитель определяется лучшей подходящей комбинацией.</div></div><div class=\"calc-result\"><div class=\"calc-banner\"><div><strong id=\"calcElement\">🔥 Огонь</strong><div style=\"font-size:11px;color:#b9c6d8\" id=\"calcCombo\">Одна масть · ×1.4</div></div><span style=\"font-size:25px\">🃏</span></div><div class=\"stat\"><span>⚔ АТАКА</span><b id=\"calcAttack\">0</b></div><div class=\"stat\"><span>🛡 ЗАЩИТА</span><b id=\"calcDefense\">0</b></div></div></div></section><footer class=\"footer\">ВОЧКО МОБА · Крепость стихий · Дуэль на трёх линиях</footer></main><div class=\"modal-back\" id=\"modalBack\" hidden><div class=\"glass modal\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modalTitle\"><button class=\"close\" id=\"closeModal\" aria-label=\"Закрыть\">✕</button><div class=\"kicker\">ВОЧКО МОБА</div><h2 id=\"modalTitle\">Сетевая игра</h2><p id=\"modalText\"></p><div id=\"modalBody\"></div><div class=\"notice\">Код комнаты можно получить у друга.</div></div></div>";const elements=Object.values(ELEMENTS).map(e=>[e.id,e.name,e.suits,'',e.attackBonus,e.defenseBonus,'Пара на башне врага атакует, пара на своей башне защищает. Бонус атаки применяется в атакующей позиции, бонус защиты — в защитной.']);
@@ -23,16 +24,51 @@ function updateArt(){root.querySelectorAll('img[data-element]').forEach(img=>{co
 return root;}
 export function waitingRoom(matchId, roomCode, getLink, { onExit } = {}) {
   const root = document.createElement('div');
-  root.className = 'lobby';
+  root.className = 'lobby waiting';
+  root.dataset.matchId = matchId;
   const link = getLink(roomCode);
   root.innerHTML = `
-    <h2>Комната готова</h2>
-    <div class="sub">Отправь ссылку или код сопернику. Как только он войдёт — начнётся партия.</div>
-    <div class="code">${roomCode}</div>
-    <div class="sub"><a href="${link}">${link}</a></div>
-    <div class="row"><span class="toast">⏳ Ждём второго игрока…</span></div>
-    ${onExit ? '<div class="row"><button class="btn" data-act="exit">🚪 Отменить комнату и вернуться в лобби</button></div>' : ''}
-    <div class="status" data-info="match">${matchId}</div>`;
+    <div class="waiting-scene" aria-hidden="true"></div>
+    <div class="waiting-card">
+      <div class="waiting-logo">ВОЧКО <span>МОБА</span></div>
+      <h2 class="waiting-title">Комната готова</h2>
+      <p class="waiting-sub">Отправь ссылку или код сопернику.<br>Как только он войдёт — партия начнётся автоматически.</p>
+      <div class="waiting-players">
+        <div class="player-frame ally"><span class="seat-mark" aria-hidden="true">1</span><b>ВЫ</b><small>Синяя сторона · готов</small></div>
+        <div class="vs-badge" aria-hidden="true">VS</div>
+        <div class="player-frame enemy"><span class="seat-mark" aria-hidden="true">2</span><b>СОПЕРНИК</b><small>Красная сторона · ждёт<span class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></small></div>
+      </div>
+      <div class="waiting-invite">
+        <div class="invite-row"><span class="invite-label">Код комнаты</span></div>
+        <div class="code">${roomCode}</div>
+        <div class="invite-row"><button class="copy-btn" data-copy="${roomCode}" type="button">⧉ Скопировать код</button></div>
+        <div class="invite-row"><span class="invite-label">Ссылка-приглашение</span></div>
+        <div class="link-line"><a href="${link}">${link}</a><button class="copy-btn" data-copy="${link}" type="button">⧉ Копировать</button></div>
+      </div>
+      <div class="waiting-status" role="status">⏳ Ждём второго игрока<span class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></div>
+      ${onExit ? '<div class="row"><button type="button" data-act="exit">🚪 Отменить комнату и вернуться в лобби</button></div>' : ''}
+      <div class="status" data-info="match">${matchId}</div>
+    </div>`;
   if (onExit) root.querySelector('[data-act="exit"]').onclick = () => onExit();
+  // Фон комнаты — утверждённый арт арены (замки/крепостные стены), приглушён под панелью.
+  const scene = root.querySelector('.waiting-scene');
+  if (scene) scene.style.backgroundImage = `url('${ARENA_ASSETS.bg}')`;
+  for (const btn of root.querySelectorAll('[data-copy]')) {
+    btn.onclick = async () => {
+      const text = btn.dataset.copy;
+      let ok = false;
+      try { await navigator.clipboard.writeText(text); ok = true; }
+      catch {
+        const input = Object.assign(document.createElement('textarea'), { value: text });
+        document.body.append(input); input.select();
+        try { ok = document.execCommand('copy'); } catch { /* буфер недоступен */ }
+        input.remove();
+      }
+      const label = btn.textContent;
+      btn.classList.toggle('ok', ok);
+      btn.textContent = ok ? '✓ Скопировано' : '✗ Не удалось';
+      setTimeout(() => { btn.classList.remove('ok'); btn.textContent = label; }, 1400);
+    };
+  }
   return root;
 }

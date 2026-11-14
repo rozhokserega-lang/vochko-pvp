@@ -229,7 +229,7 @@
 @media(max-width:740px){
   .arena-scene{border-radius:10px;box-shadow:0 6px 20px #000a,0 0 0 1px #a78c5333,0 0 0 3px #0b1524}
   .arena-scene .tower-hp .tag{display:none}
-  .arena-scene .centerlane{padding:1px 2px;gap:2px}
+  .arena-scene .centerlane{padding:1px 2px;gap:2px;transform:translate(-50%,-38%)}
   .arena-scene .centerlane b{font-size:clamp(6px,1.45cqw,10px);letter-spacing:0}
   .arena-scene .battle-head{font-size:1.6cqw;gap:3cqw}
   .arena-scene .nexus-fortress-stats b{font-size:1.6cqw}
@@ -240,6 +240,15 @@
   .arena-scene .card-slot .slot-card.just-placed{animation:none}
   .arena-scene .tower.drop-target:hover .tower-visual::after{animation:none}
 }
+
+/* ── Полоса фазы матча (#nexusScore): золото на тёмно-синем, центр ── */
+#nexusScore{display:flex;justify-content:center;min-height:21px}
+.nexus-phase{display:inline-flex;align-items:center;gap:10px;padding:2px 16px;border-radius:99px;
+  background:linear-gradient(180deg,#141d31,#0d1526);
+  border:1px solid #a78c5345;box-shadow:inset 0 1px 0 #ffffff12,0 2px 8px #0006;
+  font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap}
+.nexus-phase strong{color:#ffd98c;text-shadow:0 1px 2px #000}
+.nexus-phase #phase{color:#d7e3f6;font-weight:700;text-shadow:0 1px 2px #000}
 
 /* Компактный режим для низких окон (телефон в ландшафте): сцена получает
    максимум высоты — убираем второстепенное, сжимаем руку. */
@@ -260,10 +269,11 @@
 }
 
 /* ── Arena Layout Editor (?arenaDebug=1) ── */
-/* Расстановка теперь содержит объяснения: страница прокручивается, поле не сжимается. */
-body{overflow-y:auto}
-.wrap{height:auto;min-height:calc(100dvh - 44px)}
-.battle#lanes{flex:0 0 auto;height:clamp(220px,52vw,620px)}
+/* Расстановка теперь содержит объяснения: страница прокручивается, поле не сжимается.
+   Прокрутка включается только на странице редактора — раньше body переоткрывался глобально. */
+body:has(.arena-debug-panel){overflow-y:auto}
+body:has(.arena-debug-panel) .wrap{height:auto;min-height:calc(100dvh - 44px)}
+body:has(.arena-debug-panel) .battle#lanes{flex:0 0 auto;height:clamp(220px,52vw,620px)}
 
 .arena-debug-panel{position:fixed;top:12px;right:12px;z-index:14000;width:270px;max-height:92vh;overflow:auto;
   background:#0b1524f2;border:1px solid #a78c53;border-radius:10px;padding:10px;color:#dbe7f7;

@@ -18,8 +18,10 @@ try {
   async function place(p) {
     await p.locator('#hand .card').first().waitFor();
     for (let lane = 0; lane < 3; lane++) for (const kind of ['atk', 'def']) {
-      await p.locator('#hand .card.red:not(.used)').first().click();
-      await p.locator('#hand .card:not(.red):not(.used)').first().click();
+      // Раздача случайна и не сбалансирована по цвету мастей (см. 4e6dc07):
+      // пара — любые две свободные карты, как в browser-elements.mjs.
+      await p.locator('#hand .card:not(.used):not(.selected)').first().click();
+      await p.locator('#hand .card:not(.used):not(.selected)').first().click();
       const target = p.locator(`.tower.drop-target[data-lane="${lane}"][data-kind="${kind}"]`);
       await target.click();
     }
