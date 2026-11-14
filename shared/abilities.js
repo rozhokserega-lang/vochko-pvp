@@ -222,7 +222,7 @@ export function applyStatuses(state, opts) {
     burned: { a: [false, false, false], b: [false, false, false] },
     disabledBySide: opts.disabledBySide ?? {},
     unblocked: opts.unblocked ?? [],
-    cores:opts.cores??{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled??[],coreEffects:[],
+    cores:opts.cores??{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled??[],coreDisabledBySide:opts.coreDisabledBySide??{},coreEffects:[],
   };
   const burns = [];
   for (const side of ['a', 'b']) {
