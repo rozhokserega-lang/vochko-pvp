@@ -37,13 +37,14 @@ const RU = {
 };
 
 export const api = {
-  createRoom: (opts = {}) => call('create-room', opts),
+  createRoom: (opts = {}) => call('create-room', {nexusCoreEnabled:true,...opts}),
   joinRoom: async (roomCode) => {
     try { return await call('join-room', { roomCode }); }
     catch (e) { throw new Error(RU[e.message] ?? 'Не удалось войти: ' + e.message); }
   },
   getState: (matchId) => call('get-state', { matchId }),
   submitTurn: (turn) => call('submit-turn', turn),
+  prepareCore: (turn) => call('prepare-core',turn),
   rematch: (matchId) => call('rematch', { matchId }),
   leaveRoom: (matchId) => call('leave-room', { matchId }),
 };

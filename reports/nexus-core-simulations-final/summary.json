@@ -1,0 +1,266 @@
+{
+  "manifest": {
+    "startedAt": "2026-11-13T06:54:47.329Z",
+    "configs": [
+      {
+        "id": "A_14_no_core",
+        "core": false,
+        "games": 1000
+      },
+      {
+        "id": "B_13_core_base",
+        "core": true,
+        "profile": "base",
+        "games": 1000
+      },
+      {
+        "id": "C_13_core_balanced",
+        "core": true,
+        "profile": "balanced",
+        "games": 1000
+      },
+      {
+        "id": "C_vs_highest",
+        "core": true,
+        "profile": "balanced",
+        "policyB": "highest",
+        "games": 1000
+      },
+      {
+        "id": "C_vs_lowest",
+        "core": true,
+        "profile": "balanced",
+        "policyB": "lowest",
+        "games": 1000
+      }
+    ],
+    "workers": 8,
+    "seed": 20261113,
+    "sourceHash": "f59cf963d9e793156aaf8aac6390ef6eb15abafaa9b6b311fbf359405c37a082",
+    "sources": [
+      "shared/nexus-core.js",
+      "shared/core-bot.js",
+      "shared/bot.js",
+      "shared/engine.js",
+      "shared/abilities.js",
+      "shared/cards.js",
+      "shared/elements.js",
+      "shared/combos.js",
+      "scripts/nexus-core-balance.mjs"
+    ],
+    "ai": {
+      "depth": 2,
+      "samples": 2,
+      "legacyLayouts": 3,
+      "budget": "fixed-work; Infinity"
+    },
+    "unit": "independent mirrored seed pair",
+    "finishedAt": "2026-11-13T07:05:00.249Z"
+  },
+  "status": {
+    "completedPairs": 500,
+    "totalPairs": 500,
+    "totalGames": 5000,
+    "finished": true,
+    "updatedAt": "2026-11-13T07:05:00.273Z"
+  },
+  "games": 5000,
+  "summaries": {
+    "A_14_no_core": {
+      "games": 1000,
+      "independentPairs": 500,
+      "wins": 424,
+      "losses": 416,
+      "draws": 160,
+      "score": 0.504,
+      "scoreCI": {
+        "estimate": 0.504,
+        "low": 0.4637932563707712,
+        "high": 0.5442067436292288,
+        "n": 500,
+        "se": 0.020513644708790232
+      },
+      "meanRounds": 7.918,
+      "medianRounds": 8,
+      "drawRate": 0.16,
+      "simultaneousRate": 0.16,
+      "firstSeatScore": 0.5,
+      "decision": {
+        "mean": 39.074713305127624,
+        "p95": 74.4311999999918,
+        "max": 210.08299999998417
+      },
+      "aceConditional": null,
+      "twoConditional": null,
+      "extraDamagePerGame": 0,
+      "extraHealPerGame": 0,
+      "extraArmorPerGame": 0,
+      "queuedBurnPerGame": 0,
+      "boostedCounterRate": 0,
+      "exclusionDisplacementRate": 0,
+      "attackEntropy": 2.8917250958332925,
+      "defenseEntropy": 2.802082387546144
+    },
+    "B_13_core_base": {
+      "games": 1000,
+      "independentPairs": 500,
+      "wins": 470,
+      "losses": 444,
+      "draws": 86,
+      "score": 0.513,
+      "scoreCI": {
+        "estimate": 0.513,
+        "low": 0.47107353585154144,
+        "high": 0.5549264641484586,
+        "n": 500,
+        "se": 0.02139105313696866
+      },
+      "meanRounds": 13.158,
+      "medianRounds": 13,
+      "drawRate": 0.086,
+      "simultaneousRate": 0.086,
+      "firstSeatScore": 0.5,
+      "decision": {
+        "mean": 104.51543497491964,
+        "p95": 234.22709999998915,
+        "max": 439.50459999998566
+      },
+      "aceConditional": 0.021945945945945945,
+      "twoConditional": 0.45870930896630496,
+      "extraDamagePerGame": 7.634,
+      "extraHealPerGame": 4.146,
+      "extraArmorPerGame": 8.606,
+      "queuedBurnPerGame": 7.86,
+      "boostedCounterRate": 0.14994653121240475,
+      "exclusionDisplacementRate": 0.23255813953488372,
+      "attackEntropy": 2.702430924566517,
+      "defenseEntropy": 2.633053896541635
+    },
+    "C_13_core_balanced": {
+      "games": 1000,
+      "independentPairs": 500,
+      "wins": 474,
+      "losses": 432,
+      "draws": 94,
+      "score": 0.521,
+      "scoreCI": {
+        "estimate": 0.521,
+        "low": 0.47928265129270176,
+        "high": 0.5627173487072983,
+        "n": 500,
+        "se": 0.021284361585356258
+      },
+      "meanRounds": 13.218,
+      "medianRounds": 13,
+      "drawRate": 0.094,
+      "simultaneousRate": 0.094,
+      "firstSeatScore": 0.5,
+      "decision": {
+        "mean": 24.512067362687137,
+        "p95": 81.99399999997695,
+        "max": 313.2204999999958
+      },
+      "aceConditional": 0.01906189762261726,
+      "twoConditional": 0.48543136808559073,
+      "extraDamagePerGame": 5.644,
+      "extraHealPerGame": 2.374,
+      "extraArmorPerGame": 4.204,
+      "queuedBurnPerGame": 7.848,
+      "boostedCounterRate": 0.15165522398205425,
+      "exclusionDisplacementRate": 0.23029202602511725,
+      "attackEntropy": 2.7058617842980937,
+      "defenseEntropy": 2.629932877686075
+    },
+    "C_vs_highest": {
+      "games": 1000,
+      "independentPairs": 500,
+      "wins": 976,
+      "losses": 16,
+      "draws": 8,
+      "score": 0.98,
+      "scoreCI": {
+        "estimate": 0.98,
+        "low": 0.9683597547009849,
+        "high": 0.9916402452990151,
+        "n": 500,
+        "se": 0.005938900662762802
+      },
+      "meanRounds": 11.232,
+      "medianRounds": 11,
+      "drawRate": 0.008,
+      "simultaneousRate": 0.008,
+      "firstSeatScore": 0.5,
+      "decision": {
+        "mean": 14.665764983974459,
+        "p95": 64.9664000000048,
+        "max": 410.73300000000745
+      },
+      "aceConditional": 0.49072110286320253,
+      "twoConditional": 0.2397492817968138,
+      "extraDamagePerGame": 5.804,
+      "extraHealPerGame": 2.474,
+      "extraArmorPerGame": 7.97,
+      "queuedBurnPerGame": 10.464,
+      "boostedCounterRate": 0.15635886716668715,
+      "exclusionDisplacementRate": 0.22355769230769232,
+      "attackEntropy": 2.710944828131175,
+      "defenseEntropy": 2.6150715230422397
+    },
+    "C_vs_lowest": {
+      "games": 1000,
+      "independentPairs": 500,
+      "wins": 458,
+      "losses": 448,
+      "draws": 94,
+      "score": 0.505,
+      "scoreCI": {
+        "estimate": 0.505,
+        "low": 0.46324428422839337,
+        "high": 0.5467557157716066,
+        "n": 500,
+        "se": 0.02130393661816666
+      },
+      "meanRounds": 13.804,
+      "medianRounds": 14,
+      "drawRate": 0.094,
+      "simultaneousRate": 0.094,
+      "firstSeatScore": 0.5,
+      "decision": {
+        "mean": 13.332182146479836,
+        "p95": 38.62280000001192,
+        "max": 329.3816999999981
+      },
+      "aceConditional": 0.008419755621727077,
+      "twoConditional": 0.735963241062423,
+      "extraDamagePerGame": 4.408,
+      "extraHealPerGame": 2.02,
+      "extraArmorPerGame": 4.236,
+      "queuedBurnPerGame": 6.58,
+      "boostedCounterRate": 0.15184034025846557,
+      "exclusionDisplacementRate": 0.22565922920892495,
+      "attackEntropy": 2.70531241796204,
+      "defenseEntropy": 2.633159444344929
+    }
+  },
+  "durationDeltaCvsA": {
+    "estimate": 5.3,
+    "low": 5.0131773899790355,
+    "high": 5.586822610020964,
+    "n": 500,
+    "se": 0.14633806633722682
+  },
+  "drawDeltaCvsA": {
+    "estimate": -0.066,
+    "low": -0.10767903868050063,
+    "high": -0.02432096131949938,
+    "n": 500,
+    "se": 0.021264815653316643
+  },
+  "durationDeltaCvsB": {
+    "estimate": 0.06,
+    "low": -0.12422403717143801,
+    "high": 0.244224037171438,
+    "n": 500,
+    "se": 0.09399185569971327
+  }
+}

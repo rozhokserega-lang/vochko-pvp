@@ -1,0 +1,58 @@
+{
+  "startedAt": "2026-11-13T06:54:47.329Z",
+  "configs": [
+    {
+      "id": "A_14_no_core",
+      "core": false,
+      "games": 1000
+    },
+    {
+      "id": "B_13_core_base",
+      "core": true,
+      "profile": "base",
+      "games": 1000
+    },
+    {
+      "id": "C_13_core_balanced",
+      "core": true,
+      "profile": "balanced",
+      "games": 1000
+    },
+    {
+      "id": "C_vs_highest",
+      "core": true,
+      "profile": "balanced",
+      "policyB": "highest",
+      "games": 1000
+    },
+    {
+      "id": "C_vs_lowest",
+      "core": true,
+      "profile": "balanced",
+      "policyB": "lowest",
+      "games": 1000
+    }
+  ],
+  "workers": 8,
+  "seed": 20261113,
+  "sourceHash": "f59cf963d9e793156aaf8aac6390ef6eb15abafaa9b6b311fbf359405c37a082",
+  "sources": [
+    "shared/nexus-core.js",
+    "shared/core-bot.js",
+    "shared/bot.js",
+    "shared/engine.js",
+    "shared/abilities.js",
+    "shared/cards.js",
+    "shared/elements.js",
+    "shared/combos.js",
+    "scripts/nexus-core-balance.mjs"
+  ],
+  "ai": {
+    "depth": 2,
+    "samples": 2,
+    "legacyLayouts": 3,
+    "budget": "fixed-work; Infinity"
+  },
+  "unit": "independent mirrored seed pair",
+  "finishedAt": "2026-11-13T07:05:00.249Z"
+}

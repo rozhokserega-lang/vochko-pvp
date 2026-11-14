@@ -2,7 +2,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { dealHand, emptyBoard } from '../_shared/deal.ts';
+import { emptyBoard,dealMatchCards } from '../_shared/deal.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 
 Deno.serve(async (req) => {
@@ -15,6 +15,8 @@ Deno.serve(async (req) => {
     const [m] = await sql`select * from private.matches where room_code = ${code}`;
     if (!m) throw new HttpError('room-not-found', 404);
     if (m.state?.botMatch) throw new HttpError('room-unavailable', 409);
+    const existingSeat=m.player1_id===user.id?1:m.player2_id===user.id?2:0;
+    if(existingSeat&&m.status!=='waiting')return json({matchId:m.id,seat:existingSeat});
     if (m.player1_id === user.id) throw new HttpError('own-room', 409);
     if (m.status !== 'waiting' || m.player2_id) throw new HttpError('room-unavailable', 409);
 
@@ -26,8 +28,9 @@ Deno.serve(async (req) => {
              round = 1,
              version = version + 1,
              state = ${sql.json({
+               ...m.state,
                board: emptyBoard(),
-               hands: { 1: dealHand(), 2: dealHand() },
+               ...dealMatchCards(m.state?.rules),
                fortifyUsed: { 1: false, 2: false },
              })},
              updated_at = now()

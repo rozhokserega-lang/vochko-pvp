@@ -3,7 +3,7 @@
 import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
-import { dealHand, emptyBoard, roomCode } from '../_shared/deal.ts';
+import { emptyBoard, roomCode,dealMatchCards } from '../_shared/deal.ts';
 import { broadcastState } from '../_shared/realtime.ts';
 
 Deno.serve(async (req) => {
@@ -21,7 +21,9 @@ Deno.serve(async (req) => {
       if (m.status !== 'finished') throw new HttpError('match is not finished', 409);
 
       const st = m.state ?? {};
+      if(st.nextMatchId)return {waiting:false,matchId:st.nextMatchId,version:1,sourceVersion:Number(m.version)};
       st.rematchWants = { ...st.rematchWants, [seat]: true };
+      if(st.botMatch)st.rematchWants[2]=true;
       if (!(st.rematchWants[1] && st.rematchWants[2])) {
         await tx`update private.matches set state = ${sql.json(st)}, updated_at = now() where id = ${m.id}`;
         await tx`update private.matches set version = version + 1 where id = ${m.id}`;
@@ -29,22 +31,25 @@ Deno.serve(async (req) => {
       }
 
       // Оба согласны — новая партия, новый код комнаты.
+      const nextRules={...st.rules,...(st.rules?.nexusCoreEnabled?{deckVersion:2}:{})};
       const [created] = await tx`
         insert into private.matches (room_code, player1_id, player2_id, status, round, state)
         values (${roomCode()}, ${m.player1_id}, ${m.player2_id}, 'planning', 1, ${sql.json({
           board: emptyBoard(),
-          hands: { 1: dealHand(), 2: dealHand() },
+          ...dealMatchCards(nextRules),
+          rules:nextRules,rngSeed:st.rngSeed,
           fortifyUsed: { 1: false, 2: false },
           botMatch: !!st.botMatch, // реванш с ботом остаётся PvE
         })})
         returning id, room_code, version`;
       st.nextMatchId = created.id;
+      const sourceVersion=Number(m.version)+1;
       await tx`update private.matches set state = ${sql.json(st)}, version = version + 1, updated_at = now() where id = ${m.id}`;
-      return { waiting: false, matchId: created.id, roomCode: created.room_code, version: created.version };
+      return { waiting: false, matchId: created.id, roomCode: created.room_code, version: created.version,sourceVersion };
     });
 
     if (!next.waiting) {
-      await broadcastState(matchId, 1, 'rematch');
+      await broadcastState(matchId, next.sourceVersion, 'rematch');
       await broadcastState(next.matchId, next.version, 'joined');
     }
     return json(next);

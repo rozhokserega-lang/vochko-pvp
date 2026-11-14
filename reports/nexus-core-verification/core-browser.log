@@ -1,0 +1,7 @@
+﻿
+> vochko-pvp@0.1.0 test:core
+> node tests/browser-nexus-core.mjs
+
+(node:25732) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS core PvP: desktop drag, mobile tap, server reconnect, private selection, one battle, round reset, no overflow/overlap/errors

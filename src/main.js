@@ -2,6 +2,9 @@ import { retainAttackCharges } from './ui/arena/AttackCharge.js';
 import './ui/arena/attack-charge.css';
 import { retainTowerMeters } from './ui/arena/TowerHealth.js';
 import { shuffled } from '../shared/cards.js';
+import {coreDescriptor} from '../shared/nexus-core.js';
+import {mountNexusCore,showBattleCores,clearNexusCore} from './ui/nexus-core/NexusCore.js';
+import './ui/nexus-core/nexus-core.css';
 import './styles.css';
 import './ui/arena/tower-crystal.css';
 import './combat-v5.css';
@@ -20,6 +23,7 @@ import { cardPanelHTML, initCardPanel, PANEL_LANES, renderPanelCards, renderPane
 import { clearFloats, playRoundAnimation, bindCombatUI, isCombatPlaying } from './ui/animations.js';
 import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat-logic.js';
 import { renderStatusBadges } from './ui/arena/StatusBadges.js';
+import {bindStructureInspection,closeEffectInspector} from './ui/arena/EffectInspector.js';
 import './ui/arena/status-badges.css';import { EndScreen } from './ui/EndScreen.js';
 
 const app = document.getElementById('app');
@@ -34,9 +38,10 @@ let submission = null;
 let unwatch = null;
 let lastReportRound = 0; // номер уже показанного отчёта (для постановки у обоих игроков)
 let refreshEpoch = 0;    // защита от «зависшего» get-state при смене экрана/матча
+let coreBusy=false;
 
 const cardById = (id) => myHand.find((c) => c.id === id);
-const usedIds = () => new Set(slots.flatMap((s) => [...s.atk, ...s.def].map((c) => c.id)));
+const usedIds = () => new Set([...slots.flatMap((s) => [...s.atk, ...s.def].map((c) => c.id)),...(view?.me?.preparation?.coreCardId?[view.me.preparation.coreCardId]:[])]);
 const currentSubmission = () => submission?.matchId === view?.matchId && submission?.round === view?.round ? submission : null;
 const turnLocked = () => view.status !== 'planning' || view.me.ready || !!currentSubmission() || isCombatPlaying();
 const missingCardPrefix = 'Карты нет в руке: ';
@@ -56,13 +61,13 @@ async function boot() {
   const roomParam = new URLSearchParams(location.search).get('room');
   // Аудит п.4: восстановление матча после F5 — и для создателя комнаты тоже.
   const saved = localStorage.getItem('vochko_match');
-  if (roomParam) return joinRoom(roomParam);
   if (saved) {
     try {
       const v = await api.getState(saved);
-      if (v && v.seat && v.status !== 'finished') { lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
+      if (v && v.seat && v.status !== 'finished'&&(!roomParam||v.roomCode===roomParam.trim().toUpperCase())) { lastReportRound = v.latestRoundReport?.report?.[0]?.round ?? 0; return enterMatch(saved); }
     } catch { localStorage.removeItem('vochko_match'); }
   }
+  if (roomParam) return joinRoom(roomParam);
   renderLobby();
 }
 
@@ -103,6 +108,10 @@ async function enterMatch(matchId) {
   localStorage.setItem('vochko_match', matchId); // реконнект после F5 (аудит п.4)
   unwatch = watchMatch(matchId, () => refresh(matchId));
   await refresh(matchId);
+  if(view?.matchId===matchId&&new URLSearchParams(location.search).has('room')){
+    const params=new URLSearchParams(location.search);params.set('room',view.roomCode);
+    history.replaceState(null,'','?'+params);
+  }
 }
 
 // ── Выход из матча ─────────────────────────────────────────────────────────
@@ -120,6 +129,7 @@ function exitMatch(matchId = view?.matchId, confirmText) {
   params.delete('room');
   history.replaceState(null, '', location.pathname + (params.size ? '?' + params : ''));
   if (unwatch) { unwatch(); unwatch = null; }
+  clearNexusCore();
   clearFloats();
   lastReportRound = 0;
   selected = [];
@@ -134,6 +144,7 @@ async function refresh(matchId) {
   const epoch = refreshEpoch; // сменился pantalla/матч — устаревший get-state игнорируем
   const next = await api.getState(matchId);
   if (epoch !== refreshEpoch || (view?.matchId === matchId && next.version < view.version)) return;
+  if(view?.matchId===matchId&&next.version===view.version)return;
   view = next;
   (window.__animLog = window.__animLog || []).push({ fn: 'refresh', ver: view.version, round: view.round, repRound: view.latestRoundReport?.round ?? 0, playing: isCombatPlaying(), at: Date.now() % 100000 });
   // Хореография боя захватывает UI: новое состояние применяется после неё.
@@ -165,6 +176,9 @@ async function refresh(matchId) {
     const handIds = new Set(myHand.map((card) => card.id));
     keepDraftCards((id) => handIds.has(id));
   }
+  if(view.me.preparation?.round===view.round){
+    slots=view.me.preparation.placements.map(p=>({atk:p.attack.map(cardById),def:p.defense.map(cardById)}));
+  }
   // Финал без нового боя: переход в реванш или финальный экран.
   if (finished && !hasNewBattle) {
     // Аудит п.5: оба игрока автоматически уходят в новый матч после реванша.
@@ -179,6 +193,7 @@ async function refresh(matchId) {
   if (hasNewBattle) {
     // Финальный бой тоже играется полностью ДО экрана победы (v19 §6).
     lastReportRound = repRound;
+    showBattleCores(view);
     playRoundAnimation(view);
     return;
   }
@@ -199,6 +214,7 @@ function doRematch(btn) {
 
 function render(force = false) {
   if (!force && isCombatPlaying()) return; // UI заморожен на время боевой хореографии
+  closeEffectInspector();
   const blocked = turnLocked();
   const panelState = { round: view.round, blocked, hint: blocked ? '' : missingPairHint(),
     progress: { attack: slots.filter((s) => s.atk.length === 2).length,
@@ -231,7 +247,7 @@ function render(force = false) {
 
   const hand = byId('hand');
   initCardPanel(hand);
-  renderPanelCards(hand, myHand, selected, usedIds(), turnLocked(), dealAnimationPending);
+  renderPanelCards(hand, myHand.filter(card=>card.id!==view.me.preparation?.coreCardId), selected, usedIds(), turnLocked(), dealAnimationPending);
   dealAnimationPending = false;
   updatePreview();
 
@@ -260,6 +276,8 @@ function render(force = false) {
   });
 
   byId('fightBtn').onclick = submit;
+  bindStructureInspection(root,{selected:()=>selected,boardMe:view.board.me,boardOpp:view.board.opponent});
+  if(view.rules?.nexusCoreEnabled)byId('fightBtn').disabled=blocked||coreBusy||!view.me.preparation?.coreCardId;
   byId('exitBtn').onclick = () => exitMatch();
   wireDrag();
 }
@@ -279,7 +297,7 @@ function setStatus(text) { const el = byId('status'); if (el) el.textContent = t
 function showEndScreen(v) {
   if (document.querySelector('.end-overlay')) return;
   const title = v.winner === 'draw' ? '🤝 Ничья' : v.winner === 'me' ? '🏆 Победа!' : '💀 Поражение';
-  const message = v.winner === 'draw'
+  const message = v.endReason==='deck_exhaustion' ? 'Колода истощена: осталось меньше 13 несожжённых карт. Итог определён по HP Нексусов.' : v.winner === 'draw'
     ? 'Оба Нексуса разрушены или лимит раундов.'
     : v.winner === 'me' ? 'Нексус соперника разрушен.' : 'Твой Нексус разрушен.';
   app.appendChild(EndScreen({
@@ -300,10 +318,45 @@ function updatePreview() {
   byId('lanes').querySelectorAll('.drop-target[data-kind]').forEach((target) => {
     target.classList.toggle('pair-target', !turnLocked() && cards.length === 2);
   });
+  syncCoreView();
+}
+
+function syncCoreView(){
+  if(!view||!app.firstElementChild?.querySelector('#arenaScene'))return;
+  const remaining=myHand.filter(c=>!usedIds().has(c.id));
+  mountNexusCore(app.firstElementChild,{view,slots,remaining:remaining.length===1?remaining[0]:null,
+    selected:selected.length===1?cardById(selected[0]):null,blocked:turnLocked()||coreBusy,onActivate:activateCore,onPrepare:()=>prepareCore()});
+  if(view.rules?.nexusCoreEnabled&&!isCombatPlaying())byId('phase').textContent=view.me.ready?'Ждём соперника':view.me.preparation?.coreCardId?'Готов к бою':view.me.preparation?'Ядро Нексуса':'Расстановка карт';
+}
+window.addEventListener('resize',syncCoreView);
+const placementIds=()=>slots.map((s,l)=>({lane:l,attack:s.atk.map(c=>c.id),defense:s.def.map(c=>c.id)}));
+async function prepareCore(coreCardId,origin){
+  if(coreBusy||turnLocked()||!view.rules?.nexusCoreEnabled)return;
+  const {matchId,round}=view;let coreError='';coreBusy=true;syncCoreView();
+  try{
+    const result=await api.prepareCore({matchId,round,placements:placementIds(),...(coreCardId?{coreCardId}:{})});
+    if(view?.matchId!==matchId||view.round!==round)return;
+    view.me.preparation=result.preparation;
+    view.me.core=coreDescriptor(cardById(result.preparation.coreCardId));
+    view.version=Math.max(view.version,result.version);selected=[];
+    if(coreCardId&&origin&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      const card=cardById(coreCardId),target=document.querySelector('#nexusCore').getBoundingClientRect(),ghost=document.createElement('span');
+      ghost.className='core-flight-card';ghost.textContent=card.r+card.s;ghost.style.color='♥♦'.includes(card.s)?'#bf243c':'#162e4b';
+      ghost.style.left=origin.left+origin.width/2+'px';ghost.style.top=origin.top+origin.height/2+'px';document.body.append(ghost);
+      ghost.animate([{transform:'translate(-50%,-50%) scale(1)'},{transform:`translate(calc(-50% + ${target.left+target.width/2-origin.left-origin.width/2}px),calc(-50% + ${target.top+target.height/2-origin.top-origin.height/2}px)) scale(.15)`,opacity:0}],{duration:450,easing:'ease-in',fill:'forwards'}).finished.then(()=>ghost.remove(),()=>ghost.remove());
+    }
+  }catch(e){coreError=e.message;}
+  finally{coreBusy=false;if(view?.matchId===matchId&&view.round===round){render();if(coreError)setStatus(coreError+' Нажми Ядро, чтобы повторить.');}}
+}
+function activateCore(cardId){
+  if(!cardId||usedIds().has(cardId)||!view.me.preparation)return;
+  const card=[...document.querySelectorAll('#hand [data-card]')].find(el=>el.dataset.card===cardId);
+  prepareCore(cardId,card?.getBoundingClientRect());
 }
 
 function placeCards(target, ids) {
   if (turnLocked()) return;
+  if(view.rules?.nexusCoreEnabled&&view.me.preparation)return;
   const lane = +target.dataset.lane, kind = target.dataset.kind;
   const cards = ids.map(cardById);
   const used = usedIds();
@@ -314,19 +367,21 @@ function placeCards(target, ids) {
   cards.forEach((card) => { card.justPlaced = true; });
   selected = [];
   render();
+  if(view.rules?.nexusCoreEnabled&&!missingPairHint())prepareCore();
 }
 
 async function submit() {
   if (turnLocked()) return;
   const missing = missingPairHint();
   if (missing) return setStatus(missing);
+  if(view.rules?.nexusCoreEnabled&&!view.me.preparation?.coreCardId)return setStatus('Перенесите последнюю карту в Ядро Нексуса');
   const placements = slots.map((s, l) => ({
     lane: l,
     attack: s.atk.map((c) => c.id),
     defense: s.def.map((c) => c.id),
   }));
   const { matchId, round, version: expectedVersion } = view;
-  const turn = { matchId, round, expectedVersion, placements, fortifyLane: null };
+  const turn = { matchId, round, expectedVersion, placements, fortifyLane: null,...(view.rules?.nexusCoreEnabled?{coreCardId:view.me.preparation.coreCardId}:{}) };
   const pending = submission = { matchId, round, accepted: false };
   render();
   setStatus(view.opponent?.isBot ? '' : 'Отправляем ход…');
@@ -399,7 +454,8 @@ window.addEventListener('pointerup', (e) => {
   if (!dragStart || e.pointerId !== dragStart.pointerId) return;
   if (dragId) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.drop-target');
-    if (target) placeCards(target, selected.length === 2 && selected.includes(dragId) ? selected : [dragId]);
+    if(target?.id==='nexusCore')activateCore(dragId);
+    else if (target) placeCards(target, selected.length === 2 && selected.includes(dragId) ? selected : [dragId]);
     else setStatus('Перетащи карту на доступную башню.');
   }
   ghost?.remove(); ghost = null; dragId = null; dragStart = null;

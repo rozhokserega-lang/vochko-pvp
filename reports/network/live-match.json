@@ -1,0 +1,77 @@
+{
+  "backend": "https://ejjbkxtnjfpjbppcvijm.supabase.co",
+  "started": "2026-11-13T11:32:10.556Z",
+  "rounds": [
+    {
+      "round": 1,
+      "version": 8,
+      "nexus": [
+        80,
+        80
+      ],
+      "finished": false
+    },
+    {
+      "round": 2,
+      "version": 14,
+      "nexus": [
+        80,
+        80
+      ],
+      "finished": false
+    },
+    {
+      "round": 3,
+      "version": 20,
+      "nexus": [
+        73,
+        74
+      ],
+      "finished": false
+    },
+    {
+      "round": 4,
+      "version": 26,
+      "nexus": [
+        57,
+        68
+      ],
+      "finished": false
+    },
+    {
+      "round": 5,
+      "version": 32,
+      "nexus": [
+        21,
+        46
+      ],
+      "finished": false
+    },
+    {
+      "round": 6,
+      "version": 38,
+      "nexus": [
+        0,
+        23
+      ],
+      "finished": true
+    }
+  ],
+  "matches": [
+    "76a844ca-0c50-4568-9860-0c53a00fee24",
+    "b84dfd3a-ce57-46bd-bf14-8898e9765539"
+  ],
+  "checks": [
+    "anonymous auth, invite-link join, unauthorized state rejected",
+    "offline/online recovery and idempotent confirmation",
+    "F5 with invite URL preserves participant and current hand",
+    "full match and final animations on both clients",
+    "one shared rematch; duplicate rematch and F5 preserve new match"
+  ],
+  "winners": [
+    "opponent",
+    "me"
+  ],
+  "success": true,
+  "finished": "2026-11-13T11:33:39.802Z"
+}

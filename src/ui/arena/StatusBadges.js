@@ -98,8 +98,8 @@ export function renderStatusBadges(root, boardMe, boardOpp) {
       if (st.attackBoost) owner?.classList.add('status-boosted');
     } catch { /* повреждённые данные игнорируются */ }
   });
-  bindStatusInteractions(root);
-  bindStatusOutsideClose();
+  // Clicks are handled on the structure by EffectInspector, including badges.
+  // A selected pair must reach the placement handler instead of being swallowed.
 }
 
 // Tap-взаимодействие (мобильные): короткое нажатие на бейджи линии открывает

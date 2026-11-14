@@ -1,18 +1,23 @@
 import { pairStats, elementOf } from './elements.js';
 import { deal } from './cards.js';
 import { resolveRound, cloneGameState } from './engine.js';
+import { mulberry32 } from './rng.js';
 
 // ── Старый бот (совместимость с текущим сервером PvE) ──────────────────────
 // Совместный подбор трёх атакующих и трёх защитных пар без повторов карт.
 // Оценивается только характеристика, которая реально работает в выбранной роли.
+const rolePairCache = new Map();
 export function rolePairs(cards, attackCount = 3, defenseCount = 3) {
+  const cacheKey = `${attackCount}/${defenseCount}:` + cards.map(c=>`${c.id}:${c.s}:${c.r}:${c.v}`).join('|');
+  const cached = rolePairCache.get(cacheKey);
+  if (cached) return {score:cached.score,attacks:cached.attacks.map(pair=>pair.map(i=>cards[i])),defenses:cached.defenses.map(pair=>pair.map(i=>cards[i]))};
   const memo = new Map();
   const stats = cards.map((a, i) => cards.map((b, j) => i < j ? pairStats([a, b]) : null));
   const solve = (mask, atk, def) => {
     if (!atk && !def) return { score: 0, attacks: [], defenses: [] };
     const used = mask.toString(2).replaceAll('0', '').length;
     if (cards.length - used < 2 * (atk + def)) return { score: -Infinity };
-    const key = `${mask}:${atk}:${def}`;
+    const key = (mask * (attackCount + 1) + atk) * (defenseCount + 1) + def;
     if (memo.has(key)) return memo.get(key);
     let i = 0; while (mask & (1 << i)) i++;
     let best = solve(mask | (1 << i), atk, def);
@@ -30,7 +35,12 @@ export function rolePairs(cards, attackCount = 3, defenseCount = 3) {
     }
     memo.set(key, best); return best;
   };
-  return solve(0, attackCount, defenseCount);
+  const result = solve(0, attackCount, defenseCount);
+  if (Number.isFinite(result.score)) {
+    if (rolePairCache.size >= 4096) rolePairCache.delete(rolePairCache.keys().next().value);
+    rolePairCache.set(cacheKey,{score:result.score,attacks:result.attacks.map(pair=>pair.map(c=>cards.indexOf(c))),defenses:result.defenses.map(pair=>pair.map(c=>cards.indexOf(c)))});
+  }
+  return result;
 }
 
 export function botPlan(hand, playerBoard, botBoard) {
@@ -142,7 +152,7 @@ export function beamLayouts(hand, ownBoard, enemyBoard, {
       attack: atkLane.get(l).pair.cards,
       defense: defLane.get(l).pair.cards,
     }));
-    const key = placements.map(p => [...p.attack, ...p.defense].map(c => c.id).sort().join()).join('|');
+    const key = planKey(placements);
     if (seen.has(key)) continue;
     seen.add(key);
     layouts.push(placements);
@@ -159,7 +169,7 @@ export function evaluateState(state, side) {
   const opened = b => b.inner.filter(v => v <= 0).length; // линии, открытые к Нексусу
   return (me.nexus - en.nexus) * 2.2
     + (struct(me) - struct(en)) * 0.4
-    + (opened(me) - opened(en)) * 5   // открытая линия противника — угроза мне
+    + (opened(en) - opened(me)) * 5
     + (isNegative(en.statuses?.[0]) ? 0 : 0); // статусы учитываются симуляцией
 }
 
@@ -168,6 +178,7 @@ export function evaluateState(state, side) {
 export function choosePlan({
   state, hand, side = 'a', rng = Math.random,
   layouts = 6, samples = 4, depth = 2, budgetMs = 700, counters = false, variants = {},
+  variantsBySide, disabled = [], disabledBySide,
 } = {}) {
   const t0 = Date.now();
   const enemySide = side === 'a' ? 'b' : 'a';
@@ -175,7 +186,7 @@ export function choosePlan({
   // Кандидаты: оптимум старого бота (точный DP) + варианты beam search —
   // MC-оценка ранжирует их одинаковым моделированием.
   const candidates = [];
-  const seenKey = (placements) => placements.map(p => [...p.attack, ...p.defense].map(c => c.id).sort().join()).join('|');
+  const seenKey = planKey;
   const legacy = botPlan(hand, enemy, own);
   candidates.push(legacy);
   const legacyKey = seenKey(legacy);
@@ -193,27 +204,35 @@ export function choosePlan({
       : beamLayouts(oppHand, enemy, own, { count: 1, rng, beamWidth: 12, perSlot: 8 })[0];
   });
   // Быстрый генератор для lookahead-раундов (без DP — экономия бюджета).
-  const quick = (h, ownB, enemyB) =>
+  const quick = (h, ownB, enemyB, rng) =>
     beamLayouts(h, ownB, enemyB, { count: 1, rng, beamWidth: 8, perSlot: 5 })[0]
       ?? botPlan(h, enemyB, ownB);
+
+  // Every candidate sees the same sampled future deals and combat randomness.
+  const scenarios = oppLayouts.map(() => ({
+    seed: Math.floor(rng() * 4294967296),
+    future: Array.from({length:Math.max(0,depth-1)}, () => [deal(rng),deal(rng)]),
+  }));
 
   const turn = placements => ({ placements });
   let best = null;
   for (const plan of candidates) {
     if (best && Date.now() - t0 > budgetMs) break; // бюджет: берём лучший найденный
     let score = 0;
-    for (const oppPlan of oppLayouts) {
+    for (const [sample, oppPlan] of oppLayouts.entries()) {
+      const simRng = mulberry32(scenarios[sample].seed);
+      const engineOptions = {abilities:true,rng:simRng,counters,variants,variantsBySide,disabled,disabledBySide};
       const sim = cloneGameState(state);
       const args = side === 'a' ? [turn(plan), turn(oppPlan)] : [turn(oppPlan), turn(plan)];
-      let r = resolveRound(sim, args[0], args[1], { abilities: true, rng, counters, variants });
+      let r = resolveRound(sim, args[0], args[1], engineOptions);
       if (!r.finished && depth > 1) {
         // Следующие раунды: свежие раздачи, быстрые greedy-раскладки обеих сторон.
         for (let d = 1; d < depth && !r.finished; d++) {
-          const hSelf = deal(rng), hOpp = deal(rng);
-          const pSelf = quick(hSelf, sim[side], sim[enemySide]);
-          const pOpp = quick(hOpp, sim[enemySide], sim[side]);
+          const [hSelf,hOpp] = scenarios[sample].future[d-1];
+          const pSelf = quick(hSelf, sim[side], sim[enemySide],simRng);
+          const pOpp = quick(hOpp, sim[enemySide], sim[side],simRng);
           const a2 = side === 'a' ? [turn(pSelf), turn(pOpp)] : [turn(pOpp), turn(pSelf)];
-          r = resolveRound(sim, a2[0], a2[1], { abilities: true, rng, counters, variants });
+          r = resolveRound(sim, a2[0], a2[1], engineOptions);
         }
       }
       score += evaluateState(sim, side);
@@ -234,3 +253,6 @@ export function choosePlan({
   };
   return best;
 }
+
+export const planKey = placements => placements.map(p =>
+  `${p.lane}:${p.attack.map(c=>c.id).sort().join(',')}/${p.defense.map(c=>c.id).sort().join(',')}`).join('|');

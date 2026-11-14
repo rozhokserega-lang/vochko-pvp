@@ -1,0 +1,159 @@
+[
+  {
+    "name": "opening",
+    "frames": 9,
+    "delay": [
+      110,
+      110,
+      110,
+      110,
+      110,
+      110,
+      110,
+      110,
+      110
+    ],
+    "crop": {
+      "left": 167,
+      "top": 8,
+      "width": 394,
+      "height": 221
+    },
+    "anchors": [
+      {
+        "bottom": 228,
+        "cx": 361.5,
+        "baseWidth": 239
+      },
+      {
+        "bottom": 228,
+        "cx": 361.5,
+        "baseWidth": 239
+      },
+      {
+        "bottom": 228,
+        "cx": 361.5,
+        "baseWidth": 239
+      },
+      {
+        "bottom": 228,
+        "cx": 362,
+        "baseWidth": 246
+      },
+      {
+        "bottom": 228,
+        "cx": 362,
+        "baseWidth": 246
+      },
+      {
+        "bottom": 228,
+        "cx": 361.5,
+        "baseWidth": 245
+      },
+      {
+        "bottom": 229,
+        "cx": 361.5,
+        "baseWidth": 245
+      },
+      {
+        "bottom": 229,
+        "cx": 361.5,
+        "baseWidth": 247
+      },
+      {
+        "bottom": 229,
+        "cx": 362.5,
+        "baseWidth": 247
+      }
+    ],
+    "output": {
+      "width": 768,
+      "height": 400,
+      "baseX": 384,
+      "baseY": 391,
+      "baseWidth": 280
+    }
+  },
+  {
+    "name": "waiting",
+    "frames": 16,
+    "delay": [
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150,
+      150
+    ],
+    "crop": {
+      "left": 28,
+      "top": 3,
+      "width": 492,
+      "height": 300
+    },
+    "anchors": [
+      {
+        "bottom": 302,
+        "cx": 273.5,
+        "baseWidth": 215
+      },
+      {
+        "bottom": 302,
+        "cx": 273.5,
+        "baseWidth": 217
+      },
+      {
+        "bottom": 303,
+        "cx": 273,
+        "baseWidth": 214
+      },
+      {
+        "bottom": 300,
+        "cx": 273.5,
+        "baseWidth": 207
+      },
+      {
+        "bottom": 301,
+        "cx": 274,
+        "baseWidth": 224
+      },
+      {
+        "bottom": 301,
+        "cx": 274,
+        "baseWidth": 216
+      },
+      {
+        "bottom": 301,
+        "cx": 273,
+        "baseWidth": 206
+      },
+      {
+        "bottom": 302,
+        "cx": 273,
+        "baseWidth": 206
+      },
+      {
+        "bottom": 303,
+        "cx": 273.5,
+        "baseWidth": 205
+      }
+    ],
+    "output": {
+      "width": 768,
+      "height": 400,
+      "baseX": 384,
+      "baseY": 391,
+      "baseWidth": 280
+    }
+  }
+]

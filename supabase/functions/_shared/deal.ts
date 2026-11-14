@@ -1,6 +1,8 @@
 // Серверная раздача: доверенный источник случайности (README §6 — Math.random
 // клиента запрещён). Используем crypto.getRandomValues.
-import { deck, shuffled, deal } from '../../../shared/cards.js';
+import { deal } from '../../../shared/cards.js';
+import { dealCoreHand } from '../../../shared/nexus-core.js';
+import {createDeckMatch} from '../../../shared/player-deck.js';
 
 export function cryptoRng(): number {
   const buf = new Uint32Array(1);
@@ -9,8 +11,11 @@ export function cryptoRng(): number {
 }
 
 // Рука раунда: 7 красных + 7 чёрных из перемешанной колоды (правила v1.5).
-export function dealHand() {
-  return deal(cryptoRng);
+export function dealHand(nexusCoreEnabled=false,excluded=[]) {
+  return nexusCoreEnabled?dealCoreHand(cryptoRng,excluded):deal(cryptoRng);
+}
+export function dealMatchCards(rules){
+  return rules?.nexusCoreEnabled===true&&rules.deckVersion===2?createDeckMatch(cryptoRng):{hands:{1:dealHand(rules?.nexusCoreEnabled===true),2:dealHand(rules?.nexusCoreEnabled===true)}};
 }
 
 // Seed раунда: сохраняется в state.matches → воспроизводимый resolve (аудит).

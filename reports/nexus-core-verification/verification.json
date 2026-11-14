@@ -1,0 +1,30 @@
+{
+  "verifiedAt": "2026-11-13T07:26:48.896Z",
+  "unitTestsPassed": 340,
+  "unitTestsFailed": 0,
+  "productionBuild": "passed",
+  "browser": [
+    "desktop drag-and-drop",
+    "mobile tap",
+    "reconnect before and after burn",
+    "retry after transient failure",
+    "private enemy selection",
+    "single resolve",
+    "new-round reset",
+    "tower slots",
+    "Nexus-floor slots",
+    "PNG sprite adapter",
+    "exit cleanup"
+  ],
+  "localHTTP": "legacy 14-card PvE and 13-card core PvP; synchronization/reconnect; no external requests",
+  "simulations": {
+    "verifiedAt": "2026-11-13T07:18:07.534Z",
+    "games": 5000,
+    "mirrorPairs": 2500,
+    "complete": true,
+    "sourceHashMatched": true,
+    "mirrorOutcomesIdentical": true
+  },
+  "productionDeployed": false,
+  "mainMerged": false
+}

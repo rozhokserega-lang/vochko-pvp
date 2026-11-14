@@ -1,6 +1,7 @@
 import { lineStats, type, elementOf } from './elements.js';
 import {
   applyStatuses, effectiveLine, hitConsequences, ensureStatuses, emptyStatuses,
+  flushAbilityEffects,
 } from './abilities.js';
 
 // Атакующая пара бьёт, защитная поглощает удар. Все линии одновременны.
@@ -95,9 +96,31 @@ export function getWinner(state) {
   return { finished, winner };
 }
 
-const io = {
-  damage, damageStage, recordDamage, healStructure, snapshot: snapshotForRecord,
-};
+// Lock targets before any round-start status is applied. Burn, primary hits
+// and secondary effects all address the same structure for the entire round.
+function phaseIO(state) {
+  const stages = new Map([state.a, state.b].map(board => [board, [0, 1, 2].map(l => damageStage(board, l))]));
+  const stageOf = (board, lane) => stages.get(board)[lane];
+  const read = (board, lane) => stageOf(board, lane) === 'nexus' ? board.nexus : board[stageOf(board, lane)][lane];
+  const write = (board, lane, hp) => { if (stageOf(board, lane) === 'nexus') board.nexus = hp; else board[stageOf(board, lane)][lane] = hp; };
+  return {
+    snapshot: snapshotForRecord, damageStage: stageOf,
+    damage(board, lane, amount, pct) {
+      write(board, lane, Math.max(0, read(board, lane) - (stageOf(board, lane) === 'nexus' ? Math.round(amount * pct / 100) : amount)));
+    },
+    recordDamage(before, after, lane) {
+      const stage = stageOf(after, lane);
+      return Math.max(0, (stage === 'nexus' ? before.nexus : before[stage][lane]) - read(after, lane));
+    },
+    healStructure(board, lane, amount) {
+      const hp = read(board, lane);
+      if (hp <= 0) return 0;
+      const max = stageOf(board, lane) === 'nexus' ? NEXUS_HP : stageOf(board, lane) === 'outer' ? OUTER_HP : INNER_HP;
+      const healed = Math.min(max - hp, amount);
+      write(board, lane, hp + healed); return healed;
+    },
+  };
+}
 
 // Все характеристики вычисляются до изменения HP; обе стороны бьют даже при смерти.
 // Порядок раунда (ТЗ): статусы (очищение/поджог) → защита → атака → расчёт щита →
@@ -108,17 +131,22 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   const variants = opts.variants ?? {};
   const rng = opts.rng ?? Math.random;
   const disabled = new Set(opts.disabled ?? []);
+  const variantsBySide = opts.variantsBySide ?? { a: variants, b: variants };
   const find = (turn, lane) => turn.placements.find(p => p.lane === lane);
   const events = [], report = [], abilityEvents = [];
   // Прорывы этого раунда влияют на Нексус только со следующего раунда.
   const nexusPct = { a: shieldPct(state.a), b: shieldPct(state.b) };
+  const phase = phaseIO(state);
   state.a.burn = [0, 0, 0]; state.b.burn = [0, 0, 0]; // старое поле неактивно
 
   let ctx = null;
   if (abilities) {
     ensureStatuses(state.a); ensureStatuses(state.b);
-    ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters, variants });
+    ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io:phase, counters, variants, variantsBySide, disabledBySide: opts.disabledBySide, unblocked: opts.unblocked,
+      cores:opts.nexusCoreEnabled?{a:turnA.coreCard,b:turnB.coreCard}:{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled });
+    ctx.effects = [];
   }
+  const consequences = [];
 
   const lanes = [0, 1, 2].map(l => {
     const pa = find(turnA, l), pb = find(turnB, l);
@@ -133,7 +161,8 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
       if (abilities) {
         atkElement = elementOf(ownCards.attack)?.id;
         defElement = elementOf(oppCards.defense)?.id;
-        mods = effectiveLine({ ctx, attackerSide, lane: l, atkStat: own.attack, defStat: opp.defense, atkElement, defElement, counters, variants });
+        mods = effectiveLine({ ctx, attackerSide, lane: l, atkStat: own.attack, defStat: opp.defense, atkElement, defElement, counters, variants,
+          atkVariants: variantsBySide[attackerSide], defVariants: variantsBySide[side] });
         ownAtk = mods.attack; oppDef = mods.defense;
       }
       const info = { a: ownAtk, d: oppDef,
@@ -142,13 +171,15 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
         at: type(ownCards.attack), dt: type(oppCards.defense),
         pairs: own.pairs, opponentPairs: opp.pairs };
       if (abilities) { info.atkElement = atkElement; info.defElement = defElement; info.armorStripped = mods.armorStripped; }
-      const before = snapshotForRecord(target), stage = damageStage(target, l);
-      damage(target, l, info.hit, nexusPct[side]);
-      const dealt = recordDamage(before, target, l);
+      const before = snapshotForRecord(target), stage = phase.damageStage(target, l);
+      phase.damage(target, l, info.hit, nexusPct[side]);
+      const dealt = phase.recordDamage(before, target, l);
       events.push({ side, l, stage, amount: dealt, element: info.at,
         elements: [own.pairs[0].element] });
       if (abilities) {
-        hitConsequences({ ctx, state, attackerSide, lane: l, atkElement, defElement, hit: info.hit, rng, counters, variants });
+        consequences.push({ ctx, state, attackerSide, lane: l, atkElement, defElement, hit: info.hit,
+          absorbed: Math.min(ownAtk, oppDef), rng: opts.abilityRng?.(attackerSide,l) ?? rng, counters, variants,
+          atkVariants: variantsBySide[attackerSide], defVariants: variantsBySide[side] });
       }
       return { info, attack: ownCards.attack, defense: oppCards.defense,
         ownPairs: [ownCards.attack, ownCards.defense],
@@ -161,6 +192,8 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   }
 
   if (abilities) { // перенос статусов на следующий раунд
+    consequences.forEach(hitConsequences);
+    flushAbilityEffects(ctx);
     state.a.statuses = ctx.next.a;
     state.b.statuses = ctx.next.b;
   }
@@ -170,6 +203,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   return {
     events, report,
     ...(abilities ? { abilityEvents } : {}),
+    ...(opts.nexusCoreEnabled ? {coreEffects:ctx?.coreEffects??[]} : {}),
     finished, winner,
   };
 }

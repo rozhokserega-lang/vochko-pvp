@@ -3,6 +3,7 @@
 // Движок (engine.js) передаёт io-хелперы явно — модуль не импортирует engine.js,
 // поэтому циклических зависимостей нет.
 import { elementOf } from './elements.js';
+import { coreAbilityBonus } from './nexus-core.js';
 
 // ── Таблица 20 способностей (10 стихий × атака/защита) ──────────────────────
 export const ABILITIES = Object.freeze(Object.fromEntries([
@@ -91,6 +92,14 @@ export function counterBlocks(atkElement, defElement, enabled) {
   };
 }
 
+function collisionBlocks(ctx, attackerSide, lane, atkElement, defElement, enabled) {
+  const blocks = counterBlocks(atkElement, defElement, enabled);
+  const defenderSide = attackerSide === 'a' ? 'b' : 'a';
+  if (ctx.unblocked?.includes(`${attackerSide}:${lane}:attack`)) blocks.atk = false;
+  if (ctx.unblocked?.includes(`${defenderSide}:${lane}:defense`)) blocks.def = false;
+  return blocks;
+}
+
 // ── Статусы: жизненный цикл 1 раунд ────────────────────────────────────────
 // Статусы выставленные в раунде N применяются в начале раунда N+1 и стираются.
 // Накопление внутри раунда — через максимум; сверху жёсткие капы.
@@ -158,9 +167,9 @@ export function ensureStatuses(board) {
 }
 
 // Добавить статус с накоплением по максимуму и капом (без бесконтрольного роста).
-export function addStatus(statuses, lane, key, value) {
+export function addStatus(statuses, lane, key, value, limit) {
   if (lane < 0 || lane > 2) return;
-  const cap = STATUS_CAPS[key] ?? 99;
+  const cap = limit ?? STATUS_CAPS[key] ?? 99;
   const s = statuses[lane] ?? (statuses[lane] = {});
   s[key] = Math.min(cap, Math.max(s[key] || 0, value));
 }
@@ -206,19 +215,24 @@ export function resolveVariants(opts) {
 // io: { damage, damageStage, recordDamage, healStructure, snapshot }
 export function applyStatuses(state, opts) {
   const { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io, counters = false, variants = {} } = opts;
-  const V = resolveVariants(variants);
   const ctx = {
     state, rng, nexusPct, disabled: disabled ?? new Set(), events, abilityEvents, io,
     applied: { a: emptyStatuses(), b: emptyStatuses() },
     next: { a: emptyStatuses(), b: emptyStatuses() },
     burned: { a: [false, false, false], b: [false, false, false] },
+    disabledBySide: opts.disabledBySide ?? {},
+    unblocked: opts.unblocked ?? [],
+    cores:opts.cores??{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled??[],coreEffects:[],
   };
-  const on = (id) => !ctx.disabled.has(id);
+  const burns = [];
   for (const side of ['a', 'b']) {
+    const V = resolveVariants(opts.variantsBySide?.[side] ?? variants);
+    const on = id => !ctx.disabled.has(id) && !(ctx.disabledBySide[side] ?? []).includes(id);
     const board = state[side];
     ensureStatuses(board);
     const ownTurn = side === 'a' ? turnA : turnB;
     for (let l = 0; l < 3; l++) {
+      ctx.lane=l;
       const s = board.statuses[l];
       const placement = ownTurn?.placements?.find((p) => p.lane === l);
       const defElement = elementOf(placement?.defense)?.id;
@@ -227,15 +241,15 @@ export function applyStatuses(state, opts) {
       const oppPlacement = (side === 'a' ? turnB : turnA)?.placements?.find((p) => p.lane === l);
       const oppAtkElement = elementOf(oppPlacement?.attack)?.id;
       // Rule B: атакующая Гроза контрит защитную Воду → очищение отменено.
-      const cleanseBlocked = counters && isCounter(oppAtkElement, 'water');
+      const cleanseBlocked = counters && isCounter(oppAtkElement, 'water') && !ctx.unblocked.includes(`${side}:${l}:defense`);
       if (defElement === 'water' && on('water_cleanse') && !cleanseBlocked) {
         const negatives = NEGATIVE_STATUSES.filter((k) => s[k]);
-        if (negatives.length) {
+        if (negatives.length && V.waterCleanse !== 'noCleanse') {
           const toRemove = V.waterCleanse === 'single' ? negatives.slice(0, 1) : negatives;
           for (const k of toRemove) delete s[k];
           abilityEvents.push({ ability: 'water_cleanse', side, lane: l, effect: 'cleanse', removed: toRemove });
-        } else {
-          healTarget(ctx, side, l, V.waterCleanse === 'heal1' ? 1 : 2, 'water_cleanse');
+        } else if (!negatives.length && V.waterCleanse !== 'noHeal') {
+          healTarget(ctx, side, l, (V.waterCleanse === 'heal1' ? 1 : 2)+coreAbilityBonus(ctx,side,'water_cleanse','heal'), 'water_cleanse');
         }
       } else if (defElement === 'water' && on('water_cleanse') && cleanseBlocked) {
         abilityEvents.push({ ability: 'counter_triggered', side, lane: l, effect: 'counter',
@@ -244,16 +258,21 @@ export function applyStatuses(state, opts) {
       // Тик поджога: урон по текущей цели, затем поджог погашен.
       if (s.burn) {
         ctx.burned[side][l] = true;
-        const before = io.snapshot(board), stage = io.damageStage(board, l);
-        io.damage(board, l, s.burn, nexusPct[side]);
-        const dealt = io.recordDamage(before, board, l);
-        events.push({ side, l, stage, amount: dealt, element: '🔥', burn: dealt, burnTick: true });
-        abilityEvents.push({ ability: 'burn_tick', side, lane: l, effect: 'damage', amount: dealt, target: side });
+        burns.push({ side, l, amount: s.burn });
       }
       // Статусы этого раунда применены — съём; новые выставит разрешение раунда.
       ctx.applied[side][l] = { ...s };
       board.statuses[l] = {};
     }
+  }
+  // Complete every cleanse/heal before any burn tick: Nexus healing must not
+  // depend on whether a burning lane happens to be above or below the healer.
+  for (const {side, l, amount} of burns) {
+    const board = state[side], before = io.snapshot(board), stage = io.damageStage(board, l);
+    io.damage(board, l, amount, nexusPct[side]);
+    const dealt = io.recordDamage(before, board, l);
+    events.push({ side, l, stage, amount: dealt, element:'🔥', burn:dealt, burnTick:true, requested:amount });
+    abilityEvents.push({ability:'burn_tick',side,lane:l,effect:'damage',amount:dealt,target:side});
   }
   return ctx;
 }
@@ -264,10 +283,11 @@ export function applyStatuses(state, opts) {
 // ослабление удара Паром.
 export function effectiveLine(p) {
   const { ctx, attackerSide, lane, atkStat, defStat, atkElement, defElement, counters = false, variants = {} } = p;
+  ctx.lane=lane;
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
-  const on = (id) => !ctx.disabled.has(id);
-  const blocks = counterBlocks(atkElement, defElement, counters);
-  const V = resolveVariants(variants);
+  const on = id => !ctx.disabled.has(id) && !(ctx.disabledBySide?.[ABILITIES[id].role === 'attack' ? attackerSide : defenderSide] ?? []).includes(id);
+  const blocks = collisionBlocks(ctx,attackerSide,lane,atkElement,defElement,counters);
+  const VA = resolveVariants(p.atkVariants ?? variants), V = resolveVariants(p.defVariants ?? variants);
   const atkS = ctx.applied[attackerSide][lane] || {};
   const defS = ctx.applied[defenderSide][lane] || {};
 
@@ -278,27 +298,27 @@ export function effectiveLine(p) {
   const armor = defS.armor || 0;
   defense += armor;
   if (defElement === 'sandstorm' && on('sandstorm_shield') && !blocks.def) {
-    defense += V.sandstormShield === 'three' ? 3 : 4;
+    defense += (V.sandstormShield === 'three' ? 3 : 4)+coreAbilityBonus(ctx,defenderSide,'sandstorm_shield','shield');
   }
 
   let armorStripped = 0;
   if (atkElement === 'water' && on('water_strip_armor') && !blocks.atk && armor > 0) {
-    armorStripped = Math.min(V.waterStrip === 'two' ? 2 : 3, armor);
+    armorStripped = Math.min((VA.waterStrip === 'two' ? 2 : 3)+coreAbilityBonus(ctx,attackerSide,'water_strip_armor','strip'), armor);
     defense = Math.max(0, defense - armorStripped);
   }
-  if (atkElement === 'earth' && on('earth_pierce_def') && !blocks.atk) defense = Math.round(defense * 0.85);
+  if (atkElement === 'earth' && on('earth_pierce_def') && !blocks.atk) defense = Math.round(defense * (1-(15+coreAbilityBonus(ctx,attackerSide,'earth_pierce_def','percent'))/100));
   if (atkElement === 'lava' && on('lava_pierce_burn') && !blocks.atk) {
-    defense = Math.round(defense * (V.lavaPierce === 'pct5' ? 0.95 : 0.90));
+    defense = Math.round(defense * (1-((VA.lavaPierce === 'pct5' ? 5 : 10)+coreAbilityBonus(ctx,attackerSide,'lava_pierce_burn','percent'))/100));
   }
 
   if (defElement === 'fire_vortex' && on('fire_vortex_zaslon') && !blocks.def &&
       [lane - 1, lane + 1].some((j) => j >= 0 && j < 3 && ctx.burned[defenderSide][j])) {
-    attack = Math.round(attack * 0.90);
+    attack = Math.round(attack * (1-(10+coreAbilityBonus(ctx,defenderSide,'fire_vortex_zaslon','percent'))/100));
   }
 
   let hit = Math.max(0, attack - defense);
   if (defElement === 'steam' && on('steam_dampen') && !blocks.def) {
-    hit = Math.round(hit * (V.steamDampen === 'pct15' ? 0.85 : 0.90));
+    hit = Math.round(hit * (1-((V.steamDampen === 'pct15' ? 15 : 10)+coreAbilityBonus(ctx,defenderSide,'steam_dampen','percent'))/100));
   }
   return { attack, defense, hit, armorStripped, ...blocks };
 }
@@ -307,19 +327,24 @@ export function effectiveLine(p) {
 // Требуемый порядок: урон уже нанесён → on-hit атакующего → триггеры защиты.
 export function hitConsequences(p) {
   const { ctx, state, attackerSide, lane, atkElement, defElement, hit, rng, counters = false, variants = {} } = p;
+  ctx.lane=lane;
   const defenderSide = attackerSide === 'a' ? 'b' : 'a';
-  const on = (id) => !ctx.disabled.has(id);
+  const on = id => !ctx.disabled.has(id) && !(ctx.disabledBySide?.[ABILITIES[id].role === 'attack' ? attackerSide : defenderSide] ?? []).includes(id);
   const next = ctx.next;
-  const blocks = counterBlocks(atkElement, defElement, counters);
-  const V = resolveVariants(variants);
+  const blocks = collisionBlocks(ctx,attackerSide,lane,atkElement,defElement,counters);
+  const VA = resolveVariants(p.atkVariants ?? variants), V = resolveVariants(p.defVariants ?? variants);
+
+  const bonus=(side,id,key)=>coreAbilityBonus(ctx,side,id,key);
+  const status=(side,l,key,value,id,owner)=>addStatus(next[side],l,key,value+bonus(owner,id,key==='burn'?'burn':key==='armor'?'armor':key==='attackBoost'?'charge':'percent'),key==='burn'&&ctx.cores?.[owner]?6:undefined);
 
   // Нейтрализация — только специальная способность; числовой урон уже нанесён.
-  if (blocks.atk) {
+  if (blocks.atk && on(abilityIdOf(atkElement,'attack'))) {
     const canceled = abilityIdOf(atkElement, 'attack');
     ctx.abilityEvents.push({ ability: 'counter_triggered', side: defenderSide, lane,
       effect: 'counter', by: defElement, canceled, target: defenderSide });
   }
-  if (blocks.def) {
+  // Water's round-start counter was already recorded by applyStatuses.
+  if (blocks.def && defElement !== 'water' && on(abilityIdOf(defElement,'defense'))) {
     const canceled = abilityIdOf(defElement, 'defense');
     ctx.abilityEvents.push({ ability: 'counter_triggered', side: defenderSide, lane,
       effect: 'counter', by: atkElement, canceled, target: defenderSide });
@@ -327,53 +352,53 @@ export function hitConsequences(p) {
 
   if (hit > 0 && !blocks.atk) { // способности, требующие попадания
     if (atkElement === 'fire' && on('fire_burn'))
-      addStatus(next[defenderSide], lane, 'burn', 2);
+      status(defenderSide, lane, 'burn', 2,'fire_burn',attackerSide);
     if (atkElement === 'lava' && on('lava_pierce_burn')) {
-      const burnCondition = V.lavaPierce === 'burnArmor' ? ((ctx.applied[defenderSide][lane] || {}).armor || 0) > 0 : true;
-      if (burnCondition) addStatus(next[defenderSide], lane, 'burn', 1);
+      const burnCondition = VA.lavaPierce === 'burnArmor' ? ((ctx.applied[defenderSide][lane] || {}).armor || 0) > 0 : true;
+      if (burnCondition) status(defenderSide,lane,'burn',1,'lava_pierce_burn',attackerSide);
     }
     if (atkElement === 'air' && on('air_weaken_def'))
-      addStatus(next[defenderSide], lane, 'weakenDefense', 10);
+      status(defenderSide,lane,'weakenDefense',10,'air_weaken_def',attackerSide);
     if (atkElement === 'steam' && on('steam_weaken_def'))
-      addStatus(next[defenderSide], lane, 'weakenDefense', 15);
+      status(defenderSide,lane,'weakenDefense',15,'steam_weaken_def',attackerSide);
     if (atkElement === 'ice' && on('ice_weaken_def'))
-      addStatus(next[defenderSide], lane, 'weakenDefense', 10);
+      status(defenderSide,lane,'weakenDefense',10,'ice_weaken_def',attackerSide);
     if (atkElement === 'sandstorm' && on('sandstorm_weaken_atk'))
-      addStatus(next[defenderSide], lane, 'weakenAttack', 15);
+      status(defenderSide,lane,'weakenAttack',15,'sandstorm_weaken_atk',attackerSide);
     if (atkElement === 'fire_vortex' && on('fire_vortex_spread'))
-      for (const j of [lane - 1, lane + 1]) addStatus(next[defenderSide], j, 'burn', 1);
+      for (const j of [lane - 1, lane + 1]) status(defenderSide,j,'burn',1,'fire_vortex_spread',attackerSide);
     if (atkElement === 'thunderstorm' && on('thunderstorm_discharge')) {
       const others = [0, 1, 2].filter((j) => j !== lane);
       const j = others[Math.floor(rng() * others.length)];
-      extraDamage(ctx, attackerSide, defenderSide, j, 2, 'thunderstorm_discharge');
+      extraDamage(ctx, attackerSide, defenderSide, j, 2+bonus(attackerSide,'thunderstorm_discharge','damage'), 'thunderstorm_discharge');
     }
   }
 
   // Защитные триггеры (элемент защитной пары линии).
   if (!blocks.def) {
     if (defElement === 'earth' && on('earth_armor'))
-      addStatus(next[defenderSide], lane, 'armor', 3);
+      status(defenderSide,lane,'armor',3,'earth_armor',defenderSide);
     if (defElement === 'ice' && on('ice_weaken_atk'))
-      addStatus(next[attackerSide], lane, 'weakenAttack', 15);
+      status(attackerSide,lane,'weakenAttack',15,'ice_weaken_atk',defenderSide);
     if (defElement === 'thunderstorm' && on('thunderstorm_charge') && hit > 0)
-      addStatus(next[defenderSide], lane, 'attackBoost', 2);
+      status(defenderSide,lane,'attackBoost',2,'thunderstorm_charge',defenderSide);
     if (defElement === 'steam' && on('steam_dampen')) {
-      if (hit === 0) healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
-      else if (V.steamDampen === 'healPartial' && hit <= 2) healTarget(ctx, defenderSide, lane, 2, 'steam_dampen');
+      if (hit === 0) healTarget(ctx, defenderSide, lane, 2+bonus(defenderSide,'steam_dampen','heal'), 'steam_dampen');
+      else if (V.steamDampen === 'healPartial' && hit <= 2) healTarget(ctx, defenderSide, lane, 2+bonus(defenderSide,'steam_dampen','heal'), 'steam_dampen');
     }
     if (defElement === 'fire' && on('fire_retaliation')) {
       const blockedMode = V.fireRetaliation !== 'onHit';
-      if ((blockedMode && hit === 0) || (!blockedMode && hit > 0)) {
-        const retaliation = V.fireRetaliation === 'blocked3' ? 3 : 2;
+      if ((blockedMode && hit === 0) || (!blockedMode && p.absorbed > 0)) {
+        const retaliation = (V.fireRetaliation === 'blocked3' ? 3 : 2)+bonus(defenderSide,'fire_retaliation','damage');
         extraDamage(ctx, defenderSide, attackerSide, lane, retaliation, 'fire_retaliation');
       }
     }
     if (hit === 0 && defElement === 'air' && on('air_reflect'))
-      extraDamage(ctx, defenderSide, attackerSide, lane, 2, 'air_reflect');
+      extraDamage(ctx, defenderSide, attackerSide, lane, 2+bonus(defenderSide,'air_reflect','damage'), 'air_reflect');
     if (hit > 0 && defElement === 'lava' && on('lava_counter')) {
       const trigger = V.lavaCounter === 'strongHit' ? hit >= 3 : true;
       if (trigger) {
-        const counter = V.lavaCounter === 'three' ? 3 : 2;
+        const counter = (V.lavaCounter === 'three' ? 3 : 2)+bonus(defenderSide,'lava_counter','damage');
         extraDamage(ctx, defenderSide, attackerSide, lane, counter, 'lava_counter');
       }
     }
@@ -383,16 +408,18 @@ export function hitConsequences(p) {
 // Доп. урон (ответный, отражённый, разряд) — по текущей цели линии,
 // со щитом Нексуса получающей стороны на начало раунда.
 function extraDamage(ctx, bySide, targetSide, lane, amount, ability) {
+  if (ctx.effects) { ctx.effects.push({kind:'damage',bySide,targetSide,lane,amount,ability}); return; }
   const board = ctx.state[targetSide];
   const before = ctx.io.snapshot(board), stage = ctx.io.damageStage(board, lane);
   ctx.io.damage(board, lane, amount, ctx.nexusPct[targetSide]);
   const dealt = ctx.io.recordDamage(before, board, lane);
   if (dealt > 0) ctx.events.push({ side: targetSide, l: lane, stage, amount: dealt, element: '⚡', ability, extra: true });
-  ctx.abilityEvents.push({ ability, side: bySide, lane, effect: 'damage', amount: dealt, target: targetSide });
+  ctx.abilityEvents.push({ ability, side: bySide, lane, effect: 'damage', amount: dealt, requested:stage==='nexus'?Math.round(amount*ctx.nexusPct[targetSide]/100):amount, target: targetSide });
 }
 
 // Лечение текущей цели линии с капом по максимуму структуры.
 function healTarget(ctx, side, lane, amount, ability) {
+  if (ctx.effects) { ctx.effects.push({kind:'heal',side,lane,amount,ability}); return; }
   const board = ctx.state[side];
   const healed = ctx.io.healStructure(board, lane, amount);
   if (healed > 0) {
@@ -400,4 +427,13 @@ function healTarget(ctx, side, lane, amount, ability) {
     ctx.events.push({ side, l: lane, stage, amount: healed, element: '💧', ability, heal: true });
   }
   ctx.abilityEvents.push({ ability, side, lane, effect: 'heal', amount: healed, target: side });
+}
+
+export function flushAbilityEffects(ctx) {
+  const effects = ctx.effects;
+  ctx.effects = null;
+  // Healing checks the surviving primary target before secondary hits. Every
+  // secondary hit is pinned to that same structure; none resurrects a ruin.
+  for (const e of effects.filter(e => e.kind === 'heal')) healTarget(ctx,e.side,e.lane,e.amount,e.ability);
+  for (const e of effects.filter(e => e.kind === 'damage')) extraDamage(ctx,e.bySide,e.targetSide,e.lane,e.amount,e.ability);
 }
