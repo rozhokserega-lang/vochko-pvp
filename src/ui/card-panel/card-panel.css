@@ -3,7 +3,7 @@
 .arena-and-hand > #lanes{width:100%;height:auto;aspect-ratio:1600/760;flex:none;container-type:inline-size}
 .arena-and-hand .arena-scene{width:100%;height:auto;aspect-ratio:1600/760}
 
-.card-panel{position:relative;isolation:isolate;z-index:10;flex:none;width:100%;aspect-ratio:2172/724;container-type:inline-size;margin-top:calc(-14cqw - 5px);pointer-events:none}
+.card-panel{position:relative;isolation:isolate;z-index:10;flex:none;width:100%;aspect-ratio:2172/724;container-type:inline-size;margin-top:calc(-10cqw - 5px);pointer-events:none}
 /* Исходный PNG имеет прозрачную сферу: эффект светится сквозь стекло. */
 .panel-art{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none;user-select:none}
 .panel-zone{position:absolute;left:var(--zone-x);top:var(--zone-y);width:var(--zone-w);height:var(--zone-h);z-index:3}
@@ -90,13 +90,13 @@
 .match-screen>header{flex:0 0 44px}
 .match-screen>.wrap{flex:1;width:100%;max-width:none;height:auto;min-height:0;margin:0;padding:4px 6px;overflow:hidden}
 .match-screen .score{flex:none}
-.match-screen .arena-and-hand{--game-width:min(100cqw,calc(100cqh / .668333));container-type:size;flex:1;min-height:0;max-width:none;justify-content:center}
+.match-screen .arena-and-hand{--game-width:min(100cqw,calc(100cqh / .708333));container-type:size;flex:1;min-height:0;max-width:none;justify-content:center}
 .match-screen .arena-and-hand>#lanes,.match-screen .arena-and-hand>.card-panel{width:var(--game-width)}
-.match-screen .card-panel{margin-top:calc(var(--game-width) * -.14 - 5px)}
+.match-screen .card-panel{margin-top:calc(var(--game-width) * -.1 - 5px)}
 .panel-message{position:absolute;z-index:20;left:20%;bottom:100%;width:60%;padding:6px 10px;border:1px solid #ac8a4e;border-radius:8px;background:#101927ed;color:#ffe1a2;text-align:center;font-size:12px;line-height:1.4;pointer-events:none}
 .panel-message:empty{display:none}
 @media(max-width:640px){
- .match-screen .arena-and-hand{--game-width:min(100cqw,calc((100cqh - 48px) / .668333))}
+ .match-screen .arena-and-hand{--game-width:min(100cqw,calc((100cqh - 48px) / .708333))}
  .match-screen>header{flex-basis:36px}
  .panel-message{left:8%;width:84%;font-size:11px}
 }
