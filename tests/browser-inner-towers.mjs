@@ -24,6 +24,16 @@ try{
   await page.locator('.tower.enemy.inner').nth(1).screenshot({path:'reports/inner-towers/red-damaged.png'});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'reports/inner-towers/mobile.png'});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth),390);
+  await page.setViewportSize({width:1600,height:960});
+  await page.evaluate(()=>{for(const side of Object.values(window.fixtureView.board)){side.outer=[12,12,12];side.inner=[18,18,18];}window.renderFixture();});
+  await page.locator('.tower-sprite').evaluateAll(imgs=>Promise.all(imgs.map(img=>img.decode())));
+  for(const team of ['ally','enemy']){
+    const boxes=await page.locator(`.tower.${team}.inner`).evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {top:b.top,bottom:b.bottom};}));
+    for(let i=1;i<boxes.length;i++)assert.ok(boxes[i].top>=boxes[i-1].bottom-0.5,`${team}: adjacent tower sprites overlap`);
+    const arena=await page.locator('#lanes').boundingBox();assert.ok(boxes[2].bottom<arena.y+arena.height,`${team}: bottom tower leaves arena`);
+  }
+  await page.screenshot({path:'reports/inner-towers/all-full-desktop.png'});
+  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'reports/inner-towers/all-full-mobile.png'});
   await page.evaluate(()=>{window.fixtureView.board.me.inner[0]=9;window.renderFixture();});assert.match(await page.locator('.tower.ally.inner').first().locator('.tower-sprite').getAttribute('src'),/ally-damaged/);
   await page.evaluate(()=>{window.fixtureView.board.me.inner[0]=0;window.renderFixture();});assert.match(await page.locator('.tower.ally.inner').first().locator('.tower-sprite').getAttribute('src'),/ally-ruins/);
   assert.deepEqual(errors,[]);console.log('PASS inner tower models: both colors, all states, overlays, desktop/mobile and HP transitions');

@@ -24,7 +24,7 @@ const DAMAGED_WIDTH_RATIO = 461 / 503;
 // ── Значения по умолчанию (измерены по «Задний фон.png» и референсу) ──
 const DEFAULTS = deepFreeze({
   platforms: {
-    rowCy: [256, 475, 679],                      // ряды: верх / центр / низ
+    rowCy: [270, 510, 750],                      // ряды ниже, шаг 240 оставляет место увеличенным башням
     // outer (12 HP) — ближняя к центру, ломается первой; inner (18 HP) — ближе к Нексусу
     colCx: { allyOuter: 645, allyInner: 450, enemyInner: 1163, enemyOuter: 959 },
     rx: 64,
@@ -37,7 +37,7 @@ const DEFAULTS = deepFreeze({
   tower: {
     h: 208,           // высота спрайта башни (целая/повреждённая)
     inner:{
-      h:218,ruinsW:165,
+      h:240,ruinsW:182, // +10% только для башен на 18 HP и их обломков
       art:{slots:[{x:32.4,y:38.6,w:15.6,h:11.1},{x:50.6,y:38.6,w:15.6,h:11.1}],circle:{cx:49.3,cy:60.9,d:19.3},glow:{cy:99,w:112,h:35},hp:{cx:50,cy:-2}},
     },
     fullAspect: 0.6157,    // контент-bbox «Башня синяя.png» 431×700
