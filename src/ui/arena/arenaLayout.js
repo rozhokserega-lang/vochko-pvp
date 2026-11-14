@@ -24,8 +24,10 @@ const DAMAGED_WIDTH_RATIO = 461 / 503;
 const DEFAULTS = deepFreeze({
   platforms: {
     rowCy: [256, 475, 679],                      // ряды: верх / центр / низ
-    // outer (12 HP) — ближняя к центру, ломается первой; inner (18 HP) — ближе к Нексусу
-    colCx: { allyOuter: 645, allyInner: 450, enemyInner: 1163, enemyOuter: 959 },
+    // outer (12 HP) — ближняя к центру, ломается первой; inner (18 HP) — ближе к Нексусу.
+    // Колонки разнесены шире (аудит v20.1): больше воздуха между башнями и у центра —
+    // HP-подписи центральных башен не сцепляются даже на телефонах.
+    colCx: { allyOuter: 630, allyInner: 415, enemyInner: 1185, enemyOuter: 970 },
     rx: 64,
     ry: 43,
     nexus: {
