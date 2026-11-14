@@ -26,6 +26,7 @@ export function coreDescriptor(card) {
 }
 export function coreAbilityBonus(ctx,side,id,key) {
   if(ctx.coreDisabled?.includes(id))return 0;
+  if(ctx.coreDisabledBySide?.[side]?.includes(id))return 0; // симулятор: пер-сторонняя абляция
   const card=ctx.cores?.[side],tier=coreTier(card),ability=CORE_ABILITIES[id];
   if(!tier||!ability||!ELEMENTS[ability.element].suits.includes(card.s))return 0;
   const baseline=ability[key];if(!baseline)return 0;

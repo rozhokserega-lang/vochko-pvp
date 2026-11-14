@@ -143,7 +143,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   if (abilities) {
     ensureStatuses(state.a); ensureStatuses(state.b);
     ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io:phase, counters, variants, variantsBySide, disabledBySide: opts.disabledBySide, unblocked: opts.unblocked,
-      cores:opts.nexusCoreEnabled?{a:turnA.coreCard,b:turnB.coreCard}:{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled });
+      cores:opts.nexusCoreEnabled?{a:turnA.coreCard,b:turnB.coreCard}:{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled,coreDisabledBySide:opts.coreDisabledBySide });
     ctx.effects = [];
   }
   const consequences = [];
