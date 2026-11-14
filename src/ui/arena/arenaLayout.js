@@ -10,11 +10,15 @@
 // ArenaLayoutEditor (?arenaDebug=1) правит конфиг в рантайме, хранит правки
 // в localStorage и экспортирует JSON. В обычной игре конфиг читается как есть.
 
+import {INNER_TOWER_META} from './inner-tower-meta.js';
 export const ARENA_DESIGN = { w: 1600, h: 760 };
 // Дизайн-пространство обрезано до 1600×760 (было 1600×900): из арта фона срезаны
 // декоративная кромка стены сверху (40px) и каменная дорожка снизу (100px).
 // Фон рисуется в исходном масштабе 1600×900 (высота 118.42% сцены, top −5.263%),
 // Y-позиции ниже переведены в новую систему (старое Y − 40).
+// Ряды pvp-lobby-redesign ([270,510,750] в системе 900) пересчитаны сюда: −40
+// сдвиг обрезки и подъём на 84px, чтобы основание нижней башни (240px, +74)
+// поместилось в 760; шаг 240 сохранён — соседние спрайты не перекрываются.
 
 // Ось передней ступени в каждом спрайте. Края обломков асимметричны.
 const FOUNDATION_X = {
@@ -27,7 +31,7 @@ const DAMAGED_WIDTH_RATIO = 461 / 503;
 // ── Значения по умолчанию (измерены по «Задний фон.png» и референсу) ──
 const DEFAULTS = deepFreeze({
   platforms: {
-    rowCy: [216, 435, 639],                      // ряды: верх / центр / низ (система 1600×760)
+    rowCy: [186, 426, 666],                      // ряды: верх / центр / низ (система 1600×760)
     // outer (12 HP) — ближняя к центру, ломается первой; inner (18 HP) — ближе к Нексусу.
     // Колонки разнесены шире (аудит v20.1): больше воздуха между башнями и у центра —
     // HP-подписи центральных башен не сцепляются даже на телефонах.
@@ -41,6 +45,10 @@ const DEFAULTS = deepFreeze({
   },
   tower: {
     h: 208,           // высота спрайта башни (целая/повреждённая)
+    inner:{
+      h:240,ruinsW:182, // +10% только для башен на 18 HP и их обломков
+      art:{slots:[{x:32.4,y:38.6,w:15.6,h:11.1},{x:50.6,y:38.6,w:15.6,h:11.1}],circle:{cx:49.3,cy:60.9,d:19.3},glow:{cy:99,w:112,h:35},hp:{cx:50,cy:-2}},
+    },
     fullAspect: 0.6157,    // контент-bbox «Башня синяя.png» 431×700
     damagedAspect: 0.7186, // «…пол хп» 503×700 (обвал справа)
     bottomK: 1.72,    // основание: platform.cy + ry × bottomK (по референсу: cy + 74)
@@ -129,7 +137,7 @@ function withDerivedObjects(state) {
         id: towerId(team, kind, lane, size),
         cx: p.colCx[col],
         bottom: p.rowCy[lane] + p.ry * state.tower.bottomK,
-        h: state.tower.h,
+        h: size==='inner'?state.tower.inner.h:state.tower.h,
         ruinsW: state.tower.ruinsW,
         ruinsH: state.tower.ruinsH,
       });
@@ -187,7 +195,8 @@ export function arenaStage(hp, max) {
   return hp / max > (LAYOUT.tower.thresholds?.damagedBelow ?? 0.5) ? 'full' : 'damaged';
 }
 
-export function towerArt(team, stage) {
+export function towerArt(team, stage, size='outer') {
+  if(size==='inner')return stage==='ruins'?{...LAYOUT.tower.artRuins}:LAYOUT.tower.inner.art;
   if (stage === 'ruins') return LAYOUT.tower.artRuins;
   if (stage === 'full') return LAYOUT.tower.artFull;
   const art = LAYOUT.tower.artDamaged;
@@ -215,6 +224,11 @@ export function towerBox(team, kind, lane, size, stage) {
   const id = towerId(team, kind, lane, size);
   const obj = LAYOUT.towers.find((x) => x.id === id) ?? platformOf(team, kind, lane, size);
   const t = LAYOUT.tower;
+  if(size==='inner'){
+    const destroyed=stage==='ruins',meta=destroyed?INNER_TOWER_META.ruins[team]:INNER_TOWER_META;
+    const w=destroyed?t.inner.ruinsW:(obj.h??t.inner.h)*meta.aspect,h=destroyed?w/meta.aspect:obj.h??t.inner.h;
+    return {cx:obj.cx+(0.5-meta.anchorX)*w,bottom:obj.bottom,w,h,anchorX:meta.anchorX};
+  }
   const aspect = stage === 'damaged' ? t.damagedAspect * (team === 'enemy' ? DAMAGED_WIDTH_RATIO : 1) : t.fullAspect;
   const w = stage === 'ruins' ? obj.ruinsW ?? t.ruinsW : (obj.h ?? t.h) * aspect;
   const h = stage === 'ruins' ? obj.ruinsH ?? t.ruinsH : obj.h ?? t.h;

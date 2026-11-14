@@ -16,7 +16,7 @@
 .arena-scene .core-eligible{filter:drop-shadow(0 0 4px var(--core-color))}
 .core-battle-badge,.core-own-badge{white-space:nowrap;color:#c6f2ff;font-size:clamp(8px,.9cqw,14px);font-weight:700;text-shadow:0 1px 3px #000;margin-top:3px;z-index:10}
 @keyframes core-wait{50%{opacity:.4;box-shadow:0 0 13px #57cfff88}}@keyframes core-absorb{0%{opacity:1;translate:0 35px;scale:1}80%{opacity:1}100%{opacity:0;translate:0 -5px;scale:.05}}@keyframes core-flash{35%{filter:drop-shadow(0 0 13px var(--core-color)) brightness(1.6)}}
-@media(max-width:560px){.core-console{position:relative;left:auto;bottom:auto;width:180px;height:110px;flex:none;gap:2px;justify-content:center}.core-drop{height:70px;min-height:44px;flex:none}.core-state{font-size:11px}.core-details{font-size:11px}.core-preview{font-size:12px;padding:9px}.match-screen .arena-and-hand:has(>.core-console){--game-width:min(100cqw,calc((100cqh - 163px) / .708333))}}
+@media(max-width:560px){.core-console{position:relative;left:auto;bottom:auto;width:180px;height:110px;flex:none;gap:2px;justify-content:center}.core-drop{height:70px;min-height:44px;flex:none}.core-state{font-size:11px}.core-details{font-size:11px}.core-preview{font-size:12px;padding:9px}.match-screen .arena-and-hand:has(>.core-console){--game-width:min(100cqw,calc((100cqh - 163px) / .763333))}}
 /* Закрытый купол отснят в том же футаже, что и раскрытый кристалл (общий
    пьедестал 280px), поэтому в кадре консоли он выглядит непропорционально
    мелко — будто другая модель. Компенсация — только для десктопной консоли

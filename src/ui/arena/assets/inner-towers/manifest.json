@@ -1,0 +1,86 @@
+[
+  {
+    "file": "tower-18-ally-full.webp",
+    "source": "Башня синяя 18хп.png",
+    "sourceSha256": "ff35037a00526d5a0543ddbd72cc9609dc222b543b847cef6e05af24ef03715b",
+    "crop": {
+      "left": 18,
+      "top": 12,
+      "width": 1026,
+      "height": 1440
+    },
+    "width": 570,
+    "height": 800,
+    "bytes": 145036
+  },
+  {
+    "file": "tower-18-ally-damaged.webp",
+    "source": "Башня синяя 18хп половина хп.png",
+    "sourceSha256": "4da599159bcf4e722a18300dd499c8a9d97333a4fb4d516ab31a0a1543d795b6",
+    "crop": {
+      "left": 18,
+      "top": 12,
+      "width": 1026,
+      "height": 1440
+    },
+    "width": 570,
+    "height": 800,
+    "bytes": 150732
+  },
+  {
+    "file": "tower-18-ally-ruins.webp",
+    "source": "Башня синяя 18хп разрушена.png",
+    "sourceSha256": "6c59e116414b2b207b7dde9a5c71952462727124dc33cc486ae8c4592d1ffea1",
+    "crop": {
+      "left": 27,
+      "top": 88,
+      "width": 1198,
+      "height": 1077
+    },
+    "width": 556,
+    "height": 500,
+    "bytes": 110646
+  },
+  {
+    "file": "tower-18-enemy-full.webp",
+    "source": "Башня красная 18хп.png",
+    "sourceSha256": "083e5926e1af1a18d903d9fab6882c79e6d309b3224952d8eac0895cb990eb1e",
+    "crop": {
+      "left": 18,
+      "top": 12,
+      "width": 1026,
+      "height": 1440
+    },
+    "width": 570,
+    "height": 800,
+    "bytes": 144836
+  },
+  {
+    "file": "tower-18-enemy-damaged.webp",
+    "source": "Башня красная 18хп половина хп.png",
+    "sourceSha256": "c536f41b966791f59c9882aa7f16c169ea1369192586e1978b878d6142ffac8e",
+    "crop": {
+      "left": 18,
+      "top": 12,
+      "width": 1026,
+      "height": 1440
+    },
+    "width": 570,
+    "height": 800,
+    "bytes": 152784
+  },
+  {
+    "file": "tower-18-enemy-ruins.webp",
+    "source": "Башня красная 18хп разрушена.png",
+    "sourceSha256": "76d060ef365dde6729a0702d3f534224d55206fe6bac4b5d5dbf1922b7101946",
+    "crop": {
+      "left": 45,
+      "top": 241,
+      "width": 1106,
+      "height": 931
+    },
+    "width": 594,
+    "height": 500,
+    "bytes": 113066
+  }
+]
