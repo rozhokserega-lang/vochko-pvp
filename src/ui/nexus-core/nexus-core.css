@@ -19,10 +19,14 @@
 @media(max-width:560px){.core-console{position:relative;left:auto;bottom:auto;width:180px;height:110px;flex:none;gap:2px;justify-content:center}.core-drop{height:70px;min-height:44px;flex:none}.core-state{font-size:11px}.core-details{font-size:11px}.core-preview{font-size:12px;padding:9px}.match-screen .arena-and-hand:has(>.core-console){--game-width:min(100cqw,calc((100cqh - 163px) / .708333))}}
 /* Закрытый купол отснят в том же футаже, что и раскрытый кристалл (общий
    пьедестал 280px), поэтому в кадре консоли он выглядит непропорционально
-   мелко — будто другая модель. Компенсация: в закрытой фазе купол крупнее
-   (зум от основания), при открытии масштаб плавно возвращается к природному
-   ровно за длительность анимации opening (9 кадров × 110 мс) — стык бесшовный. */
-.core-console[data-phase="closed"] .core-art{transform:scale(1.45);transform-origin:50% 97.5%}
-.core-console[data-phase="waiting"] .core-art{transform-origin:50% 97.5%;animation:core-open-zoom .99s ease-out both}
+   мелко — будто другая модель. Компенсация — только для десктопной консоли
+   внутри сцены: в закрытой фазе купол крупнее (зум от основания), при открытии
+   масштаб возвращается к природному за 0.45с, пока купол ещё закрыт.
+   На мобильной консоли (≤560px, стоит вплотную под статами Нексуса) зум
+   вылезал бы за коробку и наезжал на HP — там натуральный масштаб. */
+@media(min-width:561px){
+  .core-console[data-phase="closed"] .core-art{transform:scale(1.45);transform-origin:50% 97.5%}
+  .core-console[data-phase="waiting"] .core-art{transform-origin:50% 97.5%;animation:core-open-zoom .45s ease-out both}
+}
 @keyframes core-open-zoom{from{transform:scale(1.45)}to{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.core-console *{animation:none!important;transition:none!important}.core-console[data-phase="closed"] .core-art{transform:none}}
