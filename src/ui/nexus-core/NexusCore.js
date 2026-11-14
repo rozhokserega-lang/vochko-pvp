@@ -59,7 +59,7 @@ export function mountNexusCore(root,{view,slots,remaining,selected,blocked,onAct
   drop.onclick=()=>chosen?showEffectInspector(drop,'Активные усиления Ядра',previewNode.innerHTML):ready?onActivate(card?.id):onPrepare();
   instance.querySelector('.core-state').textContent=chosen?`${info.icon} Ядро ${genitive[info.suit]} ${CORE_TIERS[info.tier-1]}`:ready?'Перенесите карту в Ядро Нексуса':complete?'Открыть Ядро Нексуса':'Ядро · сначала размести 12 карт';
   root.querySelector('.core-own-badge')?.remove();
-  if(chosen){const badge=document.createElement('span');badge.className='core-own-badge';badge.textContent=`${info.icon} ${genitive[info.suit]} ${CORE_TIERS[info.tier-1]}`;badge.title=`Усилятся: ${info.elements.map(id=>ELEMENTS[id].name).join(', ')} — при выполнении условий; контрстихии действуют.`;root.querySelector('.nexus-fortress.ally .nexus-fortress-stats').append(badge);}
+  if(chosen){const badge=document.createElement('span');badge.className='core-own-badge';badge.textContent=`${info.icon} ${genitive[info.suit]} ${CORE_TIERS[info.tier-1]}`;badge.title=`Усилятся: ${info.elements.map(id=>ELEMENTS[id].name).join(', ')} — при выполнении условий; контрстихии действуют.`;root.querySelector('.nexus-fortress.ally .nexus-fortress-stats').prepend(badge);}
   const preview=previewNode;
   if(info){
     const context={cores:{a:card},coreProfile:view.rules.coreProfile};
@@ -105,6 +105,6 @@ export function showBattleCores(view){
       const drop=instance.querySelector('#nexusCore');drop.disabled=false;drop.onclick=()=>showEffectInspector(drop,'Сработавшие усиления Ядра',html);
       previewNode.innerHTML=html||'<p>Активных эффектов нет</p>';
     }
-    (nexus.querySelector('.nexus-fortress-stats')??nexus).append(badge);
+    (nexus.querySelector('.nexus-fortress-stats')??nexus).prepend(badge);
   }
 }

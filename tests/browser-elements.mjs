@@ -39,7 +39,8 @@ try {
     assert.equal(await page.locator('#fortifyBtn').count(), 0);
     assert.equal(await page.locator('#pairsDetails,#battleReports,#clearBtn,#pairPreview').count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), true);
-    assert.ok(await page.locator('#arenaScene').evaluate(el => el.getBoundingClientRect().height > 180));
+    // Арена 1600×760 (обрезка арта): на 390px сцена ≈170px высотой.
+    assert.ok(await page.locator('#arenaScene').evaluate(el => el.getBoundingClientRect().height > 150));
     const previews = await page.evaluate(async () => {
       const { renderPanelPreview } = await import('/src/ui/card-panel/CardPanel.js');
       const { ELEMENTS, pairStats } = await import('/shared/elements.js');

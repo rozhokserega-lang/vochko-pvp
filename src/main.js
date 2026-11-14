@@ -14,6 +14,7 @@ import './ui/card-panel/card-panel.css';
 import { ensureSession, supabase } from './lib/supabase.js';
 import { api } from './lib/api.js';
 import { watchMatch } from './lib/realtime.js';
+import { ARENA_ASSETS } from './ui/arena/arena-assets.js';
 import { Lobby, waitingRoom } from './ui/Lobby.js';
 import {setRoomConnection} from './ui/waiting-room/WaitingRoom.js';
 import { battleHTML as Board, nexusPhaseBar } from './ui/arena/ArenaScene.js';
@@ -265,6 +266,8 @@ function render(force = false) {
   const root = document.createElement('div');
   root.className = 'match-screen';
   root.dataset.meterContext = `${view.matchId}:${view.round}`;
+  // Фон-подложка для боковых полей вокруг сцены (кинематографичные бары).
+  root.style.setProperty('--arena-bg', `url('${ARENA_ASSETS.bg}')`);
   root.innerHTML = `
     <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
       <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
@@ -352,7 +355,13 @@ function showEndScreen(v) {
 }
 
 // Хореография боя рендерит финальное состояние и финальный экран сама.
-bindCombatUI({ render, showEndScreen, renderFinal: () => render(true) });
+// render(true) пересобирает поле и стирает бейджи Ядра — возвращаем их сразу,
+// если отчёт раунда уже есть (иначе они пропадают до конца раунда).
+const renderWithBattleCores = (force) => {
+  render(force);
+  if (view?.latestRoundReport?.cores) showBattleCores(view);
+};
+bindCombatUI({ render: renderWithBattleCores, showEndScreen, renderFinal: () => renderWithBattleCores(true) });
 
 function updatePreview() {
   const cards = selected.map(cardById);
