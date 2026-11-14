@@ -1,0 +1,107 @@
+[
+  {
+    "asset": "background.webp",
+    "source": "ЗАдний фон.png",
+    "sourceSha256": "97cdfa8a2f1ebe51c58b82cee243ef1f8e5f5e20f82042c9a425650fb1348263",
+    "sourceSize": [
+      1670,
+      941
+    ],
+    "size": [
+      1670,
+      941
+    ],
+    "alpha": false,
+    "bytes": 421256
+  },
+  {
+    "asset": "logo.webp",
+    "source": "лого.png",
+    "sourceSha256": "5708bee3e2c498fcbaa630379cf2ad4aed3dc7a150dcbaa897dbd6590893e339",
+    "sourceSize": [
+      1536,
+      1024
+    ],
+    "size": [
+      900,
+      600
+    ],
+    "alpha": true,
+    "bytes": 193776
+  },
+  {
+    "asset": "panel.webp",
+    "source": "Рамка.png",
+    "sourceSha256": "da2acc1af5d3cbf1e2cd5bc600f4799e4d09de07a6f0b6cf5bfd3c8c82813da1",
+    "sourceSize": [
+      1672,
+      941
+    ],
+    "size": [
+      1672,
+      941
+    ],
+    "alpha": true,
+    "bytes": 221788
+  },
+  {
+    "asset": "player.webp",
+    "source": "мой фон.png",
+    "sourceSha256": "5111e61372d27d8cc406b1498a8bf95ad3b69686876e995808c38e4db6b8e0f7",
+    "sourceSize": [
+      2094,
+      751
+    ],
+    "size": [
+      1100,
+      395
+    ],
+    "alpha": true,
+    "bytes": 98374
+  },
+  {
+    "asset": "opponent.webp",
+    "source": "Фон соперника.png",
+    "sourceSha256": "f8b93ece8705cc94d1d954c68c28281cffb678c73b2c9264499ff2b330653ef0",
+    "sourceSize": [
+      2172,
+      724
+    ],
+    "size": [
+      1100,
+      367
+    ],
+    "alpha": true,
+    "bytes": 109710
+  },
+  {
+    "asset": "vs.webp",
+    "source": "VS.png",
+    "sourceSha256": "b9c4058b22a66a14e1b0ed4b5089178dbf1159fb422dd3e5ae9967f1b2c6b953",
+    "sourceSize": [
+      1312,
+      1199
+    ],
+    "size": [
+      360,
+      329
+    ],
+    "alpha": true,
+    "bytes": 57300
+  },
+  {
+    "asset": "button.webp",
+    "source": "Кнопка.png",
+    "sourceSha256": "fb4191337f49995f52a6d78da6a7b699f90beb6748d1b3938718df067d00a9e8",
+    "sourceSize": [
+      2172,
+      724
+    ],
+    "size": [
+      1300,
+      433
+    ],
+    "alpha": true,
+    "bytes": 98206
+  }
+]

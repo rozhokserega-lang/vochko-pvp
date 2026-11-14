@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "real room code and invite link; independent copy buttons including ID",
+    "desktop/mobile/tablet: no horizontal overflow; mirrored opponent art; keyboard copy focus",
+    "offline recovery, server retry, reduced motion, invite-link join, connected state, automatic start and F5",
+    "code join; creator cancellation rejects joining; nonexistent room handled"
+  ],
+  "success": true
+}

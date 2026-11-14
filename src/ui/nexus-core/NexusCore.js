@@ -1,6 +1,7 @@
+import {abilityDescription as description} from '../../../shared/ability-description.js';
 import {coreDescriptor,coreAbilityBonus,CORE_TIERS} from '../../../shared/nexus-core.js';
 import {ELEMENTS,elementOf} from '../../../shared/elements.js';
-import {ABILITIES,resolveVariants} from '../../../shared/abilities.js';
+import {ABILITIES} from '../../../shared/abilities.js';
 import {showEffectInspector,closeEffectInspector} from '../arena/EffectInspector.js';
 const assets={closed:new URL('./assets/closed.png',import.meta.url).href,opening:new URL('./assets/opening.webp',import.meta.url).href,
   waiting:new URL('./assets/waiting.webp',import.meta.url).href,open:new URL('./assets/open.png',import.meta.url).href};
@@ -8,14 +9,7 @@ let instance=null,instanceKey='',openingTimer=null,absorbTimer=null,phase='',pre
 const genitive={'♥':'Огня','♦':'Воды','♠':'Земли','♣':'Воздуха'};
 let waitingReady;
 const preloadWaiting=()=>waitingReady??=(async()=>{const img=new Image();img.src=assets.waiting;await img.decode();})();
-function description(a,variants){
-  const v=resolveVariants(variants);
-  return ({fire_retaliation:v.fireRetaliation==='onHit'?'При поглощении удара щитом — 2 ответного урона':v.fireRetaliation==='blocked3'?'При полной блокировке — 3 ответного урона':a.desc,
-    water_strip_armor:`Снять до ${v.waterStrip==='two'?2:3} временной брони перед ударом`,water_cleanse:`Очистить негативные статусы; если их нет — вылечить ${v.waterCleanse==='heal1'?1:2} HP`,
-    steam_dampen:`Снизить входящий урон на ${v.steamDampen==='pct15'?15:10}%; при полной блокировке вылечить 2 HP`,lava_counter:`При успешном попадании противника — ${v.lavaCounter==='three'?3:2} ответного урона`,
-    lava_pierce_burn:`Пробить ${v.lavaPierce==='pct5'?5:10}% защиты; при попадании поджог 1${v.lavaPierce==='burnArmor'?' только по цели с временной бронёй':''}`,
-    sandstorm_shield:`Получить +${v.sandstormShield==='three'?3:4} щита текущего раунда`})[a.id]??a.desc;
-}
+
 export function mountNexusCore(root,{view,slots,remaining,selected,blocked,onActivate,onPrepare}) {
   if(!view.rules?.nexusCoreEnabled){clearNexusCore();return;}
   const key=`${view.matchId}/${view.round}`;
