@@ -33,3 +33,6 @@ save('row-locked','Золотая и серебряная панели инте�
 for name,box in [('hp',(0,80,465,620)),('attack',(465,80,900,620)),('shield',(900,80,1330,620)),('check',(1330,80,1760,620)),('lock',(1760,80,2172,620))]:
  save('icon-'+name,'Глянцевые игровые иконки_ сердце, мечи, щит и замок.png',box,180)
 (dst/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+
+import subprocess
+subprocess.run([sys.executable,str(Path(__file__).with_name('prepare-core-ring-mask.py')),str(dst)],check=True)
