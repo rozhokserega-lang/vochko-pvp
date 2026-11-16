@@ -8,9 +8,9 @@
 .nexus-core-panel{display:none;position:fixed;left:max(10px,env(safe-area-inset-left));top:50%;transform:translateY(-50%);width:min(320px,calc((100dvh - 24px)/2.65),calc(100vw - 20px));z-index:1100;filter:drop-shadow(0 0 25px #000)}
 .nexus-core-panel.is-open{display:block}
 .core-panel-close{display:block;position:absolute;right:8%;top:7%;z-index:2;border:0;background:#122a3e;color:#fff;border-radius:50%;font-size:22px;width:30px;height:30px;cursor:pointer}
-.arena-scene .core-xp-dock{position:relative;display:block;flex:none;width:64%;height:6cqw;max-height:88px;min-height:0;padding:0;margin:3px 0 0;border:0;background:none;color:#bcefff;cursor:pointer;isolation:isolate;line-height:1}
+.arena-scene .core-xp-dock{position:relative;display:block;flex:none;width:88%;height:8cqw;max-height:124px;min-height:0;padding:0;margin:3px 0 0;border:0;background:none;color:#bcefff;cursor:pointer;isolation:isolate;line-height:1}
 .core-dock-art{width:100%;height:100%;object-fit:contain;pointer-events:none;transform:none}
-.core-dock-xp{position:absolute;bottom:0;left:0;width:100%;font-size:clamp(6px,.7cqw,11px);font-weight:bold;white-space:nowrap;text-shadow:0 1px 3px #000,0 0 4px #000;pointer-events:none}
+.core-dock-xp{position:absolute;bottom:0;left:0;width:100%;font-size:clamp(7px,.85cqw,13px);font-weight:bold;white-space:nowrap;text-shadow:0 1px 3px #000,0 0 4px #000;pointer-events:none}
 .core-dock-gain{position:absolute;top:20%;left:0;width:100%;font-size:clamp(9px,1cqw,16px);font-weight:bold;color:#fff2a3;opacity:0;pointer-events:none;text-shadow:0 1px 4px #000}
 .core-xp-dock.drag-over{filter:drop-shadow(0 0 8px #50dfff);background:none!important;outline:none!important}
 .core-xp-dock.drag-over .core-dock-gain{opacity:1}
