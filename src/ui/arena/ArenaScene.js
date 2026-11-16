@@ -1,3 +1,4 @@
+import {desktopWorldMetrics,desktopObjectFrame,desktopLaneY} from './desktop-layout.js';
 import {isXpCore,coreBonuses} from '../../../shared/core-progression.js';
 import { pairStats } from '../../../shared/elements.js';
 // Сцена арены v20: единое дизайн-пространство (aspect-fit), фон из ресурса,
@@ -9,6 +10,7 @@ import { towerHTML } from './TowerView.js';
 import { nexusHTML } from './NexusView.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 
+let observedScene=null,sceneObserver=null;
 const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 const pctOf = (v, base) => +(((v / base) * 100)).toFixed(3) + '%';
 
@@ -58,8 +60,12 @@ export function nexusPhaseBar(view) {
 export function applyArenaLayout(root = document) {
   const scene = root.querySelector('#arenaScene');
   if (!scene) return;
+  if(typeof ResizeObserver!=='undefined'&&observedScene!==scene){sceneObserver?.disconnect();observedScene=scene;sceneObserver=new ResizeObserver(()=>{if(scene.isConnected)applyArenaLayout(scene.parentElement);});sceneObserver.observe(scene);}
   const W = ARENA_DESIGN.w, H = ARENA_DESIGN.h;
+  const desktop=!!scene.closest('.desktop-battlefield');
+  const metrics=desktop?desktopWorldMetrics(scene.clientWidth,scene.clientHeight):null;
   const boxStyle = (el, box) => {
+    if(desktop){const lane=Number(el.dataset.lane??el.dataset.arenaId.match(/-(\d)-/)?.[1]);const frame=desktopObjectFrame(box,metrics,{lane,nexus:el.classList.contains('nexus-fortress')});for(const prop of ['left','top','width','height'])el.style[prop]=frame[prop]+'px';return;}
     el.style.left = pctOf(box.cx - box.w / 2, W);
     el.style.top = pctOf(box.bottom - box.h, H);
     el.style.width = pctOf(box.w, W);
@@ -70,7 +76,7 @@ export function applyArenaLayout(root = document) {
     const row = +lane.dataset.row;
     const cy = LAYOUT.platforms.rowCy[row] ?? H / 2;
     const badge = lane.querySelector('.centerlane');
-    if (badge) badge.style.top = pctOf(cy, H);
+    if (badge) badge.style.top = desktop?desktopLaneY(row,metrics)+'px':pctOf(cy, H);
   });
   // ── Башни ──
   scene.querySelectorAll('.tower').forEach((t) => {

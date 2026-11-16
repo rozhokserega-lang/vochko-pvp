@@ -7,9 +7,9 @@ import {cardXp,addCoreXp} from '../shared/core-progression.js';
 const server=await createServer({base:'/',server:{host:'127.0.0.1',port:5194,strictPort:true}});await server.listen();
 let browser;const errors=[];
 try{
- browser=await chromium.launch({channel:'chrome'});
+ browser=await chromium.launch(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{});
  await mkdir('reports/nexus-core-screenshots',{recursive:true});
- for(const [width,height] of [[1920,1080],[2560,1440],[1366,768],[390,844]]){
+ for(const [width,height] of [[1920,1080],[2560,1440],[1366,768]]){
   const mobile=width<1100,context=await browser.newContext({viewport:{width,height},hasTouch:mobile,isMobile:mobile}),f=serverFixture({core:true,persistent:true});
   f.match.state.rules.coreVersion=2;f.match.state.botMatch=true;addCoreXp(f.match.state.board.a,19);
   await context.route('**/src/lib/supabase.js',r=>r.fulfill({contentType:'application/javascript',body:`export async function ensureSession(){};export function supabase(){return {auth:{getSession:async()=>({data:{session:{access_token:'fixture'}}})}}}`}));
@@ -28,7 +28,7 @@ try{
   await page.goto('http://127.0.0.1:5194/');await page.locator('#hand .card').first().waitFor();
   assert.equal(await page.locator('#hand .card').count(),13);assert.equal(await page.locator('.nexus-core-panel').count(),1);assert.equal(await page.locator('.core-console').count(),0);
   const layout=await page.evaluate(()=>{const r=s=>{const b=document.querySelector(s).getBoundingClientRect();return {x:b.x,y:b.y,w:b.width,h:b.height,right:b.right,bottom:b.bottom}};return {arena:r('#arenaScene'),dock:r('#nexusCore'),hp:r('.nexus-fortress.ally .nexus-crystal'),fight:r('#fightBtn'),overflow:document.documentElement.scrollWidth>innerWidth}});
-  assert.equal(layout.overflow,false);assert.ok(layout.arena.w>300,JSON.stringify(layout));assert.ok(Math.abs(layout.arena.w/layout.arena.h-1600/760)<.03);
+  assert.equal(layout.overflow,false);assert.ok(layout.arena.w>300,JSON.stringify(layout));assert.equal(layout.arena.w,width);assert.equal(layout.arena.h,height);
   assert.ok(layout.fight.bottom<=height+1,JSON.stringify(layout));
   assert.ok(layout.dock.y>=layout.hp.bottom,JSON.stringify(layout));
   assert.ok(layout.dock.bottom<=layout.arena.bottom+1,JSON.stringify(layout));

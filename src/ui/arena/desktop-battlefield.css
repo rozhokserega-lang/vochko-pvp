@@ -1,0 +1,33 @@
+/* Desktop-first, edge-to-edge world. The card hand is a HUD overlay, not a
+   second board whose height shrinks the entire battlefield. */
+.match-screen.desktop-battlefield{position:relative;width:100vw;height:100dvh;min-width:1000px;overflow:hidden;background-image:var(--arena-bg);background-size:cover;background-position:center;background-repeat:no-repeat}
+.desktop-battlefield::before{display:none!important}
+.desktop-battlefield>header{position:absolute;inset:0 0 auto;z-index:40;height:82px;min-height:0;padding:8px 22px;display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;background:linear-gradient(180deg,#030b16f5,#091323d9 75%,#07101a66);border-bottom:1px solid #ba914365;box-shadow:0 8px 30px #0005}
+.battle-player{display:flex;align-items:center;gap:12px;min-width:0;color:#fff2d6;text-shadow:0 2px 3px #000}
+.battle-player img{width:58px;height:58px;object-fit:contain;flex:none;filter:drop-shadow(0 0 7px #179ada77)}
+.battle-player strong{font-size:19px;display:block;line-height:1.2}.battle-player small{display:block;color:#afc2d8;font-size:11px;line-height:1.6}
+.battle-player.enemy{justify-content:flex-end;text-align:right}.battle-player.enemy img{filter:drop-shadow(0 0 7px #db462c77)}
+.battle-brand{text-align:center;line-height:1}.battle-brand h1{font:900 clamp(22px,2.4vw,38px) Georgia,serif;letter-spacing:3px;line-height:1.05}.battle-brand span{display:block;font:bold 10px system-ui;letter-spacing:6px;color:#89d7ff;margin-top:3px}
+.battle-brand small{display:block;color:#ffe2a1;font-size:12px;margin-top:5px;letter-spacing:1px}
+.battle-topbar-right{display:flex;align-items:center;justify-content:flex-end;gap:14px;min-width:0}
+.battle-header-actions{display:flex;gap:6px}.battle-header-actions button{border:1px solid #b3985a88;background:#0a172bda;color:#f5e2b7;border-radius:7px;min-height:34px;padding:6px 10px;font-size:12px;white-space:nowrap}.battle-header-actions button:hover{background:#23354ce8;border-color:#e8c378}
+.desktop-battlefield>.wrap{position:absolute;inset:0;display:block;max-width:none;width:100%;height:100%;margin:0;padding:0;overflow:visible}
+.desktop-battlefield .score{position:absolute;z-index:25;top:92px;left:50%;transform:translateX(-50%);margin:0;width:max-content;pointer-events:none}
+.desktop-battlefield .nexus-phase{background:#07111dcc;border-color:#b48e4a77;box-shadow:0 4px 12px #0005;font-size:12px}
+.match-screen.desktop-battlefield .arena-and-hand{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;margin:0;gap:0;container-type:size}
+.match-screen.desktop-battlefield .arena-and-hand>#lanes{position:absolute;inset:0;width:100%;height:100%;padding:0!important;aspect-ratio:auto;min-height:0;border:0;border-radius:0;background:transparent;container-type:size;box-shadow:none}
+.desktop-battlefield .arena-and-hand .arena-scene{position:relative;width:100%!important;height:100%!important;aspect-ratio:auto;margin:0;overflow:visible;border:0;border-radius:0;box-shadow:none;background:none}
+.desktop-battlefield .arena-bg,.desktop-battlefield .battle-head{display:none!important}
+.desktop-battlefield .arena-scene .centerlane{font-size:12px;padding:5px 12px;background:#081626b3;border-color:#d1ad6355;box-shadow:0 3px 12px #0005;backdrop-filter:blur(4px)}
+.desktop-battlefield .arena-scene .centerlane b{font-size:12px;letter-spacing:1px}
+.desktop-battlefield .arena-scene .nexus-fortress-stats{margin-top:7px;gap:3px}
+.desktop-battlefield .arena-scene .nexus-fortress-stats>b{font-size:clamp(10px,1vw,16px);text-shadow:0 2px 5px #000}
+.desktop-battlefield .arena-scene .nexus-fortress-stats .hp{font-size:clamp(17px,1.5vw,26px)}
+.desktop-battlefield .arena-scene .core-xp-dock{height:clamp(58px,10vh,145px);width:94%;max-height:none;margin-top:7px}
+.desktop-battlefield .core-dock-xp{font-size:clamp(10px,.8vw,14px)}
+.match-screen.desktop-battlefield .arena-and-hand>.card-panel{position:absolute;z-index:20;left:50%;bottom:5px;transform:translateX(-50%);width:min(80vw,1240px,calc(100dvh * 1.22));height:auto;aspect-ratio:2172/724;max-width:none;margin:0;filter:drop-shadow(0 12px 22px #000b)}
+.desktop-battlefield .panel-message{z-index:24}
+.desktop-battlefield .nexus-core-panel{z-index:100}
+@media(max-height:800px){.desktop-battlefield>header{height:65px;padding:5px 16px}.battle-player img{width:46px;height:46px}.battle-player strong{font-size:16px}.battle-brand h1{font-size:27px}.battle-brand span{font-size:8px}.battle-brand small{font-size:10px}.desktop-battlefield .score{top:72px}.battle-header-actions button{padding:5px 8px}.desktop-battlefield .arena-scene .centerlane,.desktop-battlefield .arena-scene .centerlane b{font-size:10px}}
+
+@media(min-aspect-ratio:2/1),(max-aspect-ratio:3/2){.match-screen.desktop-battlefield{background-size:100% 100%}}
