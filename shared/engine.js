@@ -1,3 +1,4 @@
+import {isXpCore,absorbCoreCard,coreBonuses,nexusMaxHp,nexusShield} from './core-progression.js';
 import { lineStats, type, elementOf } from './elements.js';
 import {
   applyStatuses, effectiveLine, hitConsequences, ensureStatuses, emptyStatuses,
@@ -42,7 +43,7 @@ export function damage(p, l, amount, nexusPct = shieldPct(p)) {
   if (remain <= 0) return;
   if (p.outer[l] > 0) { p.outer[l] = Math.max(0, p.outer[l] - remain); return; }
   if (p.inner[l] > 0) { p.inner[l] = Math.max(0, p.inner[l] - remain); return; }
-  p.nexus = Math.max(0, p.nexus - Math.round((remain * nexusPct) / 100));
+  p.nexus = Math.max(0, p.nexus - Math.round((Math.max(0, remain - nexusShield(p)) * nexusPct) / 100));
 }
 
 export function damageStage(p, l) {
@@ -64,7 +65,7 @@ export function healStructure(p, l, amount) {
   const stage = damageStage(p, l);
   if (stage === 'nexus') {
     if (p.nexus <= 0) return 0;
-    const healed = Math.min(NEXUS_HP - p.nexus, amount);
+    const healed = Math.max(0, Math.min(nexusMaxHp(p) - p.nexus, amount));
     p.nexus += healed;
     return healed;
   }
@@ -106,7 +107,7 @@ function phaseIO(state) {
   return {
     snapshot: snapshotForRecord, damageStage: stageOf,
     damage(board, lane, amount, pct) {
-      write(board, lane, Math.max(0, read(board, lane) - (stageOf(board, lane) === 'nexus' ? Math.round(amount * pct / 100) : amount)));
+      write(board, lane, Math.max(0, read(board, lane) - (stageOf(board, lane) === 'nexus' ? Math.round(Math.max(0, amount - nexusShield(board)) * pct / 100) : amount)));
     },
     recordDamage(before, after, lane) {
       const stage = stageOf(after, lane);
@@ -115,7 +116,7 @@ function phaseIO(state) {
     healStructure(board, lane, amount) {
       const hp = read(board, lane);
       if (hp <= 0) return 0;
-      const max = stageOf(board, lane) === 'nexus' ? NEXUS_HP : stageOf(board, lane) === 'outer' ? OUTER_HP : INNER_HP;
+      const max = stageOf(board, lane) === 'nexus' ? nexusMaxHp(board) : stageOf(board, lane) === 'outer' ? OUTER_HP : INNER_HP;
       const healed = Math.min(max - hp, amount);
       write(board, lane, hp + healed); return healed;
     },
@@ -126,6 +127,8 @@ function phaseIO(state) {
 // Порядок раунда (ТЗ): статусы (очищение/поджог) → защита → атака → расчёт щита →
 // урон → последствия попадания → перенос статусов.
 export function resolveRound(state, turnA, turnB, opts = {}) {
+  const xpCore=isXpCore(opts);
+  if(xpCore){absorbCoreCard(state.a,turnA.coreCard,state.round);absorbCoreCard(state.b,turnB.coreCard,state.round);}
   const abilities = !!opts.abilities;
   const counters = !!opts.counters;
   const variants = opts.variants ?? {};
@@ -143,7 +146,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   if (abilities) {
     ensureStatuses(state.a); ensureStatuses(state.b);
     ctx = applyStatuses(state, { turnA, turnB, nexusPct, rng, disabled, events, abilityEvents, io:phase, counters, variants, variantsBySide, disabledBySide: opts.disabledBySide, unblocked: opts.unblocked,
-      cores:opts.nexusCoreEnabled?{a:turnA.coreCard,b:turnB.coreCard}:{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled });
+      cores:opts.nexusCoreEnabled&&!xpCore?{a:turnA.coreCard,b:turnB.coreCard}:{},coreProfile:opts.coreProfile??'balanced',coreDisabled:opts.coreDisabled });
     ctx.effects = [];
   }
   const consequences = [];
@@ -157,17 +160,18 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
     const { pa, pb, a, b } = lanes[l];
     const entry = (own, opp, ownCards, oppCards, target, side) => {
       const attackerSide = side === 'b' ? 'a' : 'b'; // side — получающая удар сторона
-      let ownAtk = own.attack, oppDef = opp.defense, atkElement, defElement, mods = null;
+      const coreAttack=xpCore?coreBonuses(state[attackerSide]).attack:0;
+      let ownAtk = own.attack+coreAttack, oppDef = opp.defense, atkElement, defElement, mods = null;
       if (abilities) {
         atkElement = elementOf(ownCards.attack)?.id;
         defElement = elementOf(oppCards.defense)?.id;
-        mods = effectiveLine({ ctx, attackerSide, lane: l, atkStat: own.attack, defStat: opp.defense, atkElement, defElement, counters, variants,
+        mods = effectiveLine({ ctx, attackerSide, lane: l, coreAttack, atkStat: own.attack, defStat: opp.defense, atkElement, defElement, counters, variants,
           atkVariants: variantsBySide[attackerSide], defVariants: variantsBySide[side] });
         ownAtk = mods.attack; oppDef = mods.defense;
       }
       const info = { a: ownAtk, d: oppDef,
         baseA: own.baseAttack, baseD: opp.baseDefense,
-        hit: abilities ? mods.hit : Math.max(0, own.attack - opp.defense), burn: 0, match: '',
+        hit: abilities ? mods.hit : Math.max(0, ownAtk - opp.defense), burn: 0, match: '',
         at: type(ownCards.attack), dt: type(oppCards.defense),
         pairs: own.pairs, opponentPairs: opp.pairs };
       if (abilities) { info.atkElement = atkElement; info.defElement = defElement; info.armorStripped = mods.armorStripped; }
@@ -203,7 +207,7 @@ export function resolveRound(state, turnA, turnB, opts = {}) {
   return {
     events, report,
     ...(abilities ? { abilityEvents } : {}),
-    ...(opts.nexusCoreEnabled ? {coreEffects:ctx?.coreEffects??[]} : {}),
+    ...(opts.nexusCoreEnabled && !xpCore ? {coreEffects:ctx?.coreEffects??[]} : {}),
     finished, winner,
   };
 }

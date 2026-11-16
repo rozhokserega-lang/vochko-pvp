@@ -9,6 +9,7 @@ import { resolveRound, newState, shieldPct } from '../shared/engine.js';
 import { RECOMMENDED } from '../shared/abilities.js';
 import {coreDescriptor,nextCoreHands,dealCoreHand} from '../shared/nexus-core.js';
 import {chooseCorePlan} from '../shared/core-bot.js';
+import * as coreProgression from '../shared/core-progression.js';
 import * as playerDeck from '../shared/player-deck.js';
 
 export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHand(mulberry32(11)):deal(mulberry32(11)), core=false, persistent=false, seedNext=()=>42 } = {}) {
@@ -77,7 +78,7 @@ export function serverFixture({ dealHand = (enabled=false) => enabled?dealCoreHa
         return { id };
       }, json: v => Response.json(v), err: (error, status) => Response.json({ error }, { status }),
       cors: {}, HttpError, sql, broadcastState: async (...args) => {broadcasts.push(args);}, dealHand,
-      ...validation, botPlan, choosePlan, resolveRound, shieldPct, mulberry32,
+      ...coreProgression,...validation, botPlan, choosePlan, resolveRound, shieldPct, mulberry32,
       RECOMMENDED, cryptoSeed: seedNext,coreDescriptor,nextCoreHands,chooseCorePlan,
       ...playerDeck,dealMatchCards:rules=>rules?.nexusCoreEnabled&&rules.deckVersion===2?playerDeck.createDeckMatch(mulberry32(seedNext())):{hands:{1:dealHand(!!rules?.nexusCoreEnabled),2:dealHand(!!rules?.nexusCoreEnabled)}},
       emptyBoard:()=>({a:newState(),b:newState()}),roomCode:()=> 'TEST' };

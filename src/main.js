@@ -1,7 +1,11 @@
+import {desktopMatchHeader,desktopBackground} from './ui/arena/DesktopMatchHeader.js';
 import { retainAttackCharges } from './ui/arena/AttackCharge.js';
 import './ui/arena/attack-charge.css';
 import { retainTowerMeters } from './ui/arena/TowerHealth.js';
 import { shuffled } from '../shared/cards.js';
+import {isXpCore} from '../shared/core-progression.js';
+import {mountNexusCorePanel,clearNexusCorePanel} from './ui/nexus-core/NexusCorePanel.js';
+import './ui/nexus-core/nexus-core-panel.css';
 import {coreDescriptor} from '../shared/nexus-core.js';
 import {mountNexusCore,showBattleCores,clearNexusCore} from './ui/nexus-core/NexusCore.js';
 import './ui/nexus-core/nexus-core.css';
@@ -27,6 +31,8 @@ import { nextReportRound, hasNewBattle as hasNewBattleReport } from './ui/combat
 import { renderStatusBadges } from './ui/arena/StatusBadges.js';
 import {bindStructureInspection,closeEffectInspector} from './ui/arena/EffectInspector.js';
 import './ui/arena/status-badges.css';import { EndScreen } from './ui/EndScreen.js';
+
+import './ui/arena/desktop-battlefield.css';
 
 const app = document.getElementById('app');
 const byId = (c) => document.getElementById(c);
@@ -136,7 +142,7 @@ function exitMatch(matchId = view?.matchId, confirmText, {confirmed=false,notify
   params.delete('room');
   history.replaceState(null, '', location.pathname + (params.size ? '?' + params : ''));
   if (unwatch) { unwatch(); unwatch = null; }
-  clearNexusCore();
+  clearNexusCore();clearNexusCorePanel();
   clearFloats();
   lastReportRound = 0;
   selected = [];
@@ -264,14 +270,12 @@ function render(force = false) {
       defense: slots.filter((s) => s.def.length === 2).length, total: slots.length },
     ready: view.status === 'planning' && (view.me.ready || currentSubmission()?.accepted) };
   const root = document.createElement('div');
-  root.className = 'match-screen';
+  root.className = 'match-screen desktop-battlefield';
   root.dataset.meterContext = `${view.matchId}:${view.round}`;
   // Фон-подложка для боковых полей вокруг сцены (кинематографичные бары).
-  root.style.setProperty('--arena-bg', `url('${ARENA_ASSETS.bg}')`);
+  root.style.setProperty('--arena-bg', `url('${desktopBackground}')`);
   root.innerHTML = `
-    <header><div><h1>ВОЧКО <span style="color:#e7ecf6">/ ТРИ ЛИНИИ</span></h1>
-      <div class="sub">PvP · сид ${view.seat} · комната ${view.roomCode}${view.opponent?.isBot ? ' · против бота' : ''}</div></div>
-      <button class="exit-btn" id="exitBtn" title="Выйти в лобби" aria-label="Выйти в лобби">🚪 Выйти</button></header>
+    ${desktopMatchHeader(view)}
     <div class="wrap">
       <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
       <div class="arena-and-hand">
@@ -324,6 +328,7 @@ function render(force = false) {
   bindStructureInspection(root,{selected:()=>selected,boardMe:view.board.me,boardOpp:view.board.opponent});
   if(view.rules?.nexusCoreEnabled)byId('fightBtn').disabled=blocked||coreBusy||!view.me.preparation?.coreCardId;
   byId('exitBtn').onclick = () => exitMatch();
+  byId('fullscreenBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else setStatus('Для полного экрана разверни окно браузера.');}catch{setStatus('Полноэкранный режим недоступен в этом окне браузера.');}};
   wireDrag();
 }
 
@@ -375,11 +380,12 @@ function updatePreview() {
 function syncCoreView(){
   if(!view||!app.firstElementChild?.querySelector('#arenaScene'))return;
   const remaining=myHand.filter(c=>!usedIds().has(c.id));
-  mountNexusCore(app.firstElementChild,{view,slots,remaining:remaining.length===1?remaining[0]:null,
+  (isXpCore(view.rules)?mountNexusCorePanel:mountNexusCore)(app.firstElementChild,{view,slots,remaining:remaining.length===1?remaining[0]:null,
     selected:selected.length===1?cardById(selected[0]):null,blocked:turnLocked()||coreBusy,onActivate:activateCore,onPrepare:()=>prepareCore()});
   if(view.rules?.nexusCoreEnabled&&!isCombatPlaying())byId('phase').textContent=view.me.ready?'Ждём соперника':view.me.preparation?.coreCardId?'Готов к бою':view.me.preparation?'Ядро Нексуса':'Расстановка карт';
 }
-window.addEventListener('resize',syncCoreView);
+window.addEventListener('resize',()=>{applyArenaLayout();syncCoreView();});
+document.addEventListener('fullscreenchange',()=>{applyArenaLayout();const button=byId('fullscreenBtn');if(button){button.textContent=document.fullscreenElement?'⛶ Окно':'⛶ Экран';button.setAttribute('aria-label',document.fullscreenElement?'Выйти из полноэкранного режима':'Включить полноэкранный режим');}});
 const placementIds=()=>slots.map((s,l)=>({lane:l,attack:s.atk.map(c=>c.id),defense:s.def.map(c=>c.id)}));
 async function prepareCore(coreCardId,origin){
   if(coreBusy||turnLocked()||!view.rules?.nexusCoreEnabled)return;
@@ -388,7 +394,9 @@ async function prepareCore(coreCardId,origin){
     const result=await api.prepareCore({matchId,round,placements:placementIds(),...(coreCardId?{coreCardId}:{})});
     if(view?.matchId!==matchId||view.round!==round)return;
     view.me.preparation=result.preparation;
-    view.me.core=coreDescriptor(cardById(result.preparation.coreCardId));
+    view.me.core=isXpCore(view.rules)?null:coreDescriptor(cardById(result.preparation.coreCardId));
+    if(result.coreProgress)view.me.coreProgress=result.coreProgress;
+    if(result.board)view.board.me={...view.board.me,...result.board};
     view.version=Math.max(view.version,result.version);selected=[];
     if(coreCardId&&origin&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
       const card=cardById(coreCardId),target=document.querySelector('#nexusCore').getBoundingClientRect(),ghost=document.createElement('span');
@@ -505,7 +513,7 @@ window.addEventListener('pointerup', (e) => {
   if (!dragStart || e.pointerId !== dragStart.pointerId) return;
   if (dragId) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.drop-target');
-    if(target?.id==='nexusCore')activateCore(dragId);
+    if(target?.id==='nexusCore'||target?.hasAttribute('data-core-target'))activateCore(dragId);
     else if (target) placeCards(target, selected.length === 2 && selected.includes(dragId) ? selected : [dragId]);
     else setStatus('Перетащи карту на доступную башню.');
   }

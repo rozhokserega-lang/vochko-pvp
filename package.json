@@ -19,7 +19,8 @@
     "build": "vite build",
     "standalone": "vite build --base=./ && node scripts/make-standalone.mjs",
     "dev": "vite",
-    "dev:local": "node scripts/dev-local.mjs"
+    "dev:local": "node scripts/dev-local.mjs",
+    "test:xp-ui": "node tests/browser-core-xp.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

@@ -35,11 +35,11 @@ Deno.serve(async (req) => {
           board: emptyBoard(),
           ...dealMatchCards({nexusCoreEnabled:coreEnabled,deckVersion:2}),
           fortifyUsed: { 1: false, 2: false },
-          rules: { abilities: coreEnabled||abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1,deckVersion:coreEnabled?2:undefined },
+          rules: { abilities: coreEnabled||abilities !== false, smartBot: smartBot !== false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:2,deckVersion:coreEnabled?2:undefined },
           rngSeed: cryptoSeed(),
         }
       : {
-          rules: { abilities: coreEnabled||abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:1,deckVersion:coreEnabled?2:undefined },
+          rules: { abilities: coreEnabled||abilities !== false, smartBot: false, counters: counters !== false, variants: matchVariants, nexusCoreEnabled:coreEnabled, coreProfile:'balanced', coreVersion:2,deckVersion:coreEnabled?2:undefined },
           rngSeed: cryptoSeed(),
         };
     const [match] = await sql`

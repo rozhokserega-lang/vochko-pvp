@@ -16,7 +16,7 @@ export async function startLocalGame(port = 5185) {
     Object.assign(f.match, { id, room_code: code, status: bot ? 'planning' : 'waiting' });
     Object.assign(f.match.state,core?createDeckMatch():{hands:{1:deal(),2:deal()}});
     f.match.state.botMatch = bot;
-    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:1,deckVersion:core?2:undefined,variants:RECOMMENDED };
+    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:2,deckVersion:core?2:undefined,variants:RECOMMENDED };
     f.match.state.rngSeed=randomInt(0,4294967296);
     if(!bot){delete f.match.state.board;delete f.match.state.hands;delete f.match.state.decks;}
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };
@@ -100,7 +100,7 @@ export async function startLocalGame(port = 5185) {
       });
     },
   };
-  const server = await createServer({ base: '/', plugins: [plugin], server: { host: '127.0.0.1', port, strictPort: true } });
+  const server = await createServer({ base: '/', plugins: [plugin], server: { host: '127.0.0.1', port, strictPort: true, watch: { usePolling: true, interval: 300, binaryInterval: 1000 } } });
   await server.listen();
   return server;
 }

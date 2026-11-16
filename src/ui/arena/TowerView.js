@@ -49,7 +49,7 @@ export function towerHTML({ hp, max, label, lane, kind, active, slots, preview }
     </div>
     ${active && alive ? `
       ${towerHealthHTML(hp, max, ownShield, charging, kind === 'def' ? cards.map(c => c.id).sort().join(',') : '')}
-      ${ownAttack ? attackChargeHTML(cards) : ''}
+      ${ownAttack ? attackChargeHTML(cards, (preview?.attack ?? power?.attack ?? 0) - (power?.attack ?? 0)) : ''}
     ` : ''}
   </div>`;
 }
