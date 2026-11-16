@@ -17,7 +17,7 @@ export function showEffectInspector(target,title,html){
 }
 export function bindStructureInspection(root,{selected,boardMe,boardOpp}){
   const inspect=e=>{
-    if(selected().length||e.target.closest('.core-console,.core-own-badge,.core-battle-badge'))return;
+    if(selected().length||e.target.closest('.core-console,.core-xp-dock,.core-own-badge,.core-battle-badge'))return;
     const target=e.target.closest('.tower,.nexus-floor,.nexus-fortress');if(!target)return;
     e.preventDefault();e.stopImmediatePropagation();
     const mine=target.classList.contains('ally')||!!target.closest('.nexus-fortress.ally'),board=mine?boardMe:boardOpp;

@@ -277,10 +277,10 @@ function render(force = false) {
       <button class="exit-btn" id="exitBtn" title="Выйти в лобби" aria-label="Выйти в лобби">🚪 Выйти</button></header>
     <div class="wrap">
       <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
-      ${isXpCore(view.rules)?'<div class="core-game-layout"><aside class="core-panel-host"></aside>':''}<div class="arena-and-hand">
+      <div class="arena-and-hand">
         <div class="battle" id="lanes">${Board(view, slots, { showProgress: !blocked })}</div>
         ${cardPanelHTML(panelState)}
-      </div>${isXpCore(view.rules)?'</div>':''}
+      </div>
     </div>`;
   const restoreChargeAnimations = retainAttackCharges(app.firstElementChild, root);
   const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
@@ -396,7 +396,7 @@ async function prepareCore(coreCardId,origin){
     if(result.board)view.board.me={...view.board.me,...result.board};
     view.version=Math.max(view.version,result.version);selected=[];
     if(coreCardId&&origin&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-      const card=cardById(coreCardId),target=document.querySelector(isXpCore(view.rules)&&matchMedia('(max-width:1100px)').matches?'.core-compact':'#nexusCore').getBoundingClientRect(),ghost=document.createElement('span');
+      const card=cardById(coreCardId),target=document.querySelector('#nexusCore').getBoundingClientRect(),ghost=document.createElement('span');
       ghost.className='core-flight-card';ghost.textContent=card.r+card.s;ghost.style.color='♥♦'.includes(card.s)?'#bf243c':'#162e4b';
       ghost.style.left=origin.left+origin.width/2+'px';ghost.style.top=origin.top+origin.height/2+'px';document.body.append(ghost);
       ghost.animate([{transform:'translate(-50%,-50%) scale(1)'},{transform:`translate(calc(-50% + ${target.left+target.width/2-origin.left-origin.width/2}px),calc(-50% + ${target.top+target.height/2-origin.top-origin.height/2}px)) scale(.15)`,opacity:0}],{duration:450,easing:'ease-in',fill:'forwards'}).finished.then(()=>ghost.remove(),()=>ghost.remove());
