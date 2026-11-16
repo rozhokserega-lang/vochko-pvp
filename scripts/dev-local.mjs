@@ -100,7 +100,7 @@ export async function startLocalGame(port = 5185) {
       });
     },
   };
-  const server = await createServer({ base: '/', plugins: [plugin], server: { host: '127.0.0.1', port, strictPort: true } });
+  const server = await createServer({ base: '/', plugins: [plugin], server: { host: '127.0.0.1', port, strictPort: true, watch: { usePolling: true, interval: 300, binaryInterval: 1000 } } });
   await server.listen();
   return server;
 }
