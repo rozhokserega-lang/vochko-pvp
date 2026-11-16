@@ -11,31 +11,21 @@ import { nexusHTML } from './NexusView.js';
 import { ARENA_ASSETS } from './arena-assets.js';
 
 let observedScene=null,sceneObserver=null;
-const LANE_NAMES = ['ВЕРХ', 'ЦЕНТР', 'НИЗ'];
 const pctOf = (v, base) => +(((v / base) * 100)).toFixed(3) + '%';
 
 // Разметка боевой сцены — тот же контракт, что у старого Board(view, slots, myHand).
 // Карты кладутся сначала на ближнюю к центру башню (outer, 12 HP) — она же
 // первая принимает урон по правилам; после её разрушения — на дальнюю (18 HP).
-export function battleHTML(view, mySlots, { showProgress = false } = {}) {
+export function battleHTML(view, mySlots) {
   const me = view.board.me, opp = view.board.opponent;
-  const mark = (ready, icon, label) => `<span class="lane-pair-mark${ready ? ' placed' : ''}" role="img"
-    aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
   const preview = l => ({
     shield: pairStats(mySlots[l].def)?.defense ?? 0,
     attack: (pairStats(mySlots[l].atk)?.attack ?? 0) + (mySlots[l].atk.length===2&&isXpCore(view.rules)?coreBonuses({coreProgress:view.me.coreProgress}).attack:0),
   });
-  const totals = l => `⚔ ${preview(l).attack} · 🛡 ${preview(l).shield}`;
   const towers = (l) => `
     <div class="side">
       ${towerHTML({ hp: me.inner[l], max: 18, label: 'МОЯ ДАЛЬНЯЯ', lane: l, kind: 'def', active: me.inner[l] > 0 && me.outer[l] <= 0, slots: mySlots, preview: preview(l) })}
       ${towerHTML({ hp: me.outer[l], max: 12, label: 'МОЯ БЛИЖНЯЯ', lane: l, kind: 'def', active: me.outer[l] > 0, slots: mySlots, preview: preview(l) })}
-    </div>
-    <div class="centerlane"><b>${LANE_NAMES[l]}</b><small>${totals(l)}</small>
-      ${showProgress ? `<span class="lane-pair-marks">
-        ${mark(mySlots[l].atk.length === 2, '⚔', 'Атака')}
-        ${mark(mySlots[l].def.length === 2, '🛡', 'Защита')}
-      </span>` : ''}
     </div>
     <div class="side enemy">
       ${towerHTML({ hp: opp.outer[l], max: 12, label: 'ВРАГ: БЛИЖНЯЯ', lane: l, kind: 'atk', active: opp.outer[l] > 0, slots: mySlots, preview: preview(l) })}
