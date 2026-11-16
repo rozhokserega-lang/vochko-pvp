@@ -2,6 +2,9 @@ import { retainAttackCharges } from './ui/arena/AttackCharge.js';
 import './ui/arena/attack-charge.css';
 import { retainTowerMeters } from './ui/arena/TowerHealth.js';
 import { shuffled } from '../shared/cards.js';
+import {isXpCore} from '../shared/core-progression.js';
+import {mountNexusCorePanel,clearNexusCorePanel} from './ui/nexus-core/NexusCorePanel.js';
+import './ui/nexus-core/nexus-core-panel.css';
 import {coreDescriptor} from '../shared/nexus-core.js';
 import {mountNexusCore,showBattleCores,clearNexusCore} from './ui/nexus-core/NexusCore.js';
 import './ui/nexus-core/nexus-core.css';
@@ -136,7 +139,7 @@ function exitMatch(matchId = view?.matchId, confirmText, {confirmed=false,notify
   params.delete('room');
   history.replaceState(null, '', location.pathname + (params.size ? '?' + params : ''));
   if (unwatch) { unwatch(); unwatch = null; }
-  clearNexusCore();
+  clearNexusCore();clearNexusCorePanel();
   clearFloats();
   lastReportRound = 0;
   selected = [];
@@ -274,10 +277,10 @@ function render(force = false) {
       <button class="exit-btn" id="exitBtn" title="Выйти в лобби" aria-label="Выйти в лобби">🚪 Выйти</button></header>
     <div class="wrap">
       <div class="score" id="nexusScore">${nexusPhaseBar(view)}</div>
-      <div class="arena-and-hand">
+      ${isXpCore(view.rules)?'<div class="core-game-layout"><aside class="core-panel-host"></aside>':''}<div class="arena-and-hand">
         <div class="battle" id="lanes">${Board(view, slots, { showProgress: !blocked })}</div>
         ${cardPanelHTML(panelState)}
-      </div>
+      </div>${isXpCore(view.rules)?'</div>':''}
     </div>`;
   const restoreChargeAnimations = retainAttackCharges(app.firstElementChild, root);
   const restoreMeterAnimations = retainTowerMeters(app.firstElementChild, root);
@@ -375,7 +378,7 @@ function updatePreview() {
 function syncCoreView(){
   if(!view||!app.firstElementChild?.querySelector('#arenaScene'))return;
   const remaining=myHand.filter(c=>!usedIds().has(c.id));
-  mountNexusCore(app.firstElementChild,{view,slots,remaining:remaining.length===1?remaining[0]:null,
+  (isXpCore(view.rules)?mountNexusCorePanel:mountNexusCore)(app.firstElementChild,{view,slots,remaining:remaining.length===1?remaining[0]:null,
     selected:selected.length===1?cardById(selected[0]):null,blocked:turnLocked()||coreBusy,onActivate:activateCore,onPrepare:()=>prepareCore()});
   if(view.rules?.nexusCoreEnabled&&!isCombatPlaying())byId('phase').textContent=view.me.ready?'Ждём соперника':view.me.preparation?.coreCardId?'Готов к бою':view.me.preparation?'Ядро Нексуса':'Расстановка карт';
 }
@@ -388,10 +391,12 @@ async function prepareCore(coreCardId,origin){
     const result=await api.prepareCore({matchId,round,placements:placementIds(),...(coreCardId?{coreCardId}:{})});
     if(view?.matchId!==matchId||view.round!==round)return;
     view.me.preparation=result.preparation;
-    view.me.core=coreDescriptor(cardById(result.preparation.coreCardId));
+    view.me.core=isXpCore(view.rules)?null:coreDescriptor(cardById(result.preparation.coreCardId));
+    if(result.coreProgress)view.me.coreProgress=result.coreProgress;
+    if(result.board)view.board.me={...view.board.me,...result.board};
     view.version=Math.max(view.version,result.version);selected=[];
     if(coreCardId&&origin&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-      const card=cardById(coreCardId),target=document.querySelector('#nexusCore').getBoundingClientRect(),ghost=document.createElement('span');
+      const card=cardById(coreCardId),target=document.querySelector(isXpCore(view.rules)&&matchMedia('(max-width:1100px)').matches?'.core-compact':'#nexusCore').getBoundingClientRect(),ghost=document.createElement('span');
       ghost.className='core-flight-card';ghost.textContent=card.r+card.s;ghost.style.color='♥♦'.includes(card.s)?'#bf243c':'#162e4b';
       ghost.style.left=origin.left+origin.width/2+'px';ghost.style.top=origin.top+origin.height/2+'px';document.body.append(ghost);
       ghost.animate([{transform:'translate(-50%,-50%) scale(1)'},{transform:`translate(calc(-50% + ${target.left+target.width/2-origin.left-origin.width/2}px),calc(-50% + ${target.top+target.height/2-origin.top-origin.height/2}px)) scale(.15)`,opacity:0}],{duration:450,easing:'ease-in',fill:'forwards'}).finished.then(()=>ghost.remove(),()=>ghost.remove());
@@ -505,7 +510,7 @@ window.addEventListener('pointerup', (e) => {
   if (!dragStart || e.pointerId !== dragStart.pointerId) return;
   if (dragId) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.drop-target');
-    if(target?.id==='nexusCore')activateCore(dragId);
+    if(target?.id==='nexusCore'||target?.hasAttribute('data-core-target'))activateCore(dragId);
     else if (target) placeCards(target, selected.length === 2 && selected.includes(dragId) ? selected : [dragId]);
     else setStatus('Перетащи карту на доступную башню.');
   }

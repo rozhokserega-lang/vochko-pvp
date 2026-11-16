@@ -7,11 +7,11 @@ const COLORS = {
   thunderstorm: '#a9a0ff', sandstorm: '#e1bd7b',
 };
 
-export function attackChargeHTML(cards) {
+export function attackChargeHTML(cards, bonus = 0) {
   const stats = pairStats(cards);
   if (!stats) return '';
-  return `<div class="tower-attack attack-charge" aria-label="Атака: ${stats.attack}" data-attack-key="${cards.map(c => c.id).sort().join(',')}">
-    <span class="attack-charge-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l16 16-2 2L3 5V3h2zm8 12l-5 5m-3-3l6 6"/></svg><b>${stats.attack}</b></span>
+  return `<div class="tower-attack attack-charge" aria-label="Атака: ${stats.attack + bonus}" data-attack-key="${cards.map(c => c.id).sort().join(',')}:${bonus}">
+    <span class="attack-charge-value"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l16 16-2 2L3 5V3h2zm8 12l-5 5m-3-3l6 6"/></svg><b>${stats.attack + bonus}</b></span>
   </div>`;
 }
 

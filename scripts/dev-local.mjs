@@ -16,7 +16,7 @@ export async function startLocalGame(port = 5185) {
     Object.assign(f.match, { id, room_code: code, status: bot ? 'planning' : 'waiting' });
     Object.assign(f.match.state,core?createDeckMatch():{hands:{1:deal(),2:deal()}});
     f.match.state.botMatch = bot;
-    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:1,deckVersion:core?2:undefined,variants:RECOMMENDED };
+    f.match.state.rules = { abilities: true, smartBot: true,nexusCoreEnabled:core,coreProfile:'balanced',coreVersion:2,deckVersion:core?2:undefined,variants:RECOMMENDED };
     f.match.state.rngSeed=randomInt(0,4294967296);
     if(!bot){delete f.match.state.board;delete f.match.state.hands;delete f.match.state.decks;}
     const room = { f, owner, guest: null, pending: Promise.resolve(), rematch: new Set() };

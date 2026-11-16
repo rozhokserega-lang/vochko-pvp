@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       }
 
       // Оба согласны — новая партия, новый код комнаты.
-      const nextRules={...st.rules,...(st.rules?.nexusCoreEnabled?{deckVersion:2}:{})};
+      const nextRules={...st.rules,...(st.rules?.nexusCoreEnabled?{deckVersion:2,coreVersion:2}:{})};
       const [created] = await tx`
         insert into private.matches (room_code, player1_id, player2_id, status, round, state)
         values (${roomCode()}, ${m.player1_id}, ${m.player2_id}, 'planning', 1, ${sql.json({

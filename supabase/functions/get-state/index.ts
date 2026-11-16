@@ -4,6 +4,7 @@ import { requireUser } from '../_shared/auth.ts';
 import { json, err, cors, HttpError } from '../_shared/cors.ts';
 import { sql } from '../_shared/db.ts';
 import { shieldPct } from '../../../shared/engine.js';
+import {isXpCore,coreProgress,publicBoard,nexusMaxHp,nexusShield} from '../../../shared/core-progression.js';
 import {coreDescriptor} from '../../../shared/nexus-core.js';
 
 Deno.serve(async (req) => {
@@ -45,16 +46,17 @@ Deno.serve(async (req) => {
       status: m.status,
       round: m.round,
       version: Number(m.version),
-      rules:{nexusCoreEnabled:st.rules?.nexusCoreEnabled===true,deckVersion:st.rules?.deckVersion??1,coreProfile:st.rules?.coreProfile??'balanced',variants:st.rules?.variants??{}},
+      rules:{coreVersion:st.rules?.coreVersion??1,nexusCoreEnabled:st.rules?.nexusCoreEnabled===true,deckVersion:st.rules?.deckVersion??1,coreProfile:st.rules?.coreProfile??'balanced',variants:st.rules?.variants??{}},
       me: {
         userId: user.id,
         hand: st.hands?.[String(seat)] ?? [],
         ready: readyRow.mine > 0,
         fortifyUsed: false,
         ...(st.rules?.nexusCoreEnabled===true?{
+          ...(isXpCore(st.rules)?{coreProgress:coreProgress(myBoard)}:{}),
           preparation:st.corePreparations?.[seat]??null,
           phase:readyRow.mine>0?'ready':st.corePreparations?.[seat]?.phase??'placement',
-          core:coreDescriptor((st.hands?.[String(seat)]??[]).find(c=>c.id===st.corePreparations?.[seat]?.coreCardId)),
+          core:isXpCore(st.rules)?null:coreDescriptor((st.hands?.[String(seat)]??[]).find(c=>c.id===st.corePreparations?.[seat]?.coreCardId)),
           excludedCards:st.decks?.[seat]?.burnedCards??st.coreExclusions?.[seat]??[],
           ...(st.decks?.[seat]?{deck:{drawCount:st.decks[seat].drawPile.length,discardPile:st.decks[seat].discardPile,burnedCards:st.decks[seat].burnedCards}}:{}),
         }:{}),
@@ -66,8 +68,8 @@ Deno.serve(async (req) => {
         fortifyUsed: false,
       },
       board: {
-        me: myBoard ? { ...myBoard, shieldPct: shieldPct(myBoard) } : null,
-        opponent: oppBoard ? { nexus: oppBoard.nexus, outer: oppBoard.outer, inner: oppBoard.inner, statuses: oppBoard.statuses ?? [{}, {}, {}], shieldPct: shieldPct(oppBoard) } : null,
+        me: myBoard ? { ...publicBoard(myBoard), nexusMaxHp:nexusMaxHp(myBoard), nexusShield:nexusShield(myBoard), shieldPct: shieldPct(myBoard) } : null,
+        opponent: oppBoard ? { nexus: oppBoard.nexus, nexusMaxHp:nexusMaxHp(oppBoard), nexusShield:nexusShield(oppBoard), outer: oppBoard.outer, inner: oppBoard.inner, statuses: oppBoard.statuses ?? [{}, {}, {}], shieldPct: shieldPct(oppBoard) } : null,
       },
       latestRoundReport: report?.public_result ?? null,
       winner: m.status === 'finished' ? (m.winner_seat == null ? 'draw' : m.winner_seat === seat ? 'me' : 'opponent') : null,

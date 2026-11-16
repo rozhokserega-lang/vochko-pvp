@@ -1,3 +1,4 @@
+import {nexusMaxHp} from '../../shared/core-progression.js';
 import { type, elementName, pairStats } from '../../shared/elements.js';
 import { TOWER_ART, NEXUS_IMAGES } from './assets.js';
 import { nexusFloorOpen, towerStage } from './combat-logic.js';
@@ -92,8 +93,8 @@ export function nexusFortress(board, placements, isEnemy) {
       <div class="nexus-floor-stack">${floors}</div>
     </div>
     <div class="nexus-fortress-stats"><b>${isEnemy ? 'НЕКСУС ВРАГА' : 'МОЙ НЕКСУС'}</b>
-      <strong class="hp">${Math.max(0, board.nexus)} / 80</strong>
-      <div class="bar"><div class="fill" style="width:${Math.max(0, board.nexus) / 80 * 100}%"></div></div>
+      <strong class="hp">${Math.max(0, board.nexus)} / ${nexusMaxHp(board)}</strong>
+      <div class="bar"><div class="fill" style="width:${Math.max(0, board.nexus) / nexusMaxHp(board) * 100}%"></div></div>
       <small>Щит ${board.shieldPct ?? 0}%</small>
     </div>
   </div>`;

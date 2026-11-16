@@ -1,3 +1,4 @@
+import {isXpCore,coreBonuses} from '../../../shared/core-progression.js';
 import { pairStats } from '../../../shared/elements.js';
 // Сцена арены v20: единое дизайн-пространство (aspect-fit), фон из ресурса,
 // 12 башен и 2 Нексуса поверх него. Разметка совместима с боевой хореографией
@@ -20,7 +21,7 @@ export function battleHTML(view, mySlots, { showProgress = false } = {}) {
     aria-label="${label}: ${ready ? 'пара готова' : 'нужна пара'}"><span aria-hidden="true">${icon}</span></span>`;
   const preview = l => ({
     shield: pairStats(mySlots[l].def)?.defense ?? 0,
-    attack: pairStats(mySlots[l].atk)?.attack ?? 0,
+    attack: (pairStats(mySlots[l].atk)?.attack ?? 0) + (mySlots[l].atk.length===2&&isXpCore(view.rules)?coreBonuses({coreProgress:view.me.coreProgress}).attack:0),
   });
   const totals = l => `⚔ ${preview(l).attack} · 🛡 ${preview(l).shield}`;
   const towers = (l) => `

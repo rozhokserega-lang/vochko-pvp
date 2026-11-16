@@ -11,6 +11,7 @@ import { resolveRound } from '../../../shared/engine.js';
 import { RECOMMENDED } from '../../../shared/abilities.js';
 import { mulberry32 } from '../../../shared/rng.js';
 import { cryptoSeed } from '../_shared/deal.ts';
+import {isXpCore} from '../../../shared/core-progression.js';
 import {chooseCorePlan} from '../../../shared/core-bot.js';
 import {coreDescriptor,nextCoreHands} from '../../../shared/nexus-core.js';
 import {settleDeckHand,drawDeckHand,deckKnowledge,exhaustionWinner} from '../../../shared/player-deck.js';
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
         // Seeded RNG → воспроизводимый расчёт раунда (seed хранится в state).
         const rng = mulberry32(Number(st.rngSeed) >>> 0);
         st.rngSeed = cryptoSeed(); // новый seed на следующий раунд
-        const resolved = resolveRound(board, turnA, turnB, { abilities, counters, variants, rng,nexusCoreEnabled:coreEnabled,coreProfile:rules.coreProfile });
+        const resolved = resolveRound(board, turnA, turnB, { abilities, counters, variants, rng,nexusCoreEnabled:coreEnabled,coreProfile:rules.coreProfile,coreVersion:rules.coreVersion });
         st.board = { a: board.a, b: board.b };
 
         st.fortifyUsed = { 1: false, 2: false }; // неактивное поле совместимости
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
         }
         const newRound = finished ? m.round : m.round + 1;
         if (!finished&&rules.deckVersion!==2) st.hands = coreEnabled?nextCoreHands(mulberry32(Number(st.rngSeed)>>>0),{a:turnA.coreCard,b:turnB.coreCard}):{ 1: dealHand(), 2: dealHand() };
-        const cores=coreEnabled?{a:coreDescriptor(turnA.coreCard),b:coreDescriptor(turnB.coreCard)}:null;
+        const cores=coreEnabled&&!isXpCore(rules)?{a:coreDescriptor(turnA.coreCard),b:coreDescriptor(turnB.coreCard)}:null;
         if(coreEnabled){if(rules.deckVersion!==2)st.coreExclusions={1:[turnA.coreCard.id],2:[turnB.coreCard.id]};st.corePreparations={};}
 
         await tx`
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
         // PvE: бот играет seat 2 в той же транзакции — расчёт мгновенный.
         // smartBot (правила матча) — Monte Carlo бот; иначе прежний botPlan.
         const matchState = { round: m.round, a: st.board.a, b: st.board.b };
-        const botTurn = coreEnabled?chooseCorePlan({state:matchState,hand:st.hands['2'],side:'b',rng:mulberry32(Number(st.rngSeed)>>>0),variants,counters,coreProfile:rules.coreProfile,
+        const botTurn = coreEnabled?chooseCorePlan({state:matchState,hand:st.hands['2'],side:'b',rng:mulberry32(Number(st.rngSeed)>>>0),variants,counters,coreProfile:rules.coreProfile,coreVersion:rules.coreVersion,
           ownDeck:rules.deckVersion===2?deckKnowledge(st.decks[2]):null,opponentBurned:st.decks?.[1]?.burnedCards??[],opponentDeckCounts:st.decks?.[1]?{draw:st.decks[1].drawPile.length,discard:st.decks[1].discardPile.length}:null}).plan:(st.rules?.smartBot === true)
           ? choosePlan({
               state: matchState, hand: st.hands['2'], side: 'b', rng: mulberry32(Number(st.rngSeed) >>> 0),

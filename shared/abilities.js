@@ -292,7 +292,7 @@ export function effectiveLine(p) {
   const defS = ctx.applied[defenderSide][lane] || {};
 
   let attack = atkStat + (atkS.attackBoost || 0);
-  attack = Math.round(attack * (1 - (atkS.weakenAttack || 0) / 100));
+  attack = Math.round(attack * (1 - (atkS.weakenAttack || 0) / 100)) + (p.coreAttack || 0);
 
   let defense = Math.round(defStat * (1 - (defS.weakenDefense || 0) / 100));
   const armor = defS.armor || 0;

@@ -1,3 +1,4 @@
+import {cardXp,publicBoard} from './core-progression.js';
 import {botPlan,evaluateState} from './bot.js';
 import {pairStats} from './elements.js';
 import {resolveRound,cloneGameState} from './engine.js';
@@ -10,11 +11,13 @@ export function simpleCoreTurn(hand,own,enemy) {
   const placements=botPlan(hand,enemy,own),used=new Set(placements.flatMap(p=>[...p.attack,...p.defense].map(c=>c.id)));
   return {placements,coreCard:hand.find(c=>!used.has(c.id)),fortifyLane:null};
 }
-export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800,samples=2,variants={},counters=true,coreProfile='balanced',policy='adaptive',ownDeck=null,opponentBurned=[],opponentDeckCounts=null}={}) {
+export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800,samples=2,variants={},counters=true,coreProfile='balanced',coreVersion=1,policy='adaptive',ownDeck=null,opponentBurned=[],opponentDeckCounts=null}={}) {
   if(hand?.length!==13)throw Error('Core AI requires 13 cards');
   // Sampled combat always uses the same viewer-relative orientation. A server
   // seat must not change the random future evaluated for an identical position.
   if(side==='b'){state={round:state.round,a:state.b,b:state.a};side='a';}
+  if(coreVersion===2){state={...state,[side==='a'?'b':'a']:publicBoard(state[side==='a'?'b':'a'])};opponentBurned=[];}
+  const tier=coreVersion===2?cardXp:coreTier;
   const started=performance.now(),enemy=side==='a'?'b':'a';
   const samplesData=Array.from({length:samples},()=>{
     const available=shuffled(deck().filter(c=>!opponentBurned.includes(c.id)),rng),h=available.slice(0,13);
@@ -27,8 +30,8 @@ export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800
   // Reserve each card in turn, including high cards; pair optimization uses the
   // remaining twelve. This makes sacrificing an Ace an actual strategic choice.
   const fallbackCard=simpleCoreTurn(hand,state[side],state[enemy]).coreCard;
-  let candidates=[fallbackCard,...[...hand].filter(c=>c.id!==fallbackCard.id).sort((a,b)=>coreTier(b)-coreTier(a))];
-  if(policy==='highest')candidates=[[...hand].sort((a,b)=>coreTier(b)-coreTier(a)||b.v-a.v)[0]];
+  let candidates=[fallbackCard,...[...hand].filter(c=>c.id!==fallbackCard.id).sort((a,b)=>tier(b)-tier(a))];
+  if(policy==='highest')candidates=[[...hand].sort((a,b)=>tier(b)-tier(a)||b.v-a.v)[0]];
   if(policy==='lowest')candidates=[[...hand].sort((a,b)=>a.v-b.v)[0]];
   for(const card of candidates){
     if(best&&performance.now()-started>budgetMs)break;
@@ -38,7 +41,7 @@ export function chooseCorePlan({state,hand,side='a',rng=Math.random,budgetMs=800
       const sim=cloneGameState(state);let forecastRound=0;
       const resolve=(own,opp)=>{
         const rollSeed=(sample.seed^Math.imul(++forecastRound,0x9e3779b9))>>>0;
-        const options={abilities:true,counters,variants,rng:mulberry32(rollSeed),nexusCoreEnabled:true,coreProfile,
+        const options={abilities:true,counters,variants,rng:mulberry32(rollSeed),nexusCoreEnabled:true,coreProfile,coreVersion,
           abilityRng:(attacker,lane)=>mulberry32((rollSeed^Math.imul(lane+1,0x85ebca6b)^(attacker==='a'?0x12345678:0x87654321))>>>0)};
         return side==='a'?resolveRound(sim,own,opp,options):resolveRound(sim,opp,own,options);
       };
